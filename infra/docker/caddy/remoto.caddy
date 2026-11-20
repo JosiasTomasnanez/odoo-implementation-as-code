@@ -1,0 +1,34 @@
+# Nombre de Odoo para entrar desde fuera del local por el túnel de Cloudflare (ADR 0020).
+# Lo monta compose.acceso-remoto.yml (ACCESO_REMOTO=1); el Caddyfile lo importa.
+# Es el mismo Odoo que el nombre de la LAN, con estas diferencias:
+# - solo responde a cloudflared (IP fija): desde la LAN, aunque alguien apunte este nombre al
+#   servidor, no abre (para la LAN está el otro nombre);
+# - bloquea lo que no se usa desde un navegador: el gestor de bases y las API externas.
+#   odoo-iac (JSON-2) corre en el mismo servidor contra el nombre de la LAN: no se toca;
+# - Odoo registra la IP real de quien entra (la que manda Cloudflare), no la de cloudflared.
+{$REMOTO_HOST:remoto.comercio-ejemplo.example} {
+	import tls-{$CADDY_TLS_MODO:interna}
+
+	@fuera_del_tunel not remote_ip {$REMOTO_TUNEL_IP:172.31.251.10}/32
+	respond @fuera_del_tunel 403
+
+	# Gestor de bases (list_db ya está apagado; doble llave), API XML-RPC/JSON-RPC/JSON-2 y la
+	# documentación de la API. Ojo: «/doc*» atraparía /documents (app Documentos): van exactos.
+	@bloqueado path /web/database /web/database/* /xmlrpc /xmlrpc/* /jsonrpc /jsonrpc/* /json/2 /json/2/* /doc /doc/* /doc-bearer/*
+	respond @bloqueado 404
+
+	encode gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# Igual que el nombre de la LAN, pero X-Forwarded-For = la IP real ({client_ip}, de
+	# Cf-Connecting-IP): Odoo (proxy_mode) toma la última de esa lista, que si no sería cloudflared.
+	@websocket path /websocket /websocket/*
+	reverse_proxy @websocket {$ODOO_WEBSOCKET_UPSTREAM:odoo:8072} {
+		header_up X-Forwarded-For {client_ip}
+	}
+
+	reverse_proxy {$ODOO_HTTP_UPSTREAM:odoo:8069} {
+		header_up X-Forwarded-For {client_ip}
+		import cookie-sesion
+	}
+}

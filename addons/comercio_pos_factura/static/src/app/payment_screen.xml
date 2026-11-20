@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- «Factura» desmarcado: franja de color al costado de la pantalla de pago (payment_screen.scss), sin texto -->
+    <t t-name="comercio_pos_factura.PaymentScreenDue" t-inherit="point_of_sale.PaymentScreenDue" t-inherit-mode="extension">
+        <xpath expr="//section" position="before">
+            <div t-if="this.comercioSinFactura" class="comercio-sin-factura d-none"/>
+        </xpath>
+    </t>
+
+    <!-- El botón se llama «Factura» (Odoo lo traduce «Recibo/Factura») -->
+    <t t-name="comercio_pos_factura.PaymentScreenButtons" t-inherit="point_of_sale.PaymentScreenButtons" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('js_invoice')]/span" position="replace">
+            <span>
+                <i class="oi me-2" data-icon="article"/> Factura
+            </span>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,59 @@
+---
+// Portada en un orden fijo y fácil de leer: anuncio → categorías → ofertas → lo nuevo → cómo se compra.
+import { env } from "cloudflare:workers";
+import Base from "../layouts/Base.astro";
+import Icono from "../components/Icono.astro";
+import Carrusel from "../components/Carrusel.astro";
+import Fila from "../components/Fila.astro";
+import { local } from "../data/catalogo";
+import { rubros, ofertas, nuevos, iconoDe } from "../servidor/consultas";
+
+const [lista, enOferta, recientes] = await Promise.all([rubros(env.DB), ofertas(env.DB, 16), nuevos(env.DB, 12)]);
+Astro.response.headers.set("Cache-Control", "private, max-age=60");
+const datos = {
+  "@context": "https://schema.org", "@type": "HardwareStore", name: "Comercio Ejemplo", url: Astro.url.origin,
+  image: `${Astro.url.origin}/icono-512.png`, telephone: local.telefono,
+  address: { "@type": "PostalAddress", streetAddress: local.direccion, addressLocality: local.ciudad, addressRegion: "Córdoba", addressCountry: "AR" },
+  potentialAction: { "@type": "SearchAction", target: `${Astro.url.origin}/buscar/?q={q}`, "query-input": "required name=q" },
+};
+---
+<Base titulo="Comercio Ejemplo" actual="inicio" datos={datos}>
+  <Carrusel />
+
+  <section class="sec" aria-labelledby="t-cat">
+    <div class="sec-tit"><h2 id="t-cat">Categorías</h2><a href="/categorias/">Ver todas</a></div>
+    <div class="rubros-fila">
+      {lista.map((c) => (
+        <a class="rubro" href={`/categoria/${c.slug}/`}>
+          {c.max_descuento > 0 && <span class="hasta-off">−{c.max_descuento}%</span>}
+          <span class="ic"><Icono nombre={iconoDe(c.nombre)} /></span>
+          <b>{c.nombre}</b>
+          <small>{c.productos} {c.productos === 1 ? "producto" : "productos"}</small>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  {enOferta.length > 0 && (
+    <section class="sec" aria-labelledby="t-of">
+      <div class="sec-tit"><h2 id="t-of">Ofertas de la semana</h2><a href="/ofertas/">Ver todas</a></div>
+      <Fila items={enOferta} />
+    </section>
+  )}
+
+  {recientes.length > 0 && (
+    <section class="sec" aria-labelledby="t-nu">
+      <div class="sec-tit"><h2 id="t-nu">Llegó mercadería nueva</h2></div>
+      <Fila items={recientes} />
+    </section>
+  )}
+
+  <section class="sec" aria-labelledby="t-como">
+    <div class="sec-tit"><h2 id="t-como">Cómo se compra</h2></div>
+    <div class="pasos">
+      <div class="paso"><span class="n">1</span><b>Elegís</b><span>Buscás lo que necesitás y lo sumás al carrito.</span></div>
+      <div class="paso"><span class="n">2</span><b>Pagás</b><span>Con Mercado Pago: tarjeta, débito o dinero en cuenta.</span></div>
+      <div class="paso"><span class="n">3</span><b>Retirás</b><span>Te avisamos cuando está listo en {local.direccion}.</span></div>
+    </div>
+  </section>
+</Base>

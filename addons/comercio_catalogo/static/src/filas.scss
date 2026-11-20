@@ -1,0 +1,20 @@
+// Filas de las listas de proveedores (06/11): la descripción y el cálculo se leen enteros (en
+// varias líneas) en lugar de cortarse con «…». Solo en las listas con la clase o_comercio_filas.
+.o_comercio_filas {
+    td[name="descripcion_ver"], td[name="parecidos_ver"], td[name="ia_motivo"], td[name="calculo"] {
+        white-space: normal !important;
+        word-break: break-word;
+    }
+    td[name="descripcion_ver"] { min-width: 190px; }
+}
+.o_comercio_texto_largo { white-space: pre-wrap; }
+// La lupa (primera columna de botones) ocupa solo lo que mide el ícono.
+.o_comercio_filas {
+    th.o_list_button:nth-child(2), td.o_list_button:nth-child(2) {
+        width: 36px !important;
+        min-width: 36px !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    td[name="nuestro_ver"] { white-space: normal !important; word-break: break-word; }
+}

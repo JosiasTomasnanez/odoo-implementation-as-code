@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Diferencia chica» de «Precios a actualizar» (26/10, pedido del cliente) -->
+    <record id="diferencia_chica_wizard_form" model="ir.ui.view">
+        <field name="name">comercio.diferencia.chica.wizard.form</field>
+        <field name="model">comercio.diferencia.chica.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Diferencia chica">
+                <p>Si el precio nuevo cambia hasta este porcentaje (para arriba o para abajo), no vale la pena
+                   cambiarlo: sale en <b class="text-warning">naranja</b> y no se muestra (filtro «Diferencia
+                   chica» para verlos). Lo que pasa de ese porcentaje sigue en rojo (sube) o verde (baja).</p>
+                <group>
+                    <field name="porcentaje"/>
+                </group>
+                <footer>
+                    <button name="action_guardar" type="object" string="Guardar" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_diferencia_chica_wizard" model="ir.actions.act_window">
+        <field name="name">Diferencia chica</field>
+        <field name="res_model">comercio.diferencia.chica.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

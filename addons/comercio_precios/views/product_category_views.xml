@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_category_form_view_precios" model="ir.ui.view">
+        <field name="name">product.category.form.comercio.precios</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Precio de venta" name="comercio_precio_venta">
+                    <p class="text-muted">
+                        Precio sugerido = base + margen + IVA, redondeado para arriba. Lo que quede
+                        vacío se toma de la categoría madre. El precio de venta no cambia solo: se
+                        revisa en «Precios a actualizar».
+                    </p>
+                    <group>
+                        <group>
+                            <field name="comercio_margen"/>
+                            <field name="comercio_base"/>
+                            <field name="comercio_proveedor_base_id" invisible="comercio_base != 'proveedor'"
+                                   required="comercio_base == 'proveedor'"/>
+                        </group>
+                        <group>
+                            <field name="comercio_iva_venta_id" options="{'no_create': True}"/>
+                            <field name="comercio_redondeo"/>
+                            <field name="comercio_redondeo_tramos" placeholder="p. ej. 10; 1000:100; 10000:500"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Márgenes por categoría: todas las reglas en una tabla, editable ahí mismo -->
+    <record id="product_category_list_margenes" model="ir.ui.view">
+        <field name="name">product.category.list.comercio.margenes</field>
+        <field name="model">product.category</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Márgenes por categoría" editable="bottom" create="0" delete="0"
+                  default_order="parent_path">
+                <field name="complete_name" string="Categoría" readonly="1"/>
+                <field name="comercio_margen" string="Margen (%)"/>
+                <field name="comercio_base" optional="show"/>
+                <field name="comercio_proveedor_base_id" optional="show"
+                       readonly="comercio_base != 'proveedor'" required="comercio_base == 'proveedor'"/>
+                <field name="comercio_iva_venta_id" optional="show" options="{'no_create': True}"/>
+                <field name="comercio_redondeo" optional="show"/>
+                <field name="comercio_redondeo_tramos" optional="show"/>
+                <field name="comercio_regla_texto" decoration-muted="not comercio_margen_efectivo"/>
+                <field name="comercio_margen_efectivo" column_invisible="1"/>
+                <field name="comercio_cant_productos" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_margenes_por_categoria" model="ir.actions.act_window">
+        <field name="name">Márgenes por categoría</field>
+        <field name="res_model">product.category</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="product_category_list_margenes"/>
+        <field name="help" type="html">
+            <p>Cada categoría con su regla de precio. Vacío = usa el de la categoría madre (columna
+               «Regla que se usa»). Al cambiar un margen, los productos afectados aparecen en
+               «Precios a actualizar»: el precio de venta no cambia hasta aplicarlo.</p>
+        </field>
+    </record>
+</odoo>

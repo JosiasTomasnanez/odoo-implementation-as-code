@@ -1,0 +1,15 @@
+# Diario de efectivo propio de la caja de ejemplo: Odoo no permite compartir un
+# método de pago en efectivo entre dos puntos de venta. Solo laboratorio.
+model: account.journal
+records:
+  - id: ej_diario_efectivo_caja
+    values:
+      name: "[EJ] Efectivo caja"
+      type: cash
+      code: EJEFC
+  # Segunda caja (en el local cobran dos cajas, P-035): cada una con su efectivo.
+  - id: ej_diario_efectivo_caja_2
+    values:
+      name: "[EJ] Efectivo caja 2"
+      type: cash
+      code: EJEF2

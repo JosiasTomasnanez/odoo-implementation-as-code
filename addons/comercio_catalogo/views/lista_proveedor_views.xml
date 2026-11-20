@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="lista_proveedor_list" model="ir.ui.view">
+        <field name="name">comercio.lista.proveedor.list</field>
+        <field name="model">comercio.lista.proveedor</field>
+        <field name="arch" type="xml">
+            <list>
+                <header>
+                    <button name="action_abrir_importar" type="object" string="Importar lista"
+                            class="btn-primary" display="always"/>
+                </header>
+                <field name="partner_id"/>
+                <field name="parte" optional="show"/>
+                <field name="origen"/>
+                <field name="frecuencia_dias"/>
+                <field name="proxima_actualizacion"/>
+                <field name="cant_productos"/>
+                <field name="pendientes_revision"/>
+                <field name="responsable_id" optional="hide"/>
+                <button name="action_importar" type="object" string="Importar lista" icon="fa-upload" class="btn-link"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="lista_proveedor_form" model="ir.ui.view">
+        <field name="name">comercio.lista.proveedor.form</field>
+        <field name="model">comercio.lista.proveedor</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_importar" type="object" string="Importar lista" class="btn-primary"/>
+                    <button name="action_descargar_ahora" type="object" string="Descargar ahora"
+                            invisible="origen != 'url'"/>
+                    <button name="action_recalcular" type="object" string="Recalcular costos"
+                            help="Vuelve a calcular los costos de la última lista con los descuentos, el IVA y el dólar de ahora: se simula y se revisa antes de aplicar."/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_ver_productos" type="object" class="oe_stat_button" icon="fa-cubes">
+                            <field name="cant_productos" widget="statinfo" string="Productos"/>
+                        </button>
+                        <button name="action_ver_importaciones" type="object" class="oe_stat_button" icon="fa-history">
+                            <field name="pendientes_revision" widget="statinfo" string="Para revisar"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archivada" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title"><h1><field name="partner_id" placeholder="Proveedor (escribí el nombre: si no existe, «Crear»)"
+                           context="{'default_is_company': True, 'default_supplier_rank': 1}"/></h1></div>
+                    <group>
+                        <group string="De dónde llega">
+                            <field name="parte" placeholder="Solo si la manda en partes (p. ej. Bulones)"/>
+                            <field name="origen" widget="radio"/>
+                            <field name="url" invisible="origen != 'url'" required="origen == 'url'" widget="url"/>
+                            <label for="alias_name" string="Correo de la lista" invisible="origen != 'correo'"/>
+                            <div invisible="origen != 'correo'">
+                                <field name="alias_name" class="oe_inline" placeholder="listas-proveedor"/>@<field name="alias_domain_id" class="oe_inline" options="{'no_create': True}"/>
+                            </div>
+                            <field name="remitentes" invisible="origen != 'correo'" placeholder="ventas@proveedor.com"/>
+                            <field name="frecuencia_dias"/>
+                            <field name="proxima_actualizacion"/>
+                            <field name="responsable_id"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Productos de la lista">
+                            <field name="lista_completa"/>
+                            <field name="categoria_id"/>
+                            <field name="unidad_fija"/>
+                            <field name="plazo_dias"/>
+                        </group>
+                    </group>
+                    <group string="Del precio de la lista al costo"
+                           help="Si el precio de la columna elegida no es lo que le cuesta al comercio. Todo es opcional: vacío, el precio de la lista es el costo. Al cambiar algo, «Recalcular costos».">
+                        <group>
+                            <field name="moneda" widget="radio" options="{'horizontal': true}"/>
+                            <div class="alert alert-warning mb-0" role="alert" colspan="2" invisible="not aviso_moneda">
+                                <field name="aviso_moneda" readonly="1"/>
+                            </div>
+                            <field name="cotizacion" invisible="moneda == 'ars'"/>
+                            <label for="cotizacion_del_dia" invisible="moneda == 'ars'"/>
+                            <div invisible="moneda == 'ars'">
+                                $ <field name="cotizacion_del_dia" class="oe_inline"/>
+                                (Banco Nación vía ARCA, <field name="cotizacion_fecha" class="oe_inline"/>)
+                            </div>
+                            <field name="descuentos" placeholder="p. ej. 30+10+10"/>
+                            <field name="descuentos_neto" placeholder="p. ej. 10" invisible="not col_promocion"/>
+                            <field name="recargo"/>
+                            <field name="descuento_pack"/>
+                        </group>
+                        <group>
+                            <field name="trae_iva"/>
+                            <field name="iva_por_defecto" invisible="not trae_iva"/>
+                        </group>
+                    </group>
+                    <group string="Columnas del archivo"
+                           help="Se completan solas con el primer archivo; corregir si el proveedor cambia el formato.">
+                        <group>
+                            <field name="col_codigo"/>
+                            <field name="col_descripcion"/>
+                            <field name="col_barras"/>
+                            <field name="col_costo"/>
+                        </group>
+                        <group>
+                            <field name="col_minimo"/>
+                            <field name="col_costo_mayor"/>
+                            <field name="col_cantidad_mayor" invisible="not col_costo_mayor"/>
+                            <field name="cantidad_mayor_fija" invisible="not col_costo_mayor or col_cantidad_mayor"/>
+                            <field name="col_unidad"/>
+                            <field name="col_descuento" placeholder="Solo si es del proveedor"/>
+                            <field name="col_iva"/>
+                            <field name="col_precio_con_iva" placeholder="Solo para saber el IVA"/>
+                            <field name="col_promocion"/>
+                            <field name="col_bulto"/>
+                            <field name="col_stock"/>
+                            <field name="hoja"/>
+                            <field name="fila_encabezado"/>
+                            <field name="familia_en_descripcion"/>
+                            <field name="envase_en_descripcion" invisible="col_unidad"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert" invisible="not cuentas_detectadas">
+                        <strong>Cuentas encontradas en la planilla</strong>
+                        <field name="cuentas_detectadas" nolabel="1" readonly="1"/>
+                    </div>
+                    <field name="ejemplo_calculo" nolabel="1" readonly="1" invisible="not ejemplo_calculo"
+                           class="font-monospace text-muted"/>
+                    <notebook>
+                        <page string="Importaciones" name="importaciones">
+                            <field name="importacion_ids" readonly="1"/>
+                        </page>
+                        <page string="Descuentos por familia" name="reglas_familia">
+                            <p class="text-muted">Descuentos extra para una parte de la lista, en cadena después de
+                                los de toda la lista. Elegí la familia (escribí parte del nombre) o, si la lista no
+                                trae familias, escribí el texto que aparece en la descripción («BULON, TUERCA»).
+                                Vale la primera regla que coincide.</p>
+                            <field name="importacion_vigente_id" invisible="1"/>
+                            <field name="regla_familia_ids" context="{'default_tipo': 'familia'}">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="tipo" column_invisible="1"/>
+                                    <field name="familia_id" domain="[('lista_id', '=', parent.id)]"
+                                           options="{'no_create': True, 'no_open': True}"
+                                           placeholder="Buscar la familia…"/>
+                                    <field name="contiene" string="Texto que aparece" required="1" placeholder="o escribir: BULON, TUERCA"/>
+                                    <field name="descuentos" placeholder="10 o 10+5"/>
+                                    <field name="filas" string="Filas"/>
+                                    <button name="action_ver_filas" type="object" string="Ver" title="Ver las filas que toman este descuento"
+                                            class="btn-link" invisible="not id or not filas"/>
+                                    <field name="nota" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Descuentos por producto" name="reglas_producto">
+                            <p class="text-muted">Excepción para un producto, en cadena después de los de la lista
+                                y la familia: buscalo por código o descripción en la última lista y poné el descuento.</p>
+                            <field name="regla_producto_ids" context="{'default_tipo': 'producto'}">
+                                <list editable="bottom">
+                                    <field name="tipo" column_invisible="1"/>
+                                    <field name="linea_id" domain="[('importacion_id', '=', parent.importacion_vigente_id)]"
+                                           options="{'no_create': True, 'no_open': True}"
+                                           context="{'linea_con_codigo': True}"
+                                           placeholder="Buscar por código o descripción…"/>
+                                    <field name="codigo" required="1" optional="show"/>
+                                    <field name="descripcion" optional="hide"/>
+                                    <field name="descuentos" placeholder="10 o 10+5"/>
+                                    <field name="filas" string="Filas"/>
+                                    <button name="action_ver_filas" type="object" string="Ver" title="Ver las filas que toman este descuento"
+                                            class="btn-link" invisible="not id or not filas"/>
+                                    <field name="nota" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_listas_proveedores" model="ir.actions.act_window">
+        <field name="name">Listas de proveedores</field>
+        <field name="res_model">comercio.lista.proveedor</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Agregá la lista de un proveedor</p>
+            <p>Elegí el proveedor, de dónde llega su lista y cada cuántos días. Las columnas del Excel
+               se completan solas con el primer archivo.</p>
+        </field>
+    </record>
+
+    <!-- Historial de costos: todos los precios de cada proveedor, con desde/hasta -->
+    <record id="historial_costos_list" model="ir.ui.view">
+        <field name="name">product.supplierinfo.list.historial.comercio</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0" default_order="product_tmpl_id, partner_id, date_start desc"
+                  decoration-muted="date_end">
+                <field name="product_tmpl_id" string="Producto"/>
+                <field name="partner_id" string="Proveedor"/>
+                <field name="product_code" string="Código"/>
+                <field name="price" string="Costo"/>
+                <field name="min_qty" string="Mínimo" optional="show"/>
+                <field name="comercio_precio_mayor" string="Por mayor" optional="show"
+                       invisible="not comercio_precio_mayor"/>
+                <field name="comercio_cantidad_mayor" string="Por mayor desde (u.)" optional="show"
+                       invisible="not comercio_precio_mayor"/>
+                <field name="date_start" string="Desde"/>
+                <field name="date_end" string="Hasta (vacío = vigente)"/>
+                <field name="product_name" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="historial_costos_search" model="ir.ui.view">
+        <field name="name">product.supplierinfo.search.historial.comercio</field>
+        <field name="model">product.supplierinfo</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_tmpl_id" string="Producto"/>
+                <field name="partner_id" string="Proveedor"/>
+                <field name="product_code" string="Código del proveedor"/>
+                <filter name="vigentes" string="Vigentes" domain="[('date_end', '=', False)]"/>
+                <filter name="cerrados" string="Anteriores (cerrados)" domain="[('date_end', '!=', False)]"/>
+                <group>
+                    <filter name="por_producto" string="Producto" context="{'group_by': 'product_tmpl_id'}"/>
+                    <filter name="por_proveedor" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_historial_costos" model="ir.actions.act_window">
+        <field name="name">Historial de costos</field>
+        <field name="res_model">product.supplierinfo</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="historial_costos_list"/>
+        <field name="search_view_id" ref="historial_costos_search"/>
+        <!-- El precio por mayor se ve en la misma fila; su fila nativa de Odoo no se repite -->
+        <field name="domain">[("comercio_escala_de_id", "=", False)]</field>
+        <field name="help" type="html">
+            <p>Cada vez que una lista cambia un costo, el anterior queda acá con su fecha «Hasta»
+               (en gris) y el nuevo arranca con su fecha «Desde». Vacío en «Hasta» = vigente.</p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,104 @@
+# Alertas del negocio (ADR 0028): EJEMPLOS a confirmar con Daniel (horario, cantidades).
+# Leen la base de Odoo con el usuario de solo lectura. Umbrales y si están prendidas:
+# monitoreo/umbrales.env. Dependen de tablas y columnas de Odoo y de los módulos propios:
+# `make verify-monitoreo` las corre.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: negocio
+    folder: Alertas
+    interval: 5m
+    rules:
+      - uid: negocio-sin-pedidos
+        title: No hubo pedidos hoy
+        condition: B
+        isPaused: @ALERTA_SIN_PEDIDOS_PAUSADA@
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: odoo
+            model:
+              refId: A
+              format: table
+              rawQuery: true
+              editorMode: code
+              rawSql: >-
+                SELECT CASE WHEN extract(isodow FROM now() AT TIME ZONE 'America/Argentina/Cordoba') BETWEEN 1 AND 6
+                  AND extract(hour FROM now() AT TIME ZONE 'America/Argentina/Cordoba') >= @UMBRAL_SIN_PEDIDOS_HORA@
+                  AND NOT EXISTS (SELECT 1 FROM pos_order o
+                    WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced'))
+                      AND (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')
+                          >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba'))
+                  THEN 1 ELSE 0 END AS sin_pedidos
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [0]}}]}}
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso, tipo: negocio}
+        annotations:
+          summary: 'Son más de las @UMBRAL_SIN_PEDIDOS_HORA@ y no se imprimió ningún pedido'
+          description: |-
+            Lunes a sábado: ningún puesto imprimió un pedido hoy. ¿Los puestos están andando? ¿Se puede entrar a Odoo desde el local?
+            (Feriados y días de cierre: silenciar la alerta en Grafana, docs/runbooks/monitoreo.md.)
+
+      - uid: negocio-facturas-excepcion
+        title: Facturas de proveedor en excepción
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: odoo
+            model:
+              refId: A
+              format: table
+              rawQuery: true
+              editorMode: code
+              rawSql: >-
+                SELECT count(*) AS facturas FROM account_move m
+                WHERE m.move_type IN ('in_invoice', 'in_refund') AND m.state != 'cancel'
+                  AND m.release_to_pay = 'exception'
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_FACTURAS_EXCEPCION@]}}]}}
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso, tipo: negocio}
+        annotations:
+          summary: '{{ printf "%.0f" $values.A.Value }} facturas de proveedor en «Excepción»'
+          description: |-
+            Más de @UMBRAL_FACTURAS_EXCEPCION@ facturas con «Se debe pagar: Excepción» (no coinciden con la orden, lo recibido o el total del papel).
+            Lista: tablero «Negocio (Odoo)» → «Compras». Las revisa la administración (docs/runbooks/facturas-proveedor.md).
+
+      - uid: negocio-lista-sin-importar
+        # Un solo aviso con el total, no uno por lista (18/11: con 50 listas recién cargadas
+        # eran 50 avisos). Cuáles son: tablero «Negocio (Odoo)» → «Última importación por lista».
+        title: Listas de proveedor sin importar
+        condition: B
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: odoo
+            model:
+              refId: A
+              format: table
+              rawQuery: true
+              editorMode: code
+              rawSql: >-
+                SELECT count(*) AS listas
+                FROM comercio_lista_proveedor l
+                WHERE l.active AND (now() AT TIME ZONE 'UTC')::date - COALESCE((SELECT max(i.fecha)
+                  FROM comercio_lista_importacion i WHERE i.lista_id = l.id AND i.estado = 'aplicada'),
+                  l.create_date)::date > @UMBRAL_LISTA_DIAS_SIN_IMPORTAR@
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [0]}}]}}
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso, tipo: negocio}
+        annotations:
+          summary: '{{ printf "%.0f" $values.A.Value }} listas de proveedor sin importar hace más de @UMBRAL_LISTA_DIAS_SIN_IMPORTAR@ días'
+          description: |-
+            Los costos de esos proveedores pueden estar viejos. Cuáles son: tablero «Negocio (Odoo)» → «Última importación por lista» (columna «Días»).
+            Costos y precios → Listas de proveedores (docs/runbooks/listas-proveedores.md). Si el proveedor ya no se usa, archivar la lista.

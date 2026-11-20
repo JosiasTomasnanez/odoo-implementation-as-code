@@ -1,0 +1,198 @@
+# Monitoreo (ADR 0028): Prometheus + exportadores + Grafana con alertas a Discord y mail.
+# Se suma a cualquiera de los dos stacks (lab u onprem) cuando MONITOREO=1; lo agrega
+# infra/scripts/lib.sh. Todo liviano: el stack entero queda muy por debajo de 1 GB de RAM
+# (límites de memoria abajo) y nada se publica a la red del local:
+# - Grafana y Prometheus escuchan solo en 127.0.0.1 (Docker se saltea ufw: no publicar
+#   nunca en 0.0.0.0). En el servidor, Grafana se abre por `tailscale serve` (HTTPS en la red
+#   de Tailscale): infra/servidor/configurar-monitoreo.sh.
+# - Los exportadores no publican puertos: Prometheus los lee por la red interna «monitoreo».
+# Secretos (claves de PostgreSQL, Grafana, webhook, SMTP): en MONITOREO_ENV_FILE y
+# AVISOS_ENV_FILE, fuera del repo en el servidor. Umbrales de las alertas: monitoreo/umbrales.env.
+services:
+  prometheus:
+    image: prom/prometheus:v3.13.4
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      # Tope por las dudas (en el lab, con ~13 000 series, ocupa unos MB por día)
+      - --storage.tsdb.retention.size=3GB
+      - --web.listen-address=0.0.0.0:9090
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoreo/prometheus:/etc/prometheus:ro
+      - prometheus-data:/prometheus
+    extra_hosts:
+      # node_exporter corre en la red del servidor y escucha en la puerta de enlace de la red
+      # «monitoreo» (no en la red del local)
+      - "servidor:${MONITOREO_GATEWAY:-172.31.250.1}"
+    networks: [monitoreo]
+    mem_limit: 256m
+
+  # Métricas del servidor (CPU, RAM, discos, red, temperaturas). Corre en la red del host para
+  # ver las interfaces reales, y escucha SOLO en la puerta de enlace de «monitoreo»
+  # (no llega desde la LAN; en el servidor, ufw permite ese puerto solo desde br-monitoreo).
+  node-exporter:
+    image: prom/node-exporter:v1.12.1
+    restart: unless-stopped
+    network_mode: host
+    pid: host
+    command:
+      - --path.rootfs=/host
+      - --web.listen-address=${MONITOREO_GATEWAY:-172.31.250.1}:9100
+      - --collector.textfile.directory=/metricas
+      - --collector.filesystem.mount-points-exclude=^/(dev|proc|run|sys|var/lib/docker/.+|var/lib/containers/.+|snap)($$|/)
+    volumes:
+      - /:/host:ro,rslave
+      # Métricas que escriben los scripts del servidor (backups, errores del log de Odoo)
+      - ${MONITOREO_METRICAS_DIR:-/var/lib/odoo-comercio/metricas}:/metricas:ro
+    depends_on: [prometheus]  # que la red «monitoreo» (y su puerta de enlace) ya exista
+    mem_limit: 64m
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.20.1
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_URI: db:5432/${MONITOREO_DB:-postgres}?sslmode=disable
+      DATA_SOURCE_USER: monitoreo
+    env_file:
+      - path: ${MONITOREO_ENV_FILE:?definir MONITOREO_ENV_FILE}
+    # DATA_SOURCE_PASS sale de PG_MONITOREO_CLAVE (monitoreo.env). Al exporter le llega solo eso:
+    # env -i deja afuera las otras claves de monitoreo.env (Grafana, su usuario de la base)
+    entrypoint: ["/bin/sh", "-c", "exec env -i DATA_SOURCE_URI=\"$$DATA_SOURCE_URI\" DATA_SOURCE_USER=\"$$DATA_SOURCE_USER\" DATA_SOURCE_PASS=\"$$PG_MONITOREO_CLAVE\" /bin/postgres_exporter \"$$@\"", "--"]
+    command:
+      - --collector.database_wraparound
+      - --collector.long_running_transactions
+      - --collector.stat_statements
+      # Texto normalizado (pg_stat_statements cambia los valores por $1, $2…): sin datos de clientes
+      - --collector.stat_statements.include_query
+      - --collector.stat_statements.query_length=160
+      - --collector.stat_statements.limit=40
+      - --collector.stat_statements.exclude_users=monitoreo,grafana_lector
+      - --collector.statio_user_tables
+      # Checkpoints: stat_bgwriter (PostgreSQL 16; con 17 o más, sumar
+      # --collector.stat_checkpointer). El WAL generado lo escribe revisar-servidor.sh
+      # (odoo_pg_wal_bytes_total): el exportador ya no lo trae para PostgreSQL 10 o más.
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [default, monitoreo]
+    mem_limit: 64m
+
+  # Tiempo de respuesta de Odoo (más liviano que activar las métricas de Caddy, y anda igual en
+  # el lab, que no tiene proxy). El HTTPS y su certificado los revisa revisar-servidor.sh.
+  blackbox:
+    image: prom/blackbox-exporter:v0.29.0
+    restart: unless-stopped
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes:
+      - ./monitoreo/prometheus/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+    networks: [default, monitoreo]
+    mem_limit: 32m
+
+  # CPU y RAM por contenedor. Con lectura cada 30 s y solo contenedores de Docker usa ~40 MB.
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.60.6
+    restart: unless-stopped
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+      - --whitelisted_container_labels=com.docker.compose.service,com.docker.compose.project
+      # Solo CPU, memoria y OOM por contenedor (lo de red y discos sale de node_exporter)
+      - --enable_metrics=cpu,memory,oom_event
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks: [monitoreo]
+    mem_limit: 96m
+
+  grafana:
+    image: grafana/grafana:13.2.4-slim
+    restart: unless-stopped
+    # iniciar.sh elige el contacto con o sin mail (según haya SMTP) y arranca Grafana
+    entrypoint: ["/bin/sh", "/etc/grafana/iniciar.sh"]
+    ports:
+      - "127.0.0.1:3000:3000"
+    env_file:
+      - path: ./monitoreo/umbrales.env
+      - path: ${MONITOREO_ENV_FILE:?definir MONITOREO_ENV_FILE}
+      - path: ${AVISOS_ENV_FILE:?definir AVISOS_ENV_FILE}
+        required: false
+    # En el servidor, monitoreo.env trae además GF_SERVER_ROOT_URL (la dirección de Tailscale)
+    environment:
+      MONITOREO_DB: ${MONITOREO_DB:-postgres}
+      GF_PATHS_PROVISIONING: /tmp/aprovisionamiento
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_DEFAULT_LANGUAGE: es-ES
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      # Desde Grafana 12 las fuentes Prometheus y PostgreSQL son complementos aparte que se bajan
+      # de grafana.com la primera vez que arranca (quedan en el volumen grafana-data). Versión
+      # fija, sin actualizaciones solas y sin los demás complementos que Grafana sumaría.
+      GF_PLUGINS_PREINSTALL_SYNC: prometheus@13.2.4,grafana-postgresql-datasource@13.0.4
+      GF_PLUGINS_PREINSTALL: ""
+      GF_PLUGINS_PREINSTALL_AUTO_UPDATE: "false"
+      # Grafana 13 levanta un proceso por cada fuente de datos que trae (~15-25 MB cada uno, más
+      # de 200 MB en total): se apagan todas las que no se usan
+      GF_PLUGINS_DISABLE_PLUGINS: >-
+        elasticsearch,stackdriver,cloudwatch,grafana-azure-monitor-datasource,graphite,influxdb,
+        jaeger,loki,mssql,mysql,opentsdb,tempo,zipkin,grafana-pyroscope-datasource,
+        grafana-testdata-datasource,grafana-advisor-app,grafana-lokiexplore-app,
+        grafana-metricsdrilldown-app,grafana-pyroscope-app,grafana-exploretraces-app
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: America/Argentina/Cordoba
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - ./monitoreo/grafana/iniciar.sh:/etc/grafana/iniciar.sh:ro
+      - ./monitoreo/grafana/aprovisionamiento:/etc/grafana/aprovisionamiento-repo:ro
+      - ./monitoreo/grafana/contactos:/etc/grafana/contactos:ro
+      - ./monitoreo/grafana/tableros:/etc/grafana/tableros:ro
+      - grafana-data:/var/lib/grafana
+    depends_on: [prometheus]
+    networks: [default, monitoreo]
+    # 400m no alcanzaba: al abrir «PostgreSQL» (58 consultas) quedaba al tope y los paneles no
+    # terminaban de cargar (27/10). Sin uso ronda 175 MB.
+    mem_limit: 768m
+
+  # Pasa las alertas de Grafana a Discord y al mail con el MISMO formato que
+  # infra/servidor/avisar.sh (el Discord nativo de Grafana fija su pie «Grafana vX» y el color, y
+  # su mail tiene otro diseño: ADR 0028).
+  # Solo biblioteca estándar de Python; sin puertos publicados.
+  relay-discord:
+    image: python:3.13.17-alpine3.23
+    restart: unless-stopped
+    # Solo lo de los avisos (webhook, mail, nombre del servidor): env -i deja afuera las claves
+    # de la base y de Grafana que traen los mismos archivos
+    command: ["/bin/sh", "-c", "exec env -i PATH=\"$$PATH\" TZ=\"$$TZ\" DISCORD_WEBHOOK_URL=\"$$DISCORD_WEBHOOK_URL\" AVISOS_SERVIDOR=\"$$AVISOS_SERVIDOR\" SMTP_HOST=\"$$SMTP_HOST\" SMTP_PORT=\"$$SMTP_PORT\" SMTP_TLS=\"$$SMTP_TLS\" SMTP_USUARIO=\"$$SMTP_USUARIO\" SMTP_CLAVE=\"$$SMTP_CLAVE\" MAIL_DE=\"$$MAIL_DE\" MAIL_PARA=\"$$MAIL_PARA\" python -u /app/relay_discord.py"]
+    env_file:
+      - path: ${MONITOREO_ENV_FILE:?definir MONITOREO_ENV_FILE}
+      - path: ${AVISOS_ENV_FILE:?definir AVISOS_ENV_FILE}
+        required: false
+    environment:
+      TZ: America/Argentina/Cordoba
+    volumes:
+      - ./monitoreo/relay/relay_discord.py:/app/relay_discord.py:ro
+      - ../servidor/formato_avisos.py:/app/formato_avisos.py:ro
+    networks: [monitoreo]
+    mem_limit: 32m
+
+networks:
+  monitoreo:
+    driver_opts:
+      com.docker.network.bridge.name: br-monitoreo
+    ipam:
+      config:
+        - subnet: ${MONITOREO_SUBNET:-172.31.250.0/24}
+          gateway: ${MONITOREO_GATEWAY:-172.31.250.1}
+
+volumes:
+  prometheus-data:
+  grafana-data:

@@ -1,0 +1,32 @@
+// «Cargando…» al medio, grande y tapando la pantalla mientras carga (20/11, pedido del usuario:
+// abajo a la derecha y chiquito parecía que el programa se había colgado, y se seguía tocando).
+// Es el indicador de Odoo (web.LoadingIndicator, clase fixed-bottom): solo se cambia su aspecto.
+.o_loading_indicator_wrap {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, .18);
+    opacity: 1 !important; // sin el «se apaga al pasar el mouse» de Odoo
+    cursor: progress;
+
+    .o_loading_indicator {
+        font-size: 1.35rem !important;
+        padding: 1rem 2rem !important;
+        gap: .75rem !important;
+    }
+
+    .spinner-border {
+        --#{$prefix}spinner-height: 1.6em;
+        --#{$prefix}spinner-width: 1.6em;
+    }
+
+    // Al terminar, el fondo se va enseguida (no bloquea mientras desaparece el cartel)
+    &.o_translate-leave {
+        background: transparent;
+        pointer-events: none;
+    }
+}

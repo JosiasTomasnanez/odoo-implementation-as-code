@@ -1,0 +1,9 @@
+# Experimento mayorista (P-015): lista de precios FICTICIA. Los porcentajes no son del
+# negocio: sirven para ver cómo calcula Odoo. Las listas son las mismas para Ventas,
+# POS y ecommerce.
+model: product.pricelist
+records:
+  - id: ej_lista_mayorista
+    values:
+      name: "[EJ] Mayorista"
+      currency_id: {ref: base.ARS}

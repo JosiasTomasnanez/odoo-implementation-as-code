@@ -1,0 +1,48 @@
+# Botones del punto de venta de ferretería (P-054, 09/11): las categorías del PdV, no los
+# rubros (los rubros llevan el margen). Propuesta del implementador, una por familia grande;
+# Daniel corrige. Todavía sin productos: se categorizan con IA (comercio_pos_categorias) cuando
+# estén cargados. Mientras tanto Ferretería 1 y 2 NO se limitan a estas categorías
+# (`limit_categories`): sin productos asignados, el puesto no mostraría nada.
+# La foto de cada botón se carga en Odoo.
+model: pos.category
+match: [name]
+records:
+  - id: pos_cat_buloneria
+    values: {name: Bulonería y fijaciones, sequence: 1}
+  - id: pos_cat_herramientas
+    values: {name: Herramientas, sequence: 2}
+  - id: pos_cat_electricidad
+    values: {name: Electricidad, sequence: 3}
+  - id: pos_cat_iluminacion
+    values: {name: Iluminación, sequence: 4}
+  - id: pos_cat_plomeria
+    values: {name: Plomería y sanitarios, sequence: 5}
+  - id: pos_cat_gas
+    values: {name: Gas, sequence: 6}
+  - id: pos_cat_pintureria
+    values: {name: Pinturería, sequence: 7}
+  - id: pos_cat_herrajes
+    values: {name: Cerrajería y herrajes, sequence: 8}
+  - id: pos_cat_adhesivos
+    values: {name: Adhesivos y lubricantes, sequence: 9}
+  - id: pos_cat_jardin
+    values: {name: Jardín, sequence: 10}
+  - id: pos_cat_varios
+    values: {name: Varios, sequence: 11}
+  # 20/11: con las listas de bazar, limpieza, organizadores y vivero (Omega, Rho, Psi,
+  # Xi). «Tierra» y «Camping» las creó el negocio a mano.
+  - id: pos_cat_bazar
+    values: {name: Bazar y cocina, sequence: 12}
+  - id: pos_cat_limpieza
+    values: {name: Limpieza, sequence: 13}
+  - id: pos_cat_organizacion
+    values: {name: Organización y hogar, sequence: 14}
+  - id: pos_cat_macetas
+    values: {name: Macetas, sequence: 15}
+  - id: pos_cat_tierra
+    values: {name: Tierra, sequence: 16}
+  - id: pos_cat_camping
+    values: {name: Camping, sequence: 17}
+  # 20/11: guantes, botas, antiparras, capas y trajes de lluvia (categorización del PdV)
+  - id: pos_cat_seguridad
+    values: {name: Seguridad y ropa de trabajo, sequence: 18}

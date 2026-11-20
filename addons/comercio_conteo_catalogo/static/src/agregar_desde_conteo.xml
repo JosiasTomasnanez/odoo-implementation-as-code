@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="comercio_conteo_catalogo.AgregarDesdeConteoDialog">
+        <Dialog title="'No está en nuestro catálogo'" size="'md'">
+            <p>
+                <b t-out="this.props.datos.descripcion"/> está en la lista de
+                <b t-out="this.props.datos.proveedores.join(', ')"/>.
+            </p>
+            <p t-if="this.props.datos.parecido">
+                Se parece a <b t-out="this.props.datos.parecido"/>, que ya tenemos.
+            </p>
+            <p t-if="this.props.datos.categoria" class="text-muted">
+                Se agrega en <t t-out="this.props.datos.categoria"/>.
+            </p>
+            <t t-set-slot="footer">
+                <button t-if="this.props.datos.parecido" class="btn btn-primary"
+                        t-on-click="() => this.elegir(true)">Es ese</button>
+                <button t-attf-class="btn {{this.props.datos.parecido ? 'btn-secondary' : 'btn-primary'}}"
+                        t-on-click="() => this.elegir(false)">Agregar a nuestro catálogo</button>
+                <button class="btn btn-secondary" t-on-click="this.props.close">Cancelar</button>
+            </t>
+        </Dialog>
+    </t>
+    <t t-name="comercio_conteo_catalogo.CodigoDeUnNuestroDialog">
+        <Dialog title="'Código que no tenemos'" size="'md'">
+            <p>
+                El código <b t-out="this.props.codigo"/> no es de ningún producto nuestro ni está en las
+                listas de los proveedores. Si el producto lo tenemos (con otro código o con el 20…),
+                buscalo y tocalo: ese código pasa a ser su código de fábrica.
+            </p>
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" placeholder="Nombre o referencia"
+                       t-model.proxy="this.estado.texto" t-on-keydown="this.onTecla"/>
+                <button class="btn btn-primary" t-on-click="this.onBuscar">Buscar</button>
+            </div>
+            <div t-if="this.estado.resultados" class="list-group">
+                <t t-foreach="this.estado.resultados" t-as="producto" t-key="producto.id">
+                    <button class="list-group-item list-group-item-action" t-on-click="() => this.elegir(producto)">
+                        <t t-out="producto.nombre"/>
+                        <span t-if="producto.codigo" class="text-muted ms-2" t-out="producto.codigo"/>
+                    </button>
+                </t>
+                <div t-if="!this.estado.resultados.length" class="text-muted">No aparece nada con eso.</div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="this.props.close">No lo tenemos</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

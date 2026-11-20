@@ -1,0 +1,11 @@
+modules:
+  # Solo lab hasta que la administración y el contador aprueben la forma (P-070). En producción se
+  # instaló sin querer el 16/11 (instalar-odoo.sh instala lo declarado en onpremise) y se desinstaló.
+  - comercio_cierre_z   # cierre Z de las registradoras (ADR 0038)
+  - stock
+  - point_of_sale   # experimento de venta de mostrador (31-pos-mostrador.yaml)
+  - pos_hr          # inicio de sesión de empleados en el POS, con roles
+  - comercio_pos_pedido_qr   # módulo propio (addons/, ADR 0009)
+  - purchase      # Compras: pedido al proveedor, recepción, reposición (solo lab por ahora; producción: P-042)
+  - comercio_compras_lista_vigente   # catálogo y aviso según la lista vigente del proveedor (va con Compras, P-042)
+  - sale_management   # Ventas: presupuestos y pedidos (experimento mayorista, P-015; solo lab)

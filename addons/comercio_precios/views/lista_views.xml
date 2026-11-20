@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Buscar producto» y filas de las listas: a cuánto lo vendemos (o lo venderíamos) -->
+    <record id="catalogo_busqueda_list_precio" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.busqueda.precio</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.catalogo_busqueda_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='costo']" position="after">
+                <field name="precio_venta" optional="show" invisible="not precio_venta"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="importacion_linea_list_precio" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.list.precio</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.importacion_linea_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='costo']" position="after">
+                <field name="precio_venta" optional="hide" invisible="not precio_venta"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

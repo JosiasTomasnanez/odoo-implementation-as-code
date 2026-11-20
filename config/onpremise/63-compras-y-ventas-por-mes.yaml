@@ -1,0 +1,15 @@
+# Favorito «Compras y ventas por mes» en Contabilidad → Reportes → Gestión → Análisis de
+# facturas (P-071, 11/11, pedido de la administración): una fila por mes y una columna por tipo
+# (facturas y notas de crédito de clientes y de proveedores), sin IVA, solo confirmadas.
+# Las compras salen con signo menos (así las cuenta Odoo en este reporte). Compartido con
+# todos los usuarios que ven el reporte.
+model: ir.filters
+match: [name, model_id]
+records:
+  - id: filtro_compras_y_ventas_por_mes
+    values:
+      name: Compras y ventas por mes
+      model_id: account.invoice.report
+      action_id: {ref: account.action_account_invoice_report_all}
+      domain: "[('state', '=', 'posted'), ('move_type', 'in', ['out_invoice', 'out_refund', 'in_invoice', 'in_refund'])]"
+      context: "{'group_by': ['invoice_date:month'], 'pivot_row_groupby': ['invoice_date:month'], 'pivot_column_groupby': ['move_type'], 'pivot_measures': ['price_subtotal']}"

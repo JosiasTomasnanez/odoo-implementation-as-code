@@ -1,0 +1,28 @@
+# Reglas de la lista «[EJ] Mayorista», una de cada forma. Odoo usa la más específica
+# que se cumpla (producto antes que categoría, categoría antes que todos; a igual
+# alcance, la de mayor cantidad mínima).
+model: product.pricelist.item
+records:
+  # Todos los productos: 10 % menos que el precio de venta.
+  - id: ej_regla_mayorista_general
+    values:
+      pricelist_id: {ref: ej_lista_mayorista}
+      base: list_price
+      compute_price: discount
+      price_discount: 10
+  # Alimentos desde 10 unidades: 15 % menos (precio por cantidad).
+  - id: ej_regla_mayorista_alimento_x10
+    values:
+      pricelist_id: {ref: ej_lista_mayorista}
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      min_quantity: 10
+      base: list_price
+      compute_price: discount
+      price_discount: 15
+  # Un producto con precio fijo para el mayorista.
+  - id: ej_regla_mayorista_cadena
+    values:
+      pricelist_id: {ref: ej_lista_mayorista}
+      product_tmpl_id: {ref: ej_prod_cadena}
+      compute_price: fixed
+      fixed_price: 1800

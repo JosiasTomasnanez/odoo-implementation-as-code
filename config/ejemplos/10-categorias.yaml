@@ -1,0 +1,74 @@
+# Categorías FICTICIAS para experimentar con la estructura multi-rubro.
+model: product.category
+records:
+  # Precio de venta (módulo comercio_precios, P-030): márgenes, IVA y redondeo FICTICIOS.
+  # En producción el negocio los carga en Odoo, en cada categoría; acá solo para el lab.
+  - id: ej_cat_mascotas
+    values:
+      name: "[EJ] Mascotas"
+      comercio_margen: 35
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 10
+  - id: ej_cat_mascotas_alimento
+    values:
+      name: "[EJ] Alimento"
+      parent_id: {ref: ej_cat_mascotas}
+      # Ejemplo del lab: también controla stock (P-032; módulo comercio_catalogo).
+      # La primera etapa es ferretería (ADR 0022); se deja para probar con todo lo del cliente.
+      comercio_controla_stock: true
+      comercio_margen: 25          # alimentos: menos margen que el resto de Mascotas
+  - id: ej_cat_ferreteria
+    values:
+      name: "[EJ] Ferretería"
+      # Primera etapa = ferretería (ADR 0022, 23/10): controla stock
+      comercio_controla_stock: true
+      comercio_margen: 45
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 5
+  - id: ej_cat_veterinaria
+    values:
+      name: "[EJ] Veterinaria"
+      comercio_margen: 40
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 100
+  # Resto de las actividades de la constancia de ARCA (19/10, docs/relevamiento/charla-19-10.md).
+  # Todavía no se sabe si coinciden con los 6 rubros de la registradora (P-031): nombres y
+  # márgenes de prueba. Sin control de stock (al principio, solo ferretería: P-032, ADR 0022).
+  - id: ej_cat_granja
+    values:
+      name: "[EJ] Granja"            # huevos, aves y productos de granja (472140)
+      comercio_margen: 30
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 10
+  - id: ej_cat_forrajeria
+    values:
+      name: "[EJ] Forrajería"        # semillas, granos, cereales y forrajes (462120, 462131)
+      comercio_margen: 25
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 10
+  - id: ej_cat_limpieza
+    values:
+      name: "[EJ] Limpieza"          # materiales y productos de limpieza (477450)
+      comercio_margen: 40
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 10
+  - id: ej_cat_vivero
+    values:
+      name: "[EJ] Vivero"            # plantas, semillas, abonos y fertilizantes (477440)
+      comercio_margen: 45
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 10
+  - id: ej_cat_almacen
+    values:
+      name: "[EJ] Almacén"           # productos alimenticios n.c.p. (472190)
+      comercio_margen: 30
+      comercio_base: costo
+      comercio_iva_venta_id: {ref: account.1_ri_tax_vat_21_ventas}
+      comercio_redondeo: 10

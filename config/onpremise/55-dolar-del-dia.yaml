@@ -1,0 +1,14 @@
+# Dólar del día (30/10, ADR 0029): Odoo trae solo, cada mañana, la cotización oficial que publica
+# ARCA (dólar divisa vendedor del Banco Nación) con el certificado de facturación electrónica.
+# La usan las listas de proveedores en dólares (comercio_catalogo: «Moneda de la lista» =
+# Dólares, sin cotización fija), que se recalculan solas a las 7 si el dólar se movió más de
+# 0,5 %. Es el ajuste de Contabilidad → Ajustes → Monedas («Actualización automática»).
+# En el lab responde ARCA homologación: la cotización es de prueba, no la real.
+model: res.company
+match: [parent_id]
+records:
+  - id: empresa_dolar_del_dia
+    values:
+      parent_id: false
+      currency_provider: arca
+      currency_interval_unit: daily

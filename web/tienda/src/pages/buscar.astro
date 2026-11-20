@@ -1,0 +1,49 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "../layouts/Base.astro";
+import Listado from "../components/Listado.astro";
+import Fila from "../components/Fila.astro";
+import Icono from "../components/Icono.astro";
+import { local, wa } from "../data/catalogo";
+import { buscar, iconoDe, ofertas, opcionesDe, rubros } from "../servidor/consultas";
+const q = (Astro.url.searchParams.get("q") ?? "").slice(0, 100).trim();
+const r = q ? await buscar(env.DB, q, opcionesDe(Astro.url)) : null;
+// Sin resultados (o sin búsqueda): se ofrece por dónde seguir
+const nada = !r || r.cuantos.todos === 0;
+const [cats, enOferta] = nada ? await Promise.all([rubros(env.DB), ofertas(env.DB, 12)]) : [[], []];
+---
+<Base titulo={q ? `«${q}»` : "Buscar"}>
+  <section class="sec">
+    {r ? (
+      <>
+        <div class="sec-tit"><h1 class="h-disp">«{q}»</h1></div>
+        {r.cuantos.todos > 0 && r.aproximado && <p class="cod">No encontramos exactamente «{q}». Te mostramos lo más parecido.</p>}
+        {r.cuantos.todos > 0
+          ? <Listado r={r} />
+          : <div class="vacio">
+              <p><b>No encontramos «{q}».</b> Probá con menos palabras o con otra forma de escribirlo.</p>
+              <p>¿No lo ves en la tienda? Puede que lo tengamos igual en el local:{" "}
+                {local.whatsapp
+                  ? <a href={wa(`Hola, busco: ${q}`)} target="_blank" rel="noopener">preguntanos por WhatsApp</a>
+                  : <>llamanos al <a href={`tel:${local.telefono.replace(/[^0-9+]/g, "")}`}>{local.telefono}</a></>}.</p>
+            </div>}
+      </>
+    ) : (
+      <div class="sec-tit"><h1 class="h-disp">Escribí lo que buscás</h1></div>
+    )}
+  </section>
+  {nada && cats.length > 0 && (
+    <section class="sec">
+      <div class="sec-tit"><h2>Buscá por categoría</h2><a href="/categorias/">Ver todas</a></div>
+      <div class="rubros-fila">
+        {cats.map((c) => <a class="rubro" href={`/categoria/${c.slug}/`}><span class="ic"><Icono nombre={iconoDe(c.nombre)} /></span><b>{c.nombre}</b><small>{c.productos} {c.productos === 1 ? "producto" : "productos"}</small></a>)}
+      </div>
+    </section>
+  )}
+  {nada && enOferta.length > 0 && (
+    <section class="sec">
+      <div class="sec-tit"><h2>Ofertas de la semana</h2><a href="/ofertas/">Ver todas</a></div>
+      <Fila items={enOferta} />
+    </section>
+  )}
+</Base>

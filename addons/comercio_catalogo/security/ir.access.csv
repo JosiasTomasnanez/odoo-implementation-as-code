@@ -1,0 +1,16 @@
+id,name,model_id,group_id/id,operation,domain
+access_lista_proveedor,lista proveedor,comercio.lista.proveedor,group_listas_proveedores,crud,
+access_lista_importacion,importacion,comercio.lista.importacion,group_listas_proveedores,crud,
+access_lista_importacion_linea,importacion linea,comercio.lista.importacion.linea,group_listas_proveedores,crud,
+access_importar_lista_wizard,importar lista,comercio.importar.lista.wizard,group_listas_proveedores,crud,
+access_product_category_crear,categoria: crear desde la lista del proveedor (ver ProductCategory.create),product.category,group_listas_proveedores,cr,
+access_uom_crear,unidad de compra: crear desde la lista del proveedor (P-053),uom.uom,group_listas_proveedores,cr,
+access_importar_lista_hoja,importar lista: hojas,comercio.importar.lista.hoja,group_listas_proveedores,crud,
+access_lista_regla,descuento extra de una lista,comercio.lista.regla,group_listas_proveedores,crud,
+access_lista_familia,familia de una lista,comercio.lista.familia,group_listas_proveedores,r,
+access_dolar_comercio,dolar: cargar la cotizacion del dia (pantalla «Dólar»; solo el dólar),res.currency.rate,group_listas_proveedores,crud,"[('currency_id.name', '=', 'USD')]"
+access_corregir_fila_wizard,corregir fila,comercio.corregir.fila.wizard,group_listas_proveedores,crud,
+access_elegir_mismo_wizard,elegir el mismo,comercio.elegir.mismo.wizard,group_listas_proveedores,crud,
+access_costo_de_wizard,tomar el costo de,comercio.costo.de.wizard,group_listas_proveedores,crud,
+access_elegir_mismo_opcion,elegir el mismo: opciones,comercio.elegir.mismo.opcion,group_listas_proveedores,crud,
+access_agregar_catalogo_wizard,agregar a nuestro catálogo,comercio.agregar.catalogo.wizard,group_listas_proveedores,crud,

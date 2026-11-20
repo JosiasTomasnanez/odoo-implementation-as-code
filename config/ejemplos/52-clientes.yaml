@@ -1,0 +1,14 @@
+# Cliente mayorista FICTICIO (CUIT inventado con dígito verificador válido).
+# Tener la lista asignada hace que Ventas (y el POS, si la lista está habilitada ahí)
+# le apliquen sus precios solos.
+model: res.partner
+records:
+  - id: ej_cliente_mayorista
+    values:
+      name: "[EJ] Veterinaria Los Robles (mayorista)"
+      is_company: true
+      country_id: {ref: base.ar}
+      vat: "30710000006"
+      l10n_ar_afip_responsibility_type_id: {ref: l10n_ar.res_IVARI}
+      property_product_pricelist: {ref: ej_lista_mayorista}
+      email: compras@losrobles.example

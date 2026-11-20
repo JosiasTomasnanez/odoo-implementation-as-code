@@ -1,0 +1,28 @@
+# Precios FICTICIOS del proveedor de mascotas (cómo lo describe él y a cuánto lo vende):
+# de acá sale el costo de cada producto (tarea diaria del catálogo).
+model: product.supplierinfo
+records:
+  - id: ej_sup_perro_cachorro
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_perro_cachorro},
+             product_name: "BALANC. CACHORRO X 3KG", price: 9800}
+  - id: ej_sup_perro_senior
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_perro_senior},
+             product_name: "BALANC. SENIOR R/PEQ X 10KG", price: 26900}
+  - id: ej_sup_gato_adulto
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_gato_adulto},
+             product_name: "ALIM. GATO ADULTO X 1KG", price: 5300}
+  - id: ej_sup_gato_pouch
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_gato_pouch},
+             product_name: "POUCH GATO SALMON 85G", price: 900}
+  - id: ej_sup_pretal
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_pretal},
+             product_name: "PRETAL ARNES PERRO M", price: 2500}
+  - id: ej_sup_cama
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_cama},
+             product_name: "CAMA ACOLCH. PERRO 60CM", price: 13200}
+  - id: ej_sup_gato_castrado
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_gato_castrado_sin_cat},
+             product_name: "CROQ. FELINAS CASTRADOS X 3KG", price: 12500}
+  - id: ej_sup_pelota
+    values: {partner_id: {ref: ej_prov_mascotas}, product_tmpl_id: {ref: ej_prod_pelota_sin_cat},
+             product_name: "PELOTA GOMA C/SONIDO", price: 1500}

@@ -1,0 +1,62 @@
+# Servidor On-Premise del comercio. Diferencias con el laboratorio:
+# - imagen propia construida con los addons adentro (inmutable, versionada por git)
+# - Odoo solo escucha en localhost: los puestos entran por el proxy HTTPS (Caddy,
+#   ADR 0013), que es lo único publicado en la red del local (80 y 443)
+# - reinicio automático, workers y límites de recursos
+# - configuración y secretos fuera del repo (ver onprem.env.example)
+services:
+  db:
+    restart: unless-stopped
+
+  odoo:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile
+      # Clon de github.com/odoo/enterprise (fuera del repo): se copia adentro de la imagen
+      additional_contexts:
+        enterprise: ${ODOO_ENTERPRISE_ADDONS:?definir ODOO_ENTERPRISE_ADDONS en onprem.env}
+      args:
+        ODOO_BASE_IMAGE: ${ODOO_BASE_IMAGE:-odoo:20.0}
+    image: ${ODOO_IMAGE:-odoo-comercio:local}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8069:8069"
+      - "127.0.0.1:8072:8072"
+    volumes:
+      - ${ODOO_CONF_FILE:?definir ODOO_CONF_FILE}:/etc/odoo/odoo.conf:ro
+
+  # Proxy HTTPS (ADR 0013): TLS, redirección 80 -> 443, /websocket al puerto gevent
+  # (8072) y el resto a 8069. Certificado según CADDY_TLS_MODO: "interna" (CA propia,
+  # raíz instalada en las PCs) o "dominio" (Let's Encrypt por DNS-01).
+  proxy:
+    build:
+      context: ./caddy
+      args:
+        CADDY_VERSION: ${CADDY_VERSION:-2.11.7}
+        CADDY_DNS_MODULE: ${CADDY_DNS_MODULE-github.com/caddy-dns/cloudflare@v0.2.4}
+    image: odoo-comercio-proxy:local
+    restart: unless-stopped
+    depends_on:
+      odoo:
+        condition: service_healthy
+    ports:
+      # PROXY_BIND_IP: IP LAN del servidor (o 0.0.0.0); el firewall limita quién entra.
+      - "${PROXY_BIND_IP:-0.0.0.0}:80:80"
+      - "${PROXY_BIND_IP:-0.0.0.0}:443:443"
+    environment:
+      ODOO_HOSTS: ${ODOO_HOSTS:?definir ODOO_HOSTS (nombre del servidor)}
+      CADDY_TLS_MODO: ${CADDY_TLS_MODO:-interna}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+    env_file:
+      # Token del proveedor DNS (solo modo dominio). Fuera del repo, permisos 600.
+      - path: ${PROXY_SECRETS_FILE:-/etc/odoo-comercio/proxy.env}
+        required: false
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificados y, en modo "interna", la CA (raíz con su clave privada): va en
+      # los backups; si se pierde hay que reinstalar la raíz en todas las PCs.
+      - ${CADDY_DATA_DIR:?definir CADDY_DATA_DIR}:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-config:

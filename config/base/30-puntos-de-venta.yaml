@@ -1,0 +1,104 @@
+# Puntos de venta del local (P-008): 9 puestos que arman el pedido y 2 cajas que cobran,
+# juntas en la cabina de la entrada. Los nombres y opciones que pueden cambiar están en
+# config/valores.yaml (el `id` queda fijo).
+#
+# Los puestos necesitan un medio de pago para abrir sesión, pero no cobran: en el
+# servidor propio el módulo comercio_pos_pedido_qr cambia «Pago» por «Imprimir pedido»
+# (config/onpremise/40-puestos.yaml) y quien atiende entra con rol supervisado.
+# Las cajas no «confían» en los puestos: abren cada pedido escaneando el QR (ADR 0009).
+#
+# Todos los tickets llevan el logo en blanco y negro para la térmica (el de la empresa es
+# en color: 05-empresa.yaml).
+model: pos.config
+match: [name]
+records:
+  - id: pos_mostrador_1
+    values:
+      name: {valor: puestos.mostrador_1}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_mostrador_2
+    values:
+      name: {valor: puestos.mostrador_2}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_mostrador_3
+    values:
+      name: {valor: puestos.mostrador_3}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_mostrador_4
+    values:
+      name: {valor: puestos.mostrador_4}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_mostrador_5
+    values:
+      name: {valor: puestos.mostrador_5}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_mostrador_6
+    values:
+      name: {valor: puestos.mostrador_6}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_ferreteria_1
+    values:
+      name: {valor: puestos.ferreteria_1}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_ferreteria_2
+    values:
+      name: {valor: puestos.ferreteria_2}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_veterinaria
+    values:
+      name: {valor: puestos.veterinaria}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [pm_debito]}
+      iface_printbill: true
+      module_pos_hr: true
+  - id: pos_caja_1
+    values:
+      name: {valor: cajas.caja_1}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      use_download_invoice: {valor: cajas.descargar_factura_pdf}
+      payment_method_ids: {refs: [pm_efectivo_caja_1, pm_debito, pm_credito, pm_transferencia]}
+      trusted_config_ids: {refs: []}
+      module_pos_hr: true
+  - id: pos_caja_2
+    values:
+      name: {valor: cajas.caja_2}
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      use_download_invoice: {valor: cajas.descargar_factura_pdf}
+      payment_method_ids: {refs: [pm_efectivo_caja_2, pm_debito, pm_credito, pm_transferencia]}
+      trusted_config_ids: {refs: []}
+      module_pos_hr: true

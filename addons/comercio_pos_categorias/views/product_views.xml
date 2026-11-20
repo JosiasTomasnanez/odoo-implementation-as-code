@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Punto de venta → Productos (lista): la categoría del PdV al lado del nombre y visible
+         (Odoo la trae escondida y al final), para ver qué falta categorizar. -->
+    <record id="product_template_tree_view_point_of_sale_categoria" model="ir.ui.view">
+        <field name="name">product.template.view.list.point_of_sale.comercio.categoria</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="point_of_sale.product_template_tree_view_point_of_sale"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="pos_categ_ids" position="move"/>
+            </field>
+            <field name="pos_categ_ids" position="attributes">
+                <attribute name="string">Categoría del PdV</attribute>
+                <attribute name="optional">show</attribute>
+            </field>
+        </field>
+    </record>
+
+    <!-- Filtro para encontrar los que todavía no tienen botón en el punto de venta -->
+    <record id="product_template_search_view_pos_sin_categoria" model="ir.ui.view">
+        <field name="name">product.template.search.pos.comercio.sin.categoria</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="point_of_sale.product_template_search_view_pos"/>
+        <field name="arch" type="xml">
+            <filter name="filter_to_availabe_pos" position="after">
+                <separator/>  <!-- grupo propio: se combina con «Punto de venta» por «y» -->
+                <filter name="sin_categoria_pos" string="Sin categoría del PdV"
+                        domain="[('pos_categ_ids', '=', False)]"/>
+            </filter>
+        </field>
+    </record>
+</odoo>

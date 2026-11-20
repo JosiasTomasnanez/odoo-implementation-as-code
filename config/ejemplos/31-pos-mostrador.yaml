@@ -1,0 +1,40 @@
+# Experimento: puesto que arma el pedido + caja que cobra
+# (docs/relevamiento/procesos/venta-mostrador.md). Solo laboratorio.
+#
+# La caja NO confía en el puesto (sin trusted_config_ids): así no ve todos los pedidos
+# de los puestos; abre cada uno escaneando el QR del proforma (P-026). Odoo exige al menos un método de pago para abrir una sesión, así que el
+# puesto tiene uno; para que no cobre, quien atiende entra como empleado con rol
+# "supervisado" (pos_hr), que no puede pagar. El botón "Cuenta" (iface_printbill)
+# imprime el pedido antes de pagar.
+model: pos.config
+records:
+  - id: ej_pos_puesto
+    values:
+      name: "[EJ] Puesto mascotas (arma pedidos)"
+      payment_method_ids: {refs: [ej_pm_tarjeta, pm_registradora]}
+      iface_printbill: true
+      comercio_arma_pedidos: true   # módulo propio: «Imprimir pedido» con QR en lugar de «Pago»
+      use_custom_receipt_info: true   # logo del ticket, como en config/base
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      # Como los puestos reales (P-046, temporal): al imprimir queda cobrado en la registradora.
+      # Las pruebas del QR (make e2e-pos) lo apagan mientras corren.
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      module_pos_hr: true
+      supervised_employee_ids: {refs: [ej_emp_atencion]}
+      manager_employee_ids: {refs: [ej_emp_encargado]}
+  - id: ej_pos_caja
+    values:
+      name: "[EJ] Caja (cobra)"
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [ej_pm_efectivo_caja, ej_pm_tarjeta]}
+      trusted_config_ids: {refs: []}
+  # En el local cobran dos cajas juntas (P-035): cualquiera abre el pedido del puesto.
+  - id: ej_pos_caja_2
+    values:
+      name: "[EJ] Caja 2 (cobra)"
+      use_custom_receipt_info: true
+      custom_logo: {archivo: ../imagenes/logo-ticket.png}
+      payment_method_ids: {refs: [ej_pm_efectivo_caja_2, ej_pm_tarjeta]}
+      trusted_config_ids: {refs: []}

@@ -1,0 +1,13 @@
+# Laboratorio local (infra/docker, `make lab-init`). Datos ficticios, se destruye y reconstruye.
+url: http://localhost:8069
+database: lab
+protocol: json2            # json2 (Odoo >= 19) | xmlrpc
+api_key_env: ODOO_LAB_API_KEY
+lang: es_AR
+layers:
+  - config/base            # visión funcional común
+  - config/onpremise       # el lab reproduce el servidor propio (módulos de addons/)
+  - config/cuentas         # cuentas por rol (en producción, después de comprarlas)
+  - config/ejemplos        # SOLO laboratorio: datos ficticios para experimentar
+values:                    # valores modificables (ADR 0010); el último archivo gana
+  - config/valores.yaml

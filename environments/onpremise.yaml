@@ -1,0 +1,15 @@
+# Servidor propio del comercio (infra/docker con compose.onprem.yml).
+# Dominio propio con certificado de Let's Encrypt (ADR 0013, 27/10). En el servidor el nombre
+# apunta a 127.0.0.1 (/etc/hosts); en las PCs, a la IP del servidor (DNS de Cloudflare).
+# Si se instala sin dominio (CA interna): https://odoo.ejemplo.internal y SSL_CERT_FILE con la raíz.
+url: https://odoo.comercio-ejemplo.example
+database: produccion
+protocol: json2
+api_key_env: ODOO_ONPREMISE_API_KEY
+lang: es_AR
+layers:
+  - config/base
+  - config/onpremise       # ajustes específicos de On-Premise
+  # - config/cuentas       # cuentas por rol (P-005): descomentar DESPUÉS de comprar las cuentas
+values:                    # valores modificables (ADR 0010); el último archivo gana
+  - config/valores.yaml

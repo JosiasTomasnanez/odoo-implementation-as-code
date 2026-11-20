@@ -1,0 +1,12 @@
+# Los PDF (reportes) los arma Odoo pidiéndose las páginas a sí mismo. Por defecto usa
+# web.base.url, que Odoo cambia al nombre por el que entró el último administrador: si entró
+# por remoto.comercio-ejemplo.example (Cloudflare Access, ADR 0020), el pedido pasa por Access y el
+# PDF sale vacío o falla. Con report.url va siempre por adentro del contenedor, sea cual sea
+# el nombre (lab y servidor). La dirección para los links de los mails la fija instalar-odoo.sh.
+model: ir.config_parameter
+match: [key]
+records:
+  - id: direccion_reportes
+    values:
+      key: report.url
+      value: http://localhost:8069

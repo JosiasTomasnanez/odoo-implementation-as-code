@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Botón «Escribir el peso» en la pantalla de la balanza (comercioPesoManual) -->
+    <t t-name="comercio_pos_balanza_systel.ScaleScreen" t-inherit="point_of_sale.ScaleScreen" t-inherit-mode="extension">
+        <xpath expr="//t[@t-set-slot='footer']/div" position="inside">
+            <button class="btn btn-secondary w-100 comercio-peso-manual" t-on-click="() => this.comercioPesoManual()">
+                Escribir el peso
+            </button>
+        </xpath>
+    </t>
+</templates>

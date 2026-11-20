@@ -1,0 +1,22 @@
+# Categorías del punto de venta FICTICIAS: los botones de arriba del POS para filtrar rápido.
+# No son las categorías de producto (rubros, márgenes): un producto puede tener varias y
+# cada punto de venta puede limitarse a las suyas (`limit_categories`). Cuáles y en qué
+# puestos lo define el negocio (P-054); la foto de cada una se carga en Odoo.
+model: pos.category
+match: [name]
+records:
+  - id: ej_pos_cat_alimento_perro
+    values:
+      name: "[EJ] Alimento perro"
+      sequence: 1
+      color: 4
+  - id: ej_pos_cat_alimento_gato
+    values:
+      name: "[EJ] Alimento gato"
+      sequence: 2
+      color: 2
+  - id: ej_pos_cat_accesorios
+    values:
+      name: "[EJ] Accesorios mascotas"
+      sequence: 3
+      color: 10

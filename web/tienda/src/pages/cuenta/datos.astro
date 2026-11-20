@@ -1,0 +1,26 @@
+---
+// Mis datos: el nombre y el teléfono con los que se arman las compras.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import CuentaNav from "../../components/CuentaNav.astro";
+import { clienteActual } from "../../servidor/clientes";
+Astro.response.headers.set("Cache-Control", "no-store");
+if (Astro.locals.sitio === "mayorista") return new Response(null, { status: 404 });
+const cliente = await clienteActual(env.DB, Astro.request);
+if (!cliente) return Astro.redirect("/cuenta?v=/cuenta/datos", 303);
+const q = Astro.url.searchParams;
+---
+<Base titulo="Mis datos" actual="cuenta">
+  <CuentaNav titulo="Mis datos" />
+  <section class="sec">
+    <form class="perfil-form" method="post" action="/api/cuenta/datos">
+      {q.has("ok") && <p class="aviso bien" role="status">Listo, guardamos tus datos.</p>}
+      {q.has("e") && <p class="aviso" role="alert">Revisá el nombre y el teléfono (solo números, con el código de área).</p>}
+      <label class="campo"><span>Nombre y apellido</span><input name="nombre" type="text" autocomplete="name" required minlength="2" maxlength="120" value={cliente.nombre ?? ""}></label>
+      <label class="campo"><span>Teléfono</span><input name="telefono" type="tel" autocomplete="tel" inputmode="tel" minlength="6" maxlength="30" placeholder="351 1234567" value={cliente.telefono ?? ""}></label>
+      <label class="campo"><span>Mail</span><input type="email" value={cliente.email} disabled></label>
+      <p class="chico-nota">Los usamos para avisarte de tus pedidos. El mail es el de tu cuenta y no se cambia.</p>
+      <button class="btn" type="submit">Guardar</button>
+    </form>
+  </section>
+</Base>

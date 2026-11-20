@@ -1,0 +1,71 @@
+# Servidor propio: los 9 puestos arman pedidos en lugar de cobrar (ADR 0009). Mientras
+# cobran las registradoras (P-046, temporal) «Imprimir pedido» además lo da por cobrado
+# con «Cobrado en registradora»: `puestos_cobran_en_registradora` en config/valores.yaml.
+# Precio unitario en el ticket como lo muestra Odoo («$ 450,00 / Unidades»), elegido por
+# Daniel el 17/11 (opción «siempre»; también hay «si_suma» y «no»).
+# Completa los registros de config/base/30-puntos-de-venta.yaml (mismo id).
+model: pos.config
+records:
+  - id: pos_mostrador_1
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_mostrador_2
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_mostrador_3
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_mostrador_4
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_mostrador_5
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_mostrador_6
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_ferreteria_1
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_ferreteria_2
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}
+  - id: pos_veterinaria
+    values:
+      comercio_arma_pedidos: true
+      comercio_ticket_unitario: siempre
+      comercio_cobro_en_registradora: {valor: puestos_cobran_en_registradora}
+      comercio_metodo_registradora_id: {ref: pm_registradora}
+      payment_method_ids: {refs: [pm_registradora]}

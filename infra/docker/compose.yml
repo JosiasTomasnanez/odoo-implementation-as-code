@@ -1,0 +1,67 @@
+# Base común del stack Odoo. No se usa sola: se combina con
+# compose.lab.yml (laboratorio) o compose.onprem.yml (servidor del comercio)
+# para que ambos entornos corran exactamente las mismas versiones.
+name: ${COMPOSE_PROJECT_NAME:-odoo}
+
+services:
+  db:
+    image: postgres:${POSTGRES_VERSION:-16}
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets: [db_password]
+    # pg_stat_statements: qué consultas tardan (tablero «PostgreSQL», ADR 0028). Guarda el texto
+    # normalizado (los valores pasan a $1, $2…). Sin los comandos de administración
+    # (track_utility=off): esos no se normalizan y un ALTER ROLE … PASSWORD quedaría a la vista.
+    # track_io_timing: tiempos de lectura de disco.
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.max=2000
+      - -c
+      - pg_stat_statements.track_utility=off
+      - -c
+      - track_io_timing=on
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  odoo:
+    image: ${ODOO_IMAGE:-odoo:20.0}
+    depends_on:
+      db:
+        condition: service_healthy
+    # La conexión a PostgreSQL (db_host, db_user, db_password...) se define en el
+    # odoo.conf de cada entorno, así el servidor y los comandos `odoo db`/`odoo shell`
+    # usan la misma configuración.
+    # IA de las listas de proveedores (módulo comercio_catalogo_ia, ADR 0018). La clave no
+    # va en la base ni en el repo: lab → .env del repo (lo lee infra/scripts/lib.sh);
+    # servidor → onprem.env. Vacía: el botón de la IA no aparece.
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      GEMINI_MODEL_RESPALDO: ${GEMINI_MODEL_RESPALDO:-}
+      # Tope de pedidos por minuto (plan gratis: 14). Con el plan pago: 0 = sin tope.
+      GEMINI_PEDIDOS_POR_MINUTO: ${GEMINI_PEDIDOS_POR_MINUTO:-14}
+    volumes:
+      - odoo-data:/var/lib/odoo
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8069/web/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db-data:
+  odoo-data:
+
+secrets:
+  db_password:
+    file: ${DB_PASSWORD_FILE:?definir DB_PASSWORD_FILE}

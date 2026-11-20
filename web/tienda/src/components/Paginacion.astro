@@ -1,0 +1,26 @@
+---
+// «‹ 1 … 4 5 6 … 12 ›»: solo aparece si hay más de una página. Conserva filtro, orden y búsqueda.
+import type { Pagina } from "../servidor/consultas";
+const { r } = Astro.props as { r: Pagina };
+const ir = (n: number) => {
+  const u = new URL(Astro.url);
+  n === 1 ? u.searchParams.delete("pagina") : u.searchParams.set("pagina", String(n));
+  return u.pathname + u.search;
+};
+const numeros: (number | "…")[] = [];
+for (let n = 1; n <= r.paginas; n++) {
+  if (n === 1 || n === r.paginas || Math.abs(n - r.pagina) <= 1) numeros.push(n);
+  else if (numeros.at(-1) !== "…") numeros.push("…");
+}
+---
+{r.paginas > 1 && (
+  <nav aria-label="Páginas">
+    <div class="paginas">
+      {r.pagina > 1 && <a class="ir" href={ir(r.pagina - 1)} rel="prev">‹ Anterior</a>}
+      {numeros.map((n) => n === "…" ? <span class="sep">…</span>
+        : n === r.pagina ? <span aria-current="page">{n}</span> : <a href={ir(n)} aria-label={`Página ${n}`}>{n}</a>)}
+      {r.pagina < r.paginas && <a class="ir" href={ir(r.pagina + 1)} rel="next">Siguiente ›</a>}
+    </div>
+    <p class="paginas-txt">Página {r.pagina} de {r.paginas}</p>
+  </nav>
+)}

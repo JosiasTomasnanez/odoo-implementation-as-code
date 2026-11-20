@@ -1,0 +1,11 @@
+# A quién y cada cuánto avisan las alertas de Grafana (ADR 0028). Como los scripts: avisa
+# cuando algo se rompe y cuando se arregla; si sigue roto, lo repite una vez por día.
+apiVersion: 1
+
+policies:
+  - orgId: 1
+    receiver: avisos
+    group_by: [alertname]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 24h

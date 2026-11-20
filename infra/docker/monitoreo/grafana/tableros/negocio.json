@@ -1,0 +1,1804 @@
+{
+ "uid": "negocio",
+ "title": "Negocio (Odoo)",
+ "description": "Pedidos, productos, stock, compras, listas de proveedores, precios y actividad, leídos de la base de Odoo con un usuario de solo lectura (ADR 0028). Sin datos personales de clientes.",
+ "tags": [
+  "casa-ejemplo"
+ ],
+ "timezone": "America/Argentina/Cordoba",
+ "editable": false,
+ "graphTooltip": 1,
+ "refresh": "1m",
+ "schemaVersion": 41,
+ "version": 1,
+ "time": {
+  "from": "now-30d",
+  "to": "now"
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "dias",
+    "label": "Sin movimiento hace (días)",
+    "type": "custom",
+    "query": "30,60,90,180",
+    "current": {
+     "text": "60",
+     "value": "60"
+    },
+    "allowCustomValue": false,
+    "options": [
+     {
+      "text": "30",
+      "value": "30",
+      "selected": false
+     },
+     {
+      "text": "60",
+      "value": "60",
+      "selected": true
+     },
+     {
+      "text": "90",
+      "value": "90",
+      "selected": false
+     },
+     {
+      "text": "180",
+      "value": "180",
+      "selected": false
+     }
+    ]
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "id": 1,
+   "title": "Hoy",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "type": "stat",
+   "title": "Pedidos hoy",
+   "description": "Impresos en los puestos (o cobrados) desde las 0 h.",
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "odoo"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "rawSql": "SELECT count(*) FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba') >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba')",
+     "format": "table",
+     "refId": "A",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 2,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Importe de los pedidos hoy",
+   "description": "Con IVA.",
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "odoo"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "rawSql": "SELECT COALESCE(sum(o.amount_total), 0) FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba') >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba')",
+     "format": "table",
+     "refId": "A",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 3,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Compras confirmadas hoy",
+   "description": "",
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "odoo"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "rawSql": "SELECT count(*) FROM purchase_order po WHERE po.state IN ('purchase', 'done') AND (po.date_approve AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba') >= date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba')",
+     "format": "table",
+     "refId": "A",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 4,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Facturas de proveedor en excepción",
+   "description": "«Se debe pagar: Excepción» (no coincide con la orden, lo recibido o el total del papel).",
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "odoo"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "rawSql": "SELECT count(*) FROM account_move m WHERE m.move_type IN ('in_invoice', 'in_refund') AND m.state != 'cancel' AND m.release_to_pay = 'exception'",
+     "format": "table",
+     "refId": "A",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 5
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 5,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Precios para cambiar",
+   "description": "En «Precios a actualizar», sin contar las diferencias chicas.",
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "odoo"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "rawSql": "SELECT count(*) FROM product_template pt, res_company rc WHERE rc.id = (SELECT min(id) FROM res_company) AND pt.active AND pt.comercio_precio_desactualizado AND NOT (COALESCE(rc.comercio_diferencia_chica, 0) > 0 AND abs(COALESCE(pt.comercio_precio_variacion, 0)) <= rc.comercio_diferencia_chica)",
+     "format": "table",
+     "refId": "A",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 6,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Códigos de fábrica por escanear",
+   "description": "Productos con el código propio 20… y sin marcar «No tiene código de fábrica» (ADR 0025).",
+   "datasource": {
+    "type": "grafana-postgresql-datasource",
+    "uid": "odoo"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "rawSql": "SELECT count(*) FROM product_product pp JOIN product_template pt ON pt.id = pp.product_tmpl_id WHERE pp.active AND pt.active AND pt.type = 'consu' AND pp.barcode LIKE '20%' AND NOT COALESCE(pt.comercio_sin_codigo_fabrica, false)",
+     "format": "table",
+     "refId": "A",
+     "rawQuery": true,
+     "editorMode": "code"
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 7,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   }
+  },
+  {
+   "type": "row",
+   "id": 8,
+   "title": "Pedidos por puesto",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Pedidos por día y puesto",
+     "description": "Pedidos impresos en cada puesto (los cobrados en una caja cuentan para el puesto que los armó).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, COALESCE(c.name->>'es_AR', c.name->>'en_US') AS metric, count(*) AS value FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND $__timeFilter(o.date_order) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        },
+        "barAlignment": 0
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 9,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 6
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Importe por día y puesto",
+     "description": "Total de los pedidos con IVA.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, COALESCE(c.name->>'es_AR', c.name->>'en_US') AS metric, sum(o.amount_total) AS value FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND $__timeFilter(o.date_order) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 10,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 6
+     }
+    },
+    {
+     "type": "barchart",
+     "title": "Pedidos por hora del día (horas pico)",
+     "description": "Suma de todo el período elegido.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT lpad(extract(hour FROM (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba'))::text, 2, '0') || ' h' AS hora, COALESCE(c.name->>'es_AR', c.name->>'en_US') AS puesto, count(*) AS pedidos FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND $__timeFilter(o.date_order) GROUP BY 1, 2 ORDER BY 1",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {},
+      "overrides": []
+     },
+     "options": {
+      "orientation": "vertical",
+      "stacking": "normal",
+      "showValue": "never",
+      "groupWidth": 0.8,
+      "barWidth": 0.9,
+      "xTickLabelRotation": 0,
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "transformations": [
+      {
+       "id": "groupingToMatrix",
+       "options": {
+        "columnField": "puesto",
+        "rowField": "hora",
+        "valueField": "pedidos",
+        "emptyValue": "zero"
+       }
+      }
+     ],
+     "id": 11,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 14
+     }
+    },
+    {
+     "type": "barchart",
+     "title": "Pedidos por día de la semana",
+     "description": "Suma de todo el período elegido.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT extract(isodow FROM (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba'))::int || ' ' || (ARRAY['lun','mar','mié','jue','vie','sáb','dom'])[extract(isodow FROM (o.date_order AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba'))::int] AS dia, COALESCE(c.name->>'es_AR', c.name->>'en_US') AS puesto, count(*) AS pedidos FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND $__timeFilter(o.date_order) GROUP BY 1, 2 ORDER BY 1",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {},
+      "overrides": []
+     },
+     "options": {
+      "orientation": "vertical",
+      "stacking": "normal",
+      "showValue": "never",
+      "groupWidth": 0.8,
+      "barWidth": 0.9,
+      "xTickLabelRotation": 0,
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "transformations": [
+      {
+       "id": "groupingToMatrix",
+       "options": {
+        "columnField": "puesto",
+        "rowField": "dia",
+        "valueField": "pedidos",
+        "emptyValue": "zero"
+       }
+      }
+     ],
+     "id": 12,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 14
+     }
+    },
+    {
+     "type": "table",
+     "title": "Resumen por puesto (período elegido)",
+     "description": "Anulados: impresos que nadie cobró (regla de la última caja).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(c.name->>'es_AR', c.name->>'en_US') AS \"Puesto\", count(*) AS \"Pedidos\", COALESCE(sum(it.items), 0) AS \"Ítems\", sum(o.amount_total) AS \"Importe\", round(avg(o.amount_total), 2) AS \"Promedio por pedido\", count(*) FILTER (WHERE o.state = 'cancel') AS \"Anulados\" FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) LEFT JOIN LATERAL (SELECT sum(l.qty) AS items FROM pos_order_line l WHERE l.order_id = o.id) it ON true WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND $__timeFilter(o.date_order) GROUP BY 1 ORDER BY 2 DESC",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 13,
+     "gridPos": {
+      "h": 7,
+      "w": 24,
+      "x": 0,
+      "y": 22
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 14,
+   "title": "Productos",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 29
+   },
+   "panels": [
+    {
+     "type": "table",
+     "title": "Más vendidos (período elegido)",
+     "description": "Cobrados (o dados por cobrados en la registradora).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(pp.default_code || ' · ', '') || COALESCE(pt.name->>'es_AR', pt.name->>'en_US') AS \"Producto\", sum(l.qty) AS \"Cantidad\", sum(l.price_subtotal_incl) AS \"Importe\", count(DISTINCT o.id) AS \"Pedidos\" FROM pos_order_line l JOIN pos_order o ON o.id = l.order_id JOIN product_product pp ON pp.id = l.product_id JOIN product_template pt ON pt.id = pp.product_tmpl_id WHERE o.state IN ('paid', 'done', 'invoiced') AND $__timeFilter(o.date_order) GROUP BY 1 ORDER BY 2 DESC LIMIT 30",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 15,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 0,
+      "y": 30
+     }
+    },
+    {
+     "type": "table",
+     "title": "Sin movimiento hace $dias días (con stock)",
+     "description": "Productos con stock que no entraron ni salieron en ese plazo (elegir los días arriba).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(pp.default_code || ' · ', '') || COALESCE(pt.name->>'es_AR', pt.name->>'en_US') AS \"Producto\", s.cantidad AS \"Stock\", (SELECT max((m.date AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) FROM stock_move m WHERE m.product_id = pp.id AND m.state = 'done') AS \"Último movimiento\" FROM (SELECT q.product_id, sum(q.quantity) AS cantidad FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE l.usage = 'internal' GROUP BY q.product_id) s JOIN product_product pp ON pp.id = s.product_id JOIN product_template pt ON pt.id = pp.product_tmpl_id WHERE s.cantidad > 0 AND pp.active AND NOT EXISTS ( SELECT 1 FROM stock_move m WHERE m.product_id = pp.id AND m.state = 'done' AND m.date >= now() AT TIME ZONE 'UTC' - make_interval(days => ${dias:sqlstring}::int)) ORDER BY 3 NULLS FIRST LIMIT 50",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 16,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 12,
+      "y": 30
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 17,
+   "title": "Stock",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 40
+   },
+   "panels": [
+    {
+     "type": "table",
+     "title": "Stock negativo",
+     "description": "Se vendió más de lo que figuraba: falta cargar una compra o un ajuste de inventario.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(pp.default_code || ' · ', '') || COALESCE(pt.name->>'es_AR', pt.name->>'en_US') AS \"Producto\", s.cantidad AS \"Stock\" FROM (SELECT q.product_id, sum(q.quantity) AS cantidad FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE l.usage = 'internal' GROUP BY q.product_id) s JOIN product_product pp ON pp.id = s.product_id JOIN product_template pt ON pt.id = pp.product_tmpl_id WHERE s.cantidad < 0 ORDER BY 2 LIMIT 50",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 2,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 18,
+     "gridPos": {
+      "h": 9,
+      "w": 12,
+      "x": 0,
+      "y": 41
+     }
+    },
+    {
+     "type": "table",
+     "title": "Por debajo del mínimo (reglas de reabastecimiento)",
+     "description": "Solo productos con regla de mínimo cargada (Inventario → Reabastecimiento). Vacío si no hay reglas.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(pp.default_code || ' · ', '') || COALESCE(pt.name->>'es_AR', pt.name->>'en_US') AS \"Producto\", op.product_min_qty AS \"Mínimo\", COALESCE((SELECT sum(q.quantity) FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE q.product_id = op.product_id AND l.usage = 'internal' AND l.parent_path LIKE ol.parent_path || '%'), 0) AS \"Stock\" FROM stock_warehouse_orderpoint op JOIN stock_location ol ON ol.id = op.location_id JOIN product_product pp ON pp.id = op.product_id JOIN product_template pt ON pt.id = pp.product_tmpl_id WHERE op.active AND COALESCE((SELECT sum(q.quantity) FROM stock_quant q JOIN stock_location l ON l.id = q.location_id WHERE q.product_id = op.product_id AND l.usage = 'internal' AND l.parent_path LIKE ol.parent_path || '%'), 0) < op.product_min_qty ORDER BY 1 LIMIT 50",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 2,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 19,
+     "gridPos": {
+      "h": 9,
+      "w": 12,
+      "x": 12,
+      "y": 41
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Movimientos de stock por día",
+     "description": "Líneas de movimiento hechas (un pedido con 5 productos = 5).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (m.date AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, CASE WHEN o.usage = 'supplier' THEN 'Entradas de proveedores' WHEN d.usage = 'customer' THEN 'Ventas y salidas a clientes' WHEN o.usage = 'customer' THEN 'Devoluciones de clientes' WHEN d.usage = 'supplier' THEN 'Devoluciones a proveedores' WHEN 'inventory' IN (o.usage, d.usage) THEN 'Ajustes de inventario' ELSE 'Otros' END AS metric, count(*) AS value FROM stock_move m JOIN stock_location o ON o.id = m.location_id JOIN stock_location d ON d.id = m.location_dest_id WHERE m.state = 'done' AND $__timeFilter(m.date) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 20,
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 50
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 21,
+   "title": "Compras",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 58
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Órdenes de compra confirmadas por día",
+     "description": "",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (po.date_approve AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, 'órdenes' AS metric, count(*) AS value FROM purchase_order po WHERE po.state IN ('purchase', 'done') AND $__timeFilter(po.date_approve) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      },
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (po.date_approve AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, 'importe' AS metric, sum(po.amount_total) AS value FROM purchase_order po WHERE po.state IN ('purchase', 'done') AND $__timeFilter(po.date_approve) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "B",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "importe"
+        },
+        "properties": [
+         {
+          "id": "custom.axisPlacement",
+          "value": "right"
+         },
+         {
+          "id": "custom.drawStyle",
+          "value": "line"
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 22,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 59
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Facturas de proveedor cargadas por día",
+     "description": "",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (m.create_date AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, CASE WHEN j.comercio_sin_factura THEN 'Compras sin factura' WHEN m.release_to_pay = 'exception' THEN 'En excepción' ELSE 'Facturas' END AS metric, count(*) AS value FROM account_move m JOIN account_journal j ON j.id = m.journal_id WHERE m.move_type IN ('in_invoice', 'in_refund') AND m.state != 'cancel' AND $__timeFilter(m.create_date) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 23,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 59
+     }
+    },
+    {
+     "type": "table",
+     "title": "Recepciones pendientes",
+     "description": "Mercadería pedida que todavía no se recibió en Odoo.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT p.name AS \"Recepción\", p.origin AS \"Origen\", pr.name AS \"Proveedor\", (p.scheduled_date AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba') AS \"Prevista\", GREATEST(0, extract(day FROM now() AT TIME ZONE 'UTC' - p.scheduled_date))::int AS \"Días de atraso\" FROM stock_picking p JOIN stock_picking_type pt ON pt.id = p.picking_type_id LEFT JOIN res_partner pr ON pr.id = p.partner_id WHERE pt.code = 'incoming' AND p.state NOT IN ('done', 'cancel', 'draft') ORDER BY p.scheduled_date LIMIT 50",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 24,
+     "gridPos": {
+      "h": 9,
+      "w": 12,
+      "x": 0,
+      "y": 67
+     }
+    },
+    {
+     "type": "table",
+     "title": "Facturas en excepción o con el total que no cierra",
+     "description": "Excepción: no coincide con la orden o con lo recibido (account_3way_match). «No cierra»: el total leído del papel distinto del de Odoo (en un borrador, el de Odoo se actualiza al guardar).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT m.name AS \"Factura\", m.ref AS \"Número del proveedor\", pr.name AS \"Proveedor\", m.invoice_date AS \"Fecha\", m.amount_total AS \"Total en Odoo\", m.comercio_total_factura AS \"Total del papel\", CASE WHEN m.comercio_total_factura IS NOT NULL AND abs(m.comercio_total_factura - m.amount_total) > 0.01 THEN 'No cierra el total' ELSE 'Excepción' END AS \"Problema\" FROM account_move m LEFT JOIN res_partner pr ON pr.id = m.partner_id WHERE m.move_type IN ('in_invoice', 'in_refund') AND m.state != 'cancel' AND (m.release_to_pay = 'exception' OR (m.comercio_total_factura IS NOT NULL AND abs(m.comercio_total_factura - m.amount_total) > 0.01)) ORDER BY m.invoice_date DESC NULLS LAST LIMIT 50",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 2,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 25,
+     "gridPos": {
+      "h": 9,
+      "w": 12,
+      "x": 12,
+      "y": 67
+     }
+    },
+    {
+     "type": "table",
+     "title": "Compras sin factura abiertas (ADR 0023)",
+     "description": "Registradas en el diario sin factura, a la espera de la factura real (la administración las anula a mano al cargarla).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT m.name AS \"Comprobante\", pr.name AS \"Proveedor\", m.date AS \"Fecha\", m.amount_total AS \"Total\", m.payment_state AS \"Pago\", (date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba')::date - m.date) AS \"Días\" FROM account_move m JOIN account_journal j ON j.id = m.journal_id LEFT JOIN res_partner pr ON pr.id = m.partner_id WHERE j.comercio_sin_factura AND m.state = 'posted' ORDER BY m.date LIMIT 50",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 2,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 26,
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 76
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 27,
+   "title": "Listas de proveedores",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 84
+   },
+   "panels": [
+    {
+     "type": "table",
+     "title": "Última importación por lista",
+     "description": "«Días» vacío = nunca se aplicó. Alerta: más de 14 días sin importar. Filas para revisar: de la importación más nueva, si todavía está para revisar.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT pr.name AS \"Proveedor\", concat_ws(' · ', l.name, l.parte) AS \"Lista\", l.frecuencia_dias AS \"Cada (días)\", (SELECT max(i.fecha) FROM comercio_lista_importacion i WHERE i.lista_id = l.id AND i.estado = 'aplicada') AS \"Última aplicada\", (now() AT TIME ZONE 'UTC')::date - (SELECT max(i.fecha) FROM comercio_lista_importacion i WHERE i.lista_id = l.id AND i.estado = 'aplicada')::date AS \"Días\", v.estado AS \"Estado de la última\", CASE WHEN v.estado = 'simulada' THEN v.cant_revisar END AS \"Filas para revisar\" FROM comercio_lista_proveedor l JOIN res_partner pr ON pr.id = l.partner_id LEFT JOIN LATERAL (SELECT i.estado, i.cant_revisar FROM comercio_lista_importacion i WHERE i.lista_id = l.id AND i.estado NOT IN ('error', 'descartada') ORDER BY i.id DESC LIMIT 1) v ON true WHERE l.active ORDER BY 5 DESC NULLS FIRST",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 28,
+     "gridPos": {
+      "h": 10,
+      "w": 24,
+      "x": 0,
+      "y": 85
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Importaciones por día",
+     "description": "Por estado actual (aplicada, simulada = para revisar, reemplazada, descartada, error).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT date_trunc('day', (i.create_date AT TIME ZONE 'UTC' AT TIME ZONE 'America/Argentina/Cordoba')) AT TIME ZONE 'America/Argentina/Cordoba' AS time, i.estado AS metric, count(*) AS value FROM comercio_lista_importacion i WHERE $__timeFilter(i.create_date) GROUP BY 1, 2 ORDER BY 1",
+       "format": "time_series",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 29,
+     "gridPos": {
+      "h": 7,
+      "w": 24,
+      "x": 0,
+      "y": 95
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 30,
+   "title": "Costos y precios",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 102
+   },
+   "panels": [
+    {
+     "type": "stat",
+     "title": "Cambios de costo de proveedores (7 días)",
+     "description": "Precios de proveedor que cambiaron (cada lista aplicada o carga a mano).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT count(*) FROM product_supplierinfo s JOIN LATERAL (SELECT a.price FROM product_supplierinfo a WHERE a.partner_id = s.partner_id AND a.product_tmpl_id = s.product_tmpl_id AND a.comercio_escala_de_id IS NULL AND a.id < s.id AND a.date_end IS NOT NULL ORDER BY a.id DESC LIMIT 1) ant ON true WHERE s.comercio_escala_de_id IS NULL AND s.date_start >= (date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba'))::date - 7 AND s.price != ant.price",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "colorMode": "value",
+      "graphMode": "none",
+      "textMode": "auto",
+      "justifyMode": "center"
+     },
+     "id": 31,
+     "gridPos": {
+      "h": 4,
+      "w": 6,
+      "x": 0,
+      "y": 103
+     }
+    },
+    {
+     "type": "stat",
+     "title": "Precios para cambiar",
+     "description": "«Precios a actualizar» en rojo o verde.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT count(*) FILTER (WHERE NOT (COALESCE(rc.comercio_diferencia_chica, 0) > 0 AND abs(COALESCE(pt.comercio_precio_variacion, 0)) <= rc.comercio_diferencia_chica)) FROM product_template pt, res_company rc WHERE rc.id = (SELECT min(id) FROM res_company) AND pt.active AND pt.comercio_precio_desactualizado",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "colorMode": "value",
+      "graphMode": "none",
+      "textMode": "auto",
+      "justifyMode": "center"
+     },
+     "id": 32,
+     "gridPos": {
+      "h": 4,
+      "w": 6,
+      "x": 6,
+      "y": 103
+     }
+    },
+    {
+     "type": "stat",
+     "title": "Diferencias chicas (ocultas)",
+     "description": "Por debajo del porcentaje de «Diferencia chica»: no vale la pena cambiarlos.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT count(*) FILTER (WHERE COALESCE(rc.comercio_diferencia_chica, 0) > 0 AND abs(COALESCE(pt.comercio_precio_variacion, 0)) <= rc.comercio_diferencia_chica) FROM product_template pt, res_company rc WHERE rc.id = (SELECT min(id) FROM res_company) AND pt.active AND pt.comercio_precio_desactualizado",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "colorMode": "value",
+      "graphMode": "none",
+      "textMode": "auto",
+      "justifyMode": "center"
+     },
+     "id": 33,
+     "gridPos": {
+      "h": 4,
+      "w": 6,
+      "x": 12,
+      "y": 103
+     }
+    },
+    {
+     "type": "stat",
+     "title": "Etiquetas para reimprimir",
+     "description": "",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT count(*) FROM product_template pt WHERE pt.active AND pt.comercio_etiqueta_pendiente",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "colorMode": "value",
+      "graphMode": "none",
+      "textMode": "auto",
+      "justifyMode": "center"
+     },
+     "id": 34,
+     "gridPos": {
+      "h": 4,
+      "w": 6,
+      "x": 18,
+      "y": 103
+     }
+    },
+    {
+     "type": "table",
+     "title": "Cambios de costo de la semana",
+     "description": "Precio del proveedor (por su unidad de compra) contra el anterior del mismo proveedor. Ordenados por el cambio más grande.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT s.date_start AS \"Desde\", pr.name AS \"Proveedor\", COALESCE(s.product_code || ' · ', '') || COALESCE(pt.name->>'es_AR', pt.name->>'en_US') AS \"Producto\", ant.price AS \"Antes\", s.price AS \"Ahora\", round(100 * (s.price - ant.price) / NULLIF(ant.price, 0), 1) AS \"Cambio %\" FROM product_supplierinfo s JOIN res_partner pr ON pr.id = s.partner_id JOIN product_template pt ON pt.id = s.product_tmpl_id JOIN LATERAL (SELECT a.price FROM product_supplierinfo a WHERE a.partner_id = s.partner_id AND a.product_tmpl_id = s.product_tmpl_id AND a.comercio_escala_de_id IS NULL AND a.id < s.id AND a.date_end IS NOT NULL ORDER BY a.id DESC LIMIT 1) ant ON true WHERE s.comercio_escala_de_id IS NULL AND s.date_start >= (date_trunc('day', now() AT TIME ZONE 'America/Argentina/Cordoba'))::date - 7 AND s.price != ant.price ORDER BY abs(s.price - ant.price) / NULLIF(ant.price, 0) DESC NULLS LAST LIMIT 100",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 2,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 35,
+     "gridPos": {
+      "h": 10,
+      "w": 24,
+      "x": 0,
+      "y": 107
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 36,
+   "title": "Actividad por usuario",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 117
+   },
+   "panels": [
+    {
+     "type": "table",
+     "title": "Qué hizo cada usuario (período elegido)",
+     "description": "Usuarios de Odoo (administración, compras, depósito). Los cajeros y puestos son empleados: van en la tabla de al lado.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(up.name, u.login) AS \"Usuario\", x.que AS \"Qué\", count(*) AS \"Cantidad\" FROM ( SELECT po.create_uid AS uid, 'Órdenes de compra confirmadas' AS que FROM purchase_order po WHERE po.state IN ('purchase', 'done') AND $__timeFilter(po.date_approve) UNION ALL SELECT m.create_uid, CASE WHEN j.comercio_sin_factura THEN 'Compras sin factura cargadas' ELSE 'Facturas de proveedor cargadas' END FROM account_move m JOIN account_journal j ON j.id = m.journal_id WHERE m.move_type IN ('in_invoice', 'in_refund') AND $__timeFilter(m.create_date) UNION ALL SELECT p.write_uid, 'Recepciones validadas' FROM stock_picking p JOIN stock_picking_type pt ON pt.id = p.picking_type_id WHERE pt.code = 'incoming' AND p.state = 'done' AND $__timeFilter(p.date_done) UNION ALL SELECT i.create_uid, 'Listas de proveedores importadas' FROM comercio_lista_importacion i WHERE $__timeFilter(i.create_date) UNION ALL SELECT a.create_uid, 'Ajustes de inventario' FROM stock_move a JOIN stock_location o ON o.id = a.location_id JOIN stock_location d ON d.id = a.location_dest_id WHERE a.state = 'done' AND 'inventory' IN (o.usage, d.usage) AND $__timeFilter(a.date) ) x JOIN res_users u ON u.id = x.uid LEFT JOIN res_partner up ON up.id = u.partner_id GROUP BY 1, 2 ORDER BY 1, 3 DESC",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 37,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 0,
+      "y": 118
+     }
+    },
+    {
+     "type": "table",
+     "title": "Pedidos por empleado del puesto (período elegido)",
+     "description": "Empleado con PIN que armó el pedido (pos_hr).",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT COALESCE(o.cashier, '(sin empleado)') AS \"Empleado\", COALESCE(c.name->>'es_AR', c.name->>'en_US') AS \"Puesto\", count(*) AS \"Pedidos\", sum(o.amount_total) AS \"Importe\" FROM pos_order o JOIN pos_config c ON c.id = COALESCE(substring(o.pos_reference from '^[0-9]+-([0-9]+)-')::int, o.config_id) WHERE (o.comercio_en_caja OR o.state IN ('paid', 'done', 'invoiced')) AND $__timeFilter(o.date_order) GROUP BY 1, 2 ORDER BY 3 DESC",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 38,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 12,
+      "y": 118
+     }
+    }
+   ]
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "links": []
+}

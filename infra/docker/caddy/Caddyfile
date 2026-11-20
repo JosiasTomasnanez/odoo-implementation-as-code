@@ -1,0 +1,71 @@
+# Proxy HTTPS delante de Odoo en el servidor del local (ADR 0013).
+# Todo lo variable viene de variables de entorno (ver onprem.env.example):
+#   ODOO_HOSTS        nombre(s) con que los puestos entran, p. ej. odoo.ejemplo.internal
+#   CADDY_TLS_MODO    interna (CA propia de Caddy, por defecto) | dominio (Let's Encrypt DNS-01)
+#   ACME_EMAIL        correo para avisos de Let's Encrypt (solo modo dominio, opcional)
+#   CLOUDFLARE_API_TOKEN  token del DNS (solo modo dominio; va en un archivo de secretos)
+#   REMOTO_HOST, REMOTO_TUNEL_IP  nombre e IP de cloudflared (solo con ACCESO_REMOTO=1, ADR 0020:
+#                     compose.acceso-remoto.yml monta sitios/remoto.caddy)
+
+{
+	# La raíz de la CA interna se instala a mano en las PCs (docs/runbooks/https-servidor.md),
+	# no dentro del contenedor.
+	skip_install_trust
+	# IP real de quien entra por el túnel (ADR 0020): Caddy cree en Cf-Connecting-IP SOLO si el
+	# pedido viene de cloudflared (IP fija en la red «remoto»). Para los pedidos de la LAN todo
+	# sigue igual: la IP es la de la PC y esos encabezados se ignoran.
+	servers {
+		trusted_proxies static {$REMOTO_TUNEL_IP:172.31.251.10}/32
+		client_ip_headers Cf-Connecting-IP
+	}
+	# Nombre de la CA interna: así aparece la raíz en Windows («Comercio Ejemplo - AAAA ECC Root»).
+	pki {
+		ca local {
+			name "Comercio Ejemplo"
+		}
+	}
+}
+
+# Modo "interna": Caddy actúa de autoridad certificante propia. Raíz de ~10 años;
+# intermedia (7 días) y certificado del sitio (12 h) se renuevan solos, sin Internet.
+(tls-interna) {
+	tls internal
+}
+
+# Modo "dominio": certificado de Let's Encrypt validado por DNS-01 (el servidor no se
+# expone a Internet). Para otro proveedor DNS: cambiar el plugin en caddy/Dockerfile y
+# esta línea `dns` según la documentación del plugin (github.com/caddy-dns).
+(tls-dominio) {
+	tls {$ACME_EMAIL} {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+		# Comprobar la propagación del TXT con DNS públicos, no con el DNS local
+		# (que puede responder distinto por el split DNS).
+		resolvers 1.1.1.1 8.8.8.8
+	}
+}
+
+# Odoo no marca la cookie de sesión como Secure ni SameSite; la documentación de Odoo
+# lo resuelve en el proxy (proxy_cookie_flags session_id samesite=lax secure).
+(cookie-sesion) {
+	header_down Set-Cookie "^(session_id=.*)$" "$1; Secure; SameSite=Lax"
+}
+
+{$ODOO_HOSTS} {
+	import tls-{$CADDY_TLS_MODO:interna}
+
+	encode gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# Odoo con workers: /websocket va al proceso gevent (8072), el resto a 8069.
+	# Caddy ya reenvía Upgrade/Connection y X-Forwarded-For/Proto/Host (proxy_mode).
+	@websocket path /websocket /websocket/*
+	reverse_proxy @websocket {$ODOO_WEBSOCKET_UPSTREAM:odoo:8072}
+
+	reverse_proxy {$ODOO_HTTP_UPSTREAM:odoo:8069} {
+		import cookie-sesion
+	}
+}
+
+# Sitios opcionales: el nombre del túnel (remoto.caddy) lo monta compose.acceso-remoto.yml.
+# Sin ese archivo no se importa nada.
+import sitios/*.caddy

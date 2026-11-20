@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Buscar producto» (19/10): en nuestros productos y en la última lista de TODOS los
+         proveedores a la vez, sin abrir ninguna lista. Se agrega lo que no tenemos ahí mismo. -->
+    <record id="catalogo_busqueda_list" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.busqueda</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0" multi_edit="1" limit="80"
+                  default_order="registrado desc, sin_costo, costo"
+                  decoration-success="registrado" decoration-warning="estado == 'pendiente' and accion == 'posible duplicado'"
+                  decoration-muted="estado in ('ignorada',)">
+                <header>
+                    <!-- Un solo botón (02/11, pedido del cliente): pregunta si es un solo producto, uno
+                         por fila o el mismo que el parecido -->
+                    <button name="action_abrir_agregar" type="object" string="Agregar a nuestro catálogo"
+                            class="btn-primary"/>
+                </header>
+                <field name="importacion_vigente" column_invisible="True"/>
+                <field name="accion" column_invisible="True"/>
+                <field name="estado" column_invisible="True"/>
+                <!-- Sin columna «Lo tenemos» (27/10): lo que tenemos ya sale en verde -->
+                <field name="registrado" column_invisible="True"/>
+                <field name="partner_id" string="Proveedor" readonly="1"/>
+                <field name="codigo_proveedor" readonly="1"/>
+                <!-- La descripción entera a la vista (19/11, Daniel): lo secundario va «a pedido»
+                     (menú de columnas de la derecha) -->
+                <field name="descripcion" readonly="1" width="360px"/>
+                <field name="costo_manual" column_invisible="True"/>
+                <field name="costo" readonly="1" decoration-info="costo_manual"/>
+                <field name="costo_mayor" optional="hide" readonly="1" invisible="not costo_mayor"/>
+                <!-- A la vista: tocándolo se entra al producto (19/11, Daniel) -->
+                <field name="producto_id" readonly="1" optional="show"/>
+                <field name="detalle" string="Problema" readonly="1" optional="hide"
+                       invisible="accion != 'revisar'" decoration-warning="1"/>
+                <field name="categoria_mostrada_id" options="{'no_open': True}"
+                       readonly="not importacion_vigente or (not producto_id and (estado != 'pendiente' or accion not in ('nuevo', 'posible duplicado')))"/>
+                <field name="candidato_ids" widget="many2many_tags" optional="hide" readonly="1"
+                       invisible="accion != 'posible duplicado'"/>
+                <field name="producto_elegido_id" options="{'no_create': True}" optional="hide"
+                       readonly="estado != 'pendiente' or accion not in ('posible duplicado', 'nuevo') or not importacion_vigente"/>
+                <button name="action_aplicar" type="object" string="Agregar" icon="fa-plus-circle"
+                        class="btn-link" invisible="not importacion_vigente or not ((estado == 'pendiente' and accion == 'nuevo') or (producto_id and not registrado))"
+                        help="Crea el producto en la categoría elegida, con este proveedor y su costo (o vuelve a poner uno que se había quitado)."/>
+                <button name="action_es_el_mismo" type="object" string="Es el mismo" icon="fa-link"
+                        class="btn-link" invisible="estado != 'pendiente' or not importacion_vigente or not (accion == 'posible duplicado' or (accion == 'nuevo' and producto_elegido_id))"
+                        help="Ya lo tenemos (el de «Se parece a»): se le agrega este proveedor y su costo."/>
+                <button name="action_es_nuevo" type="object" string="Agregar como nuevo" icon="fa-plus"
+                        class="btn-link" invisible="estado != 'pendiente' or accion != 'posible duplicado' or not importacion_vigente"
+                        help="No es ninguno de los parecidos: se agrega a nuestro catálogo como producto nuevo."/>
+            </list>
+        </field>
+    </record>
+
+    <record id="catalogo_busqueda_search" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.busqueda.search</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="buscar" string="Producto"/>
+                <field name="partner_id" string="Proveedor"/>
+                <field name="codigo_proveedor" string="Código del proveedor"/>
+                <filter name="registrado" string="Lo tenemos" domain="[('registrado', '=', True)]"/>
+                <filter name="catalogo" string="No lo tenemos" domain="[('registrado', '=', False)]"/>
+                <group>
+                    <filter name="por_proveedor" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+                    <filter name="por_producto" string="Producto" context="{'group_by': 'producto_general'}"
+                            help="Cada producto, lo tengamos o no, con los proveedores que lo venden uno abajo del otro (junta por nuestro producto, el código de barras o la misma descripción)."/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_buscar_producto" model="ir.actions.act_window">
+        <field name="name">Buscar producto</field>
+        <field name="res_model">comercio.lista.importacion.linea</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="catalogo_busqueda_list"/>
+        <field name="search_view_id" ref="catalogo_busqueda_search"/>
+        <field name="domain">[('de_lista_vigente', '=', True), ('accion', '!=', 'baja')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Buscá un producto en todas las listas de los proveedores</p>
+            <p>Escribí palabras o medidas en cualquier orden (por ejemplo «fix 4x40») o un código.
+               Verde: ya lo tenemos. Para agregar uno que no tenemos: elegí la categoría y tocá
+               <b>Agregar</b>.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_buscar_producto" name="Buscar producto" parent="menu_raiz" sequence="0"
+              action="action_buscar_producto"/>
+</odoo>

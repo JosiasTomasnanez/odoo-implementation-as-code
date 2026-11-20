@@ -1,0 +1,68 @@
+---
+// Mi cuenta. Sin sesión: ingresar o crear cuenta (mail y contraseña, o Google). Con sesión: el
+// resumen de la cuenta (pedido en curso, pedidos, datos, contraseña). Con «modo» en la dirección se
+// muestra el ingreso aunque haya sesión: así se cambia la contraseña desde la cuenta.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import Ingreso from "../../components/Ingreso.astro";
+import { clienteActual } from "../../servidor/clientes";
+import { ESTADOS, enCurso } from "../../servidor/estados";
+import { recordarVuelta, rutaSegura } from "../../servidor/volver";
+Astro.response.headers.set("Cache-Control", "no-store");
+const cliente = await clienteActual(env.DB, Astro.request);
+const q = Astro.url.searchParams;
+const ingreso = !cliente || q.has("modo");
+// De dónde vino: para devolverlo ahí después de ingresar
+const vuelta = rutaSegura(q.get("v"));
+if (!cliente && vuelta) Astro.response.headers.append("Set-Cookie", recordarVuelta(vuelta));
+type P = { id: string; numero: number; token: string; estado: string };
+const pedidos = cliente && !ingreso ? (await env.DB.prepare(`SELECT id, numero, token, estado FROM pedidos
+    WHERE cliente_id = ? AND sitio = 'tienda' AND estado NOT IN ('pendiente_pago', 'vencido') ORDER BY creado DESC LIMIT 50`).bind(cliente.id).all<P>()).results : [];
+const curso = pedidos.filter((p) => enCurso(p.estado)).slice(0, 3);
+const nombre = cliente?.nombre?.trim().split(/\s+/)[0];
+const cant = pedidos.length === 0 ? "Todavía no hiciste pedidos" : pedidos.length === 1 ? "1 pedido" : `${pedidos.length >= 50 ? "Más de 50" : pedidos.length} pedidos`;
+---
+<Base titulo="Mi cuenta" actual="cuenta">
+  {ingreso ? (
+    <section class="sec">
+      <Ingreso titulo="Tu cuenta en Comercio Ejemplo" puntos={["Ves tus pedidos y cómo van", "Repetís lo de siempre en un toque", "Tus datos quedan guardados para la próxima compra"]} pie="Para comprar no hace falta una cuenta." />
+    </section>
+  ) : (
+    <section class="sec perfil">
+      <div class="perfil-enc">
+        <span class="avatar grande" aria-hidden="true">{(cliente!.nombre ?? cliente!.email).trim()[0].toUpperCase()}</span>
+        <div>
+          <h1 class="h-disp">{nombre ? `Hola, ${nombre}` : "Tu cuenta"}</h1>
+          <p>{cliente!.email}</p>
+        </div>
+      </div>
+      {curso.map((p) => (
+        <a class={p.estado === "listo" ? "perfil-pedido listo" : "perfil-pedido"} href={`/pedido/${p.id}?t=${p.token}`}>
+          <span class="pp-pre">Tu pedido W-{String(p.numero).padStart(4, "0")}</span>
+          <b>{ESTADOS[p.estado] ?? p.estado}</b>
+          <span class="pp-ver">Ver cómo va ›</span>
+        </a>
+      ))}
+      <nav class="perfil-ops" aria-label="Mi cuenta">
+        <a href="/cuenta/pedidos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 11H5.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span><b>Mis pedidos</b><small>{cant}{pedidos.length ? " · mirá cómo van o repetí uno" : ""}</small></span>
+        </a>
+        <a href="/cuenta/datos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+          <span><b>Mis datos</b><small>{cliente!.nombre ? `${cliente!.nombre}${cliente!.telefono ? ` · ${cliente!.telefono}` : " · falta el teléfono"}` : "Nombre y teléfono para tus compras"}</small></span>
+        </a>
+        <a href={`/cuenta?modo=olvide&m=${encodeURIComponent(cliente!.email)}`}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+          <span><b>Contraseña</b><small>Cambiala con un código que te mandamos al mail</small></span>
+        </a>
+        <a href="/ayuda/">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7"/><path d="M12 17h.01"/></svg>
+          <span><b>Ayuda</b><small>Cómo se compra, cambios y devoluciones</small></span>
+        </a>
+      </nav>
+      <form class="perfil-salir" method="post" action="/api/cuenta/salir"><button class="btn lineal" type="submit">Cerrar sesión</button></form>
+      <p class="perfil-baja"><a href="/legales/eliminar-cuenta/">Eliminar mi cuenta</a></p>
+    </section>
+  )}
+</Base>

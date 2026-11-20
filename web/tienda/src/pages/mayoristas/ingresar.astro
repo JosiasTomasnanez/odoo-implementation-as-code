@@ -1,0 +1,15 @@
+---
+// Sitio mayorista: ingresar o crear cuenta. Después, sin aprobación, el inicio pide los datos de
+// la empresa (razón social, CUIT, teléfono) y la cuenta queda pendiente hasta que se aprueba.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import Ingreso from "../../components/Ingreso.astro";
+import { clienteActual } from "../../servidor/clientes";
+Astro.response.headers.set("Cache-Control", "no-store");
+if (await clienteActual(env.DB, Astro.request)) return Astro.redirect("/", 303);
+---
+<Base titulo="Ingresar">
+  <section class="sec">
+    <Ingreso titulo="Clientes mayoristas" puntos={["Tu lista de precios, en pantalla o en Excel", "El pedido completo cargado de una vez", "Tus pedidos anteriores, para repetirlos"]} pie="Si todavía no tenés cuenta, creala y pedí el alta con los datos de tu empresa." />
+  </section>
+</Base>

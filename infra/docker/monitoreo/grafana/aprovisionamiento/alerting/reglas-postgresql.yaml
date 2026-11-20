@@ -1,0 +1,172 @@
+# Alertas de PostgreSQL (ADR 0028). Umbrales: monitoreo/umbrales.env (@UMBRAL_…@).
+# @MONITOREO_DB@ = la base de Odoo (lab o produccion), para no contar las bases de prueba de
+# restore-test.sh. Qué hacer con cada una: docs/runbooks/monitoreo.md.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: postgresql
+    folder: Alertas
+    interval: 1m
+    rules:
+      - uid: pg-conexiones
+        title: PostgreSQL con muchas conexiones
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '100 * sum(pg_stat_activity_count) / max(pg_settings_max_connections)'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_PG_CONEXIONES_PORCENTAJE@]}}]}}
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'PostgreSQL usa el {{ printf "%.0f" $values.A.Value }} % de las conexiones'
+          description: |-
+            Más del @UMBRAL_PG_CONEXIONES_PORCENTAJE@ % de max_connections desde hace 5 minutos. Si llega al 100 %, Odoo no puede abrir conexiones y falla.
+            Tablero «PostgreSQL» → «Conexiones por estado».
+
+      - uid: pg-transaccion-larga
+        title: Transacción larga en PostgreSQL
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'max(pg_stat_activity_max_tx_duration{datname="@MONITOREO_DB@", state=~"active|idle in transaction.*|fastpath function call"}) / 60'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_PG_TRANSACCION_MINUTOS@]}}]}}
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Una transacción lleva {{ printf "%.0f" $values.A.Value }} minutos abierta'
+          description: |-
+            Una consulta o transacción de la base lleva más de @UMBRAL_PG_TRANSACCION_MINUTOS@ minutos. Traba el vacuum y puede bloquear a otros.
+            Si coincide con el backup (03:00) o una importación grande, esperar. Si no: docs/runbooks/monitoreo.md («Transacción larga»).
+
+      - uid: pg-idle-en-transaccion
+        title: Conexión colgada en una transacción
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'max(pg_stat_activity_max_tx_duration{datname="@MONITOREO_DB@", state=~"idle in transaction.*"}) / 60'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_PG_IDLE_TRANSACCION_MINUTOS@]}}]}}
+        for: 1m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Una conexión lleva {{ printf "%.0f" $values.A.Value }} minutos «idle in transaction»'
+          description: |-
+            Alguien abrió una transacción y no la cierra hace más de @UMBRAL_PG_IDLE_TRANSACCION_MINUTOS@ minutos (un `odoo shell` olvidado, un script cortado). Bloquea el vacuum y puede trabar tablas.
+            docs/runbooks/monitoreo.md («Transacción larga»).
+
+      - uid: pg-deadlocks
+        title: Deadlocks en PostgreSQL
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'sum(increase(pg_stat_database_deadlocks{datname="@MONITOREO_DB@"}[10m]))'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [0.5]}}]}}
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: '{{ printf "%.0f" $values.A.Value }} deadlock(s) en 10 minutos'
+          description: |-
+            Dos operaciones se trabaron entre sí y PostgreSQL cortó una (el usuario vio un error y tiene que repetir). Uno suelto puede pasar; seguidos, revisar.
+            Log de Odoo a esa hora (buscar «deadlock detected»): qué pantalla o tarea programada lo provocó.
+
+      - uid: pg-cache-baja
+        title: PostgreSQL lee mucho del disco
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 3600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '(100 * sum(rate(pg_stat_database_blks_hit{datname="@MONITOREO_DB@"}[1h])) / (sum(rate(pg_stat_database_blks_hit{datname="@MONITOREO_DB@"}[1h])) + sum(rate(pg_stat_database_blks_read{datname="@MONITOREO_DB@"}[1h])))) and on () (sum(rate(pg_stat_database_blks_hit{datname="@MONITOREO_DB@"}[1h])) + sum(rate(pg_stat_database_blks_read{datname="@MONITOREO_DB@"}[1h])) > 500)'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: lt, params: [@UMBRAL_PG_CACHE_PORCENTAJE@]}}]}}
+        for: 30m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Solo el {{ printf "%.1f" $values.A.Value }} % de las lecturas sale de memoria'
+          description: |-
+            El cache hit ratio está por debajo del @UMBRAL_PG_CACHE_PORCENTAJE@ % hace 30 minutos (con movimiento): la base ya no entra en memoria o hay consultas que recorren tablas enteras.
+            Tablero «PostgreSQL» → «Caché y disco» y «Lecturas completas en tablas grandes». Puede hacer falta subir shared_buffers.
+
+      - uid: pg-temporales
+        title: PostgreSQL escribe muchos temporales
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 3600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'sum(increase(pg_stat_database_temp_bytes{datname="@MONITOREO_DB@"}[1h])) / 1048576'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_PG_TEMPORALES_MB_HORA@]}}]}}
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: '{{ printf "%.0f" $values.A.Value }} MB de archivos temporales en una hora'
+          description: |-
+            Consultas que no entran en work_mem ordenan o agrupan en disco (más de @UMBRAL_PG_TEMPORALES_MB_HORA@ MB en la última hora).
+            Tablero «PostgreSQL» → «Consultas lentas»: la que más tarda suele ser la culpable.
+
+      - uid: pg-xid-wraparound
+        title: Edad de transacciones alta (wraparound)
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '100 * max(pg_database_wraparound_age_datfrozenxid_seconds) / 2147483648'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_PG_XID_PORCENTAJE@]}}]}}
+        for: 1h
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: error}
+        annotations:
+          summary: 'Edad de XID al {{ printf "%.0f" $values.A.Value }} % del límite'
+          description: |-
+            El autovacuum no está «congelando» filas viejas. Al 100 % PostgreSQL se frena para no perder datos.
+            Muy raro en una base de este tamaño: revisar que autovacuum esté prendido y docs/runbooks/monitoreo.md («Wraparound»).
+
+      - uid: pg-sin-autovacuum
+        title: Tabla grande sin autovacuum
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '((time() - pg_stat_user_tables_last_autovacuum{datname="@MONITOREO_DB@"}) / 86400 > @UMBRAL_PG_VACUUM_DIAS@) and on (relname) (pg_stat_user_tables_table_size_bytes{datname="@MONITOREO_DB@"} > @UMBRAL_PG_VACUUM_TABLA_MB@ * 1048576) and on (relname) (pg_stat_user_tables_n_dead_tup{datname="@MONITOREO_DB@"} > @UMBRAL_PG_VACUUM_FILAS_MUERTAS@)'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [0]}}]}}
+        for: 1h
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'La tabla {{ $labels.relname }} no tiene autovacuum hace más de @UMBRAL_PG_VACUUM_DIAS@ días'
+          description: |-
+            {{ $labels.relname }} pasa los @UMBRAL_PG_VACUUM_TABLA_MB@ MB, tiene más de @UMBRAL_PG_VACUUM_FILAS_MUERTAS@ filas muertas y el autovacuum no corrió en @UMBRAL_PG_VACUUM_DIAS@ días: crece de más y se pone lenta.
+            Suele ser una transacción colgada (ver esas alertas). docs/runbooks/monitoreo.md («Autovacuum»).
+
+      - uid: pg-crecimiento
+        title: La base crece de golpe
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 86400, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'delta(pg_database_size_bytes{datname="@MONITOREO_DB@"}[24h]) / 1073741824'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_PG_CRECIMIENTO_GB_DIA@]}}]}}
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'La base creció {{ printf "%.1f" $values.A.Value }} GB en 24 horas'
+          description: |-
+            Más de @UMBRAL_PG_CRECIMIENTO_GB_DIA@ GB en un día no es normal para el local (una importación repetida, un error en bucle que llena mail_message, adjuntos).
+            Tablero «PostgreSQL» → «Tablas que más crecieron» (período: últimas 24 h).

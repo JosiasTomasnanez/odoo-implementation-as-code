@@ -1,0 +1,7 @@
+---
+import type { Vista } from "../servidor/consultas";
+const { p } = Astro.props as { p: Vista };
+---
+{p.consultar
+  ? <span class="stock consultar">Consultar disponibilidad</span>
+  : p.disponible ? <span class="stock">Hay en el local</span> : <span class="stock no">Sin stock por ahora</span>}

@@ -1,0 +1,15 @@
+# Tableros (ADR 0028): los JSON de grafana/tableros/ (los genera generar_tableros.py).
+# Se pueden mover y mirar en Grafana, pero los cambios se hacen en el repo.
+apiVersion: 1
+
+providers:
+  - name: tableros-ejemplo
+    orgId: 1
+    folder: Comercio Ejemplo
+    folderUid: casa-ejemplo
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    updateIntervalSeconds: 60
+    options:
+      path: /etc/grafana/tableros

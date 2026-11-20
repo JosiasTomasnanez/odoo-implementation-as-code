@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_tienda" model="ir.ui.view">
+        <field name="name">product.template.form.comercio.tienda</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <span name="purchase_option" position="after">
+                <span name="tienda_option" class="d-inline-flex">
+                    <field name="comercio_tienda_publicar" widget="boolean_checkbox" class="w-auto"/>
+                    <label for="comercio_tienda_publicar"/>
+                </span>
+                <span name="tienda_consultar_option" class="d-inline-flex" invisible="not comercio_tienda_publicar">
+                    <field name="comercio_tienda_consultar" widget="boolean_checkbox" class="w-auto"/>
+                    <label for="comercio_tienda_consultar"/>
+                </span>
+                <span name="tienda_nuevo_option" class="d-inline-flex align-items-center gap-1" invisible="not comercio_tienda_publicar">
+                    <label for="comercio_tienda_nuevo_hasta"/>
+                    <field name="comercio_tienda_nuevo_hasta" class="w-auto"/>
+                </span>
+            </span>
+        </field>
+    </record>
+
+    <record id="product_template_search_tienda" model="ir.ui.view">
+        <field name="name">product.template.search.comercio.tienda</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <filter name="filter_to_sell" position="after">
+                <filter string="En la tienda online" name="comercio_tienda" domain="[('comercio_tienda_publicar', '=', True)]"/>
+            </filter>
+        </field>
+    </record>
+
+    <record id="product_category_form_tienda" model="ir.ui.view">
+        <field name="name">product.category.form.comercio.tienda</field>
+        <field name="model">product.category</field>
+        <field name="inherit_id" ref="product.product_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Tienda online">
+                    <field name="comercio_tienda_margen_stock"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- De a muchos, desde Acciones de la lista de productos -->
+    <record id="accion_tienda_publicar" model="ir.actions.server">
+        <field name="name">Publicar en la tienda</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">list,kanban</field>
+        <field name="state">code</field>
+        <field name="code">records.action_comercio_tienda_publicar()</field>
+    </record>
+    <record id="accion_tienda_quitar" model="ir.actions.server">
+        <field name="name">Quitar de la tienda</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">list,kanban</field>
+        <field name="state">code</field>
+        <field name="code">records.action_comercio_tienda_quitar()</field>
+    </record>
+    <record id="accion_tienda_consultar" model="ir.actions.server">
+        <field name="name">Tienda: consultar disponibilidad</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">list,kanban</field>
+        <field name="state">code</field>
+        <field name="code">records.action_comercio_tienda_consultar()</field>
+    </record>
+</odoo>

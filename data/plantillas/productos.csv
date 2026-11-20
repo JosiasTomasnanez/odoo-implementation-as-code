@@ -1,0 +1,8 @@
+﻿proveedor;codigo_proveedor;descripcion_proveedor;codigo_barras;nombre;categoria;unidad;costo;cantidad_minima;plazo_dias;pesable;precio_venta
+[EJ] Distribuidora Norte SA;A-100;ALIM GATO CASTRADO X 7.5KG;7790000001017;[EJ] Alimento gato castrado 7,5 kg;[EJ] Mascotas / [EJ] Alimento;u;25000,00;1;3;no;
+[EJ] Distribuidora Norte SA;A-101;CORREA NYLON 1.5M ROJA;;[EJ] Correa nylon 1,5 m roja;[EJ] Mascotas;u;3200,50;6;3;no;
+[EJ] Mayorista Sur SRL;Z-9;Alimento Gato Castrado 7,5kg;7790000001017;;;u;24500;10;7;;
+[EJ] Mayorista Sur SRL;Z-10;Comedero acero chico;2000005550010;[EJ] Comedero acero chico;[EJ] Mascotas;u;1800;;;;
+[EJ] Bulonera Oeste;B-1;TORNILLO T1 AGUJA X KG;;[EJ] Tornillo T1 aguja (por kg);[EJ] Ferretería;kg;9500;1;2;si;
+[EJ] Bulonera Oeste;B-2;ARANDELA PLANA 1/4;7,79E+12;[EJ] Arandela plana 1/4;[EJ] Ferretería;u;35;100;2;;
+[EJ] Bulonera Oeste;B-3;CINTA METRICA 5M;7790000002021;[EJ] Cinta métrica 5 m;[EJ] Ferretería;u;4100;;;;8900

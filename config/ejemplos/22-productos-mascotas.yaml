@@ -1,0 +1,75 @@
+# Productos FICTICIOS del proveedor de 21-proveedor-mascotas.yaml, con su categoría del
+# punto de venta (15-categorias-pos.yaml). Los dos últimos, SIN categoría del POS a propósito
+# (para probar «Categorizar con IA», módulo comercio_pos_categorias).
+# Sin costo cargado: escribirlo lo marcaría «Costo manual»; la tarea diaria del catálogo lo
+# toma de los precios del proveedor.
+model: product.template
+records:
+  - id: ej_prod_perro_cachorro
+    values:
+      name: "[EJ] Alimento perro cachorro 3 kg"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      list_price: 14500
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_alimento_perro]}
+  - id: ej_prod_perro_senior
+    values:
+      name: "[EJ] Balanceado senior razas pequeñas 10 kg"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      list_price: 39800
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_alimento_perro]}
+  - id: ej_prod_gato_adulto
+    values:
+      name: "[EJ] Alimento gato adulto 1 kg"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      list_price: 7900
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_alimento_gato]}
+  - id: ej_prod_gato_pouch
+    values:
+      name: "[EJ] Pouch gato salmón 85 g"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      list_price: 1350
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_alimento_gato]}
+  - id: ej_prod_pretal
+    values:
+      name: "[EJ] Pretal arnés perro mediano"
+      type: consu
+      categ_id: {ref: ej_cat_mascotas}
+      list_price: 4200
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_accesorios]}
+  - id: ej_prod_cama
+    values:
+      name: "[EJ] Cama acolchada perro 60 cm"
+      type: consu
+      categ_id: {ref: ej_cat_mascotas}
+      list_price: 21900
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_accesorios]}
+  # Sin categoría del POS (para «Categorizar con IA»): un alimento de gato y un juguete
+  - id: ej_prod_gato_castrado_sin_cat
+    values:
+      name: "[EJ] Croquetas felinas castrados 3 kg"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      list_price: 18700
+      available_in_pos: true
+  - id: ej_prod_pelota_sin_cat
+    values:
+      name: "[EJ] Pelota de goma con sonido"
+      type: consu
+      categ_id: {ref: ej_cat_mascotas}
+      list_price: 2600
+      available_in_pos: true

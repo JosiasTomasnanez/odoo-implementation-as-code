@@ -1,0 +1,8 @@
+# Apps de la puesta en marcha (adopción gradual: solo lo mínimo para vender y cobrar).
+# La localización argentina (l10n_ar, l10n_ar_pos) la instala Odoo al crear la base con
+# país Argentina; no se declara acá.
+modules:
+  - point_of_sale   # puestos y cajas (P-008)
+  - pos_hr          # quien atiende entra con su PIN de empleado, sin ser usuario (P-005)
+  - stock           # inventario: primera etapa = stock, compras e inventario (ADR 0017, 0022)
+  - purchase        # compras a proveedores y recepción que suma stock (ADR 0017)

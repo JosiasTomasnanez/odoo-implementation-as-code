@@ -1,0 +1,13 @@
+// Botones de categorías del punto de venta más chicos (20/11, pedido del usuario: con muchas
+// categorías ocupaban media pantalla). Odoo los hace de 4rem de alto y el bloque llega a 16,5rem.
+.pos .category-list {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    max-height: 10.1rem; // tres filas (pedido del 20/11); si hay más, se desplaza dentro del bloque
+    gap: .35rem !important;
+
+    .category-button {
+        height: 2.75rem !important;
+        font-size: .85rem;
+        line-height: 1.1;
+    }
+}

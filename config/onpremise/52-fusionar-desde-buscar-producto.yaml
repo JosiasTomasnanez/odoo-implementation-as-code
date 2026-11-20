@@ -1,0 +1,15 @@
+# «Fusionar productos» también en el menú Acciones de «Buscar producto» y de las filas de
+# las listas: fusiona los productos nuestros de las filas marcadas (las filas que no son
+# nuestras se ignoran). Abre la misma pantalla de Odoo que «Fusionar» en Productos
+# (50-fusionar-productos.yaml); solo administradores.
+model: ir.actions.server
+records:
+  - id: fusionar_productos_desde_listas
+    values:
+      name: Fusionar productos
+      model_id: {ref: comercio_catalogo.model_comercio_lista_importacion_linea}
+      binding_model_id: {ref: comercio_catalogo.model_comercio_lista_importacion_linea}
+      binding_view_types: list
+      state: code
+      code: "action = env['data_merge.record'].action_deduplicates(records.producto_id)"
+      group_ids: {refs: [base.group_system]}

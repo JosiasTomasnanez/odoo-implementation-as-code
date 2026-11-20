@@ -1,0 +1,8 @@
+# ADR 0027. Red de seguridad: si uno de los servicios odoo-* termina con error sin haber
+# avisado él mismo (p. ej. el script no llegó a arrancar), avisa igual.
+[Unit]
+Description=Aviso de falla de %i
+
+[Service]
+Type=oneshot
+ExecStart=/opt/odoo-implementation/infra/servidor/avisar.sh --falla-servicio %i

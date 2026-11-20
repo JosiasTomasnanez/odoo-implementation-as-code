@@ -1,0 +1,15 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "../layouts/Base.astro";
+import Listado from "../components/Listado.astro";
+import { listadoOfertas, opcionesDe } from "../servidor/consultas";
+const r = await listadoOfertas(env.DB, opcionesDe(Astro.url));
+Astro.response.headers.set("Cache-Control", "private, max-age=60");
+---
+<Base titulo="Ofertas" actual="ofertas">
+  <section class="sec">
+    <div class="miga"><a href="/">Inicio</a> / Ofertas</div>
+    <div class="sec-tit"><h1 class="h-disp">Ofertas de la semana</h1></div>
+    <Listado r={r} conOfertas={false} vacio="No hay ofertas con ese filtro." />
+  </section>
+</Base>

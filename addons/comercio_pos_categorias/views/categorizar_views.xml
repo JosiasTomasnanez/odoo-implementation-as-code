@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="categorizar_form" model="ir.ui.view">
+        <field name="name">comercio.pos.categorizar.form</field>
+        <field name="model">comercio.pos.categorizar</field>
+        <field name="arch" type="xml">
+            <form string="Categorizar productos del punto de venta">
+                <field name="modo" invisible="1"/>
+                <!-- A mano: se eligen las categorías para todos los productos -->
+                <group invisible="modo != 'manual'">
+                    <field name="producto_ids" widget="many2many_tags" readonly="1"/>
+                    <field name="categoria_ids" widget="many2many_tags" options="{'no_create': True}"
+                           placeholder="Botones del punto de venta..."/>
+                    <field name="reemplazar"/>
+                </group>
+                <!-- Con IA: una sugerencia por producto, se revisa antes de aplicar -->
+                <div invisible="modo != 'ia'">
+                    <p class="text-muted" style="white-space: pre-line"><field name="resumen" nolabel="1"/></p>
+                    <field name="linea_ids" nolabel="1">
+                        <list editable="bottom" create="0" delete="0"
+                              decoration-muted="not aplicar" decoration-warning="aplicar and confianza &lt; 0.8">
+                            <field name="aplicar" width="70px"/>
+                            <field name="producto_id"/>
+                            <field name="rubro" optional="show"/>
+                            <field name="categoria_id" options="{'no_create': True}"/>
+                            <field name="confianza" optional="show"/>
+                            <field name="motivo" optional="show"/>
+                        </list>
+                    </field>
+                </div>
+                <footer>
+                    <button name="action_aplicar" type="object" string="Aplicar" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- En el menú Acciones de Productos (también en Punto de venta → Productos), como «Fusionar» -->
+    <record id="action_categorizar_ia" model="ir.actions.server">
+        <field name="name">Categorizar con IA</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">list,kanban</field>
+        <field name="group_ids" eval="[(4, ref('point_of_sale.group_pos_manager'))]"/>
+        <field name="state">code</field>
+        <field name="code">action = env['comercio.pos.categorizar'].abrir_con_ia(records)</field>
+    </record>
+
+    <record id="action_categorizar_manual" model="ir.actions.server">
+        <field name="name">Categorizar a mano</field>
+        <field name="model_id" ref="product.model_product_template"/>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_view_types">list,kanban</field>
+        <field name="group_ids" eval="[(4, ref('point_of_sale.group_pos_manager'))]"/>
+        <field name="state">code</field>
+        <field name="code">action = env['comercio.pos.categorizar'].abrir_a_mano(records)</field>
+    </record>
+</odoo>

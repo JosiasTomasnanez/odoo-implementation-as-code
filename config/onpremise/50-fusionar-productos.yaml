@@ -1,0 +1,16 @@
+# «Fusionar» en el menú Acciones de Productos (app Limpieza de datos, Enterprise). Es lo
+# mismo que crea el botón «Habilitar fusión» del modelo en Odoo; acá queda declarado para
+# que el servidor lo tenga. Solo para administradores (regla de Odoo: los modelos de
+# fusión son de base.group_system). Uso: docs/runbooks/listas-proveedores.md.
+model: ir.actions.server
+match: [binding_model_id, code]   # adopta el que ya creó el botón, si existe
+records:
+  - id: fusionar_productos
+    values:
+      name: Fusionar
+      model_id: {ref: product.model_product_template}
+      binding_model_id: {ref: product.model_product_template}
+      binding_view_types: list
+      state: code
+      code: "action = env['data_merge.record'].action_deduplicates(records)"
+      group_ids: {refs: [base.group_system]}

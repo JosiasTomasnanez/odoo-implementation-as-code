@@ -1,0 +1,23 @@
+---
+// Marco de las pantallas de ingreso (tienda, mayoristas y administración): a un lado, en azul noche,
+// para qué sirve entrar; al otro, el formulario. En el celular el lado queda arriba, compacto.
+const { titulo, puntos = [], pie } = Astro.props as { titulo: string; puntos?: string[]; pie?: string };
+---
+<div class="ingreso-marco">
+  <aside class="ingreso-lado">
+    <h2>{titulo}</h2>
+    {puntos.length > 0 && <ul>{puntos.map((t) => <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="10"/><path d="M5.5 10.4l3 3 6-6.6" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>{t}</span></li>)}</ul>}
+    {pie && <p>{pie}</p>}
+  </aside>
+  <slot />
+</div>
+<script>
+  // «Repetir contraseña»: avisa en el momento si no coincide (el servidor lo vuelve a revisar).
+  for (const r of document.querySelectorAll<HTMLInputElement>('input[name="clave2"]')) {
+    const c = r.form?.querySelector<HTMLInputElement>('input[name="clave"]');
+    if (!c) continue;
+    const ver = () => r.setCustomValidity(r.value && r.value !== c.value ? "Las dos contraseñas no coinciden" : "");
+    r.addEventListener("input", ver);
+    c.addEventListener("input", ver);
+  }
+</script>

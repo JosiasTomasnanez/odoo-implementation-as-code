@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Códigos de fábrica»: escanear en la fila (el lector manda Enter y pasa a la siguiente) -->
+    <record id="product_template_list_codigos_fabrica" model="ir.ui.view">
+        <field name="name">product.template.list.comercio.codigos.fabrica</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Códigos de fábrica" editable="bottom" create="0" delete="0">
+                <header>
+                    <button name="action_comercio_sin_codigo_fabrica" type="object" string="No tienen código de fábrica"/>
+                    <button name="action_comercio_con_codigo_fabrica" type="object" string="Volver a la lista"/>
+                </header>
+                <field name="name" readonly="1"/>
+                <field name="default_code" readonly="1" optional="show"/>
+                <field name="categ_id" readonly="1" optional="show"/>
+                <field name="barcode" string="Código actual" readonly="1"/>
+                <field name="comercio_codigo_lista" string="La lista decía" readonly="1" optional="show"/>
+                <field name="comercio_codigo_fabrica" placeholder="Escanear acá"/>
+                <field name="comercio_codigos_alternativos" optional="hide"/>
+                <field name="comercio_sin_codigo_fabrica" column_invisible="1"/>
+                <button name="action_comercio_sin_codigo_fabrica" type="object" string="No tiene"
+                        icon="fa-ban" invisible="comercio_sin_codigo_fabrica"
+                        title="No trae código de fábrica: sale de la lista"/>
+                <button name="action_comercio_con_codigo_fabrica" type="object" string="Volver"
+                        icon="fa-undo" invisible="not comercio_sin_codigo_fabrica"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="product_template_search_codigos_fabrica" model="ir.ui.view">
+        <field name="name">product.template.search.comercio.codigos.fabrica</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Producto" filter_domain="['|', '|', ('name', 'ilike', self), ('default_code', 'ilike', self), ('barcode', 'ilike', self)]"/>
+                <field name="categ_id"/>
+                <filter name="pendientes" string="Con código propio (20…)"
+                        domain="[('barcode', '=like', '20%'), ('comercio_sin_codigo_fabrica', '=', False)]"/>
+                <filter name="sin_fabrica" string="Marcados sin código de fábrica"
+                        domain="[('comercio_sin_codigo_fabrica', '=', True)]"/>
+                <group>
+                    <filter name="por_categoria" string="Categoría" context="{'group_by': 'categ_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_codigos_fabrica" model="ir.actions.act_window">
+        <field name="name">Códigos de fábrica</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="product_template_list_codigos_fabrica"/>
+        <field name="search_view_id" ref="product_template_search_codigos_fabrica"/>
+        <field name="domain">[("type", "=", "consu")]</field>
+        <field name="context">{"search_default_pendientes": 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Ningún producto tiene el código propio 20… pendiente.</p>
+            <p>Acá están los productos con el código propio (20…). Clic en «Escanear acá» de la primera fila y
+               escanear el envase: el lector pasa solo a la fila siguiente. El 20… queda como alternativo,
+               así la etiqueta ya pegada sigue sirviendo en la caja. Si el producto no trae código: «No tiene».</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_codigos_fabrica" name="Códigos de fábrica" parent="comercio_catalogo.menu_seccion_listas"
+              sequence="5" action="action_codigos_fabrica"/>
+</odoo>

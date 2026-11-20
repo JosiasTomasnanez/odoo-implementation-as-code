@@ -1,0 +1,10 @@
+# Proveedor FICTICIO de mascotas. Sus productos están en 22-productos-mascotas.yaml (casi
+# todos ya con su categoría del punto de venta) y sus precios en
+# 23-precios-proveedor-mascotas.yaml. Nada es un producto, precio ni proveedor real.
+model: res.partner
+match: [name]
+records:
+  - id: ej_prov_mascotas
+    values:
+      name: "[EJ] Distribuidora Mascotas Sur"
+      supplier_rank: 1

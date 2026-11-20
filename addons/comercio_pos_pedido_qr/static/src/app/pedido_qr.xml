@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="comercio_pos_pedido_qr.ActionpadWidget" t-inherit="point_of_sale.ActionpadWidget" t-inherit-mode="extension">
+        <!-- Puesto: «Imprimir pedido» reemplaza a «Pago». -->
+        <xpath expr="//div[hasclass('validation')]//button[hasclass('pay-order-button')]" position="attributes">
+            <attribute name="t-if">!this.pos.config.comercio_arma_pedidos</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('validation')]//button[hasclass('pay-order-button')]" position="before">
+            <button t-if="this.pos.config.comercio_arma_pedidos"
+                class="comercio-imprimir-pedido button btn btn-primary btn-lg py-3 d-flex align-items-center justify-content-center flex-fill"
+                t-on-click="() => this.pos.comercioImprimirPedido()">
+                <i class="oi me-2" data-icon="print"/>Imprimir pedido
+            </button>
+        </xpath>
+        <!-- Caja con el carrito vacío: abrir un pedido tipeando el número (si falla el lector). -->
+        <xpath expr="//div[hasclass('actionpad')]" position="inside">
+            <div t-if="!this.pos.config.comercio_arma_pedidos and this.props.order?.isEmpty() and this.pos.router.currentScreen() === 'ProductScreen'"
+                class="d-flex">
+                <button class="comercio-abrir-pedido btn btn-secondary btn-lg py-3 flex-fill"
+                    t-on-click="() => this.pos.comercioPedirNumeroPedido()">
+                    <i class="oi me-2" data-icon="qr_code_scanner"/>Abrir pedido (escanear o tipear número)
+                </button>
+            </div>
+        </xpath>
+    </t>
+
+    <!-- Pantallas chicas (tablet, celular): el botón «Pagar» de abajo también se reemplaza. -->
+    <t t-name="comercio_pos_pedido_qr.ProductScreen" t-inherit="point_of_sale.ProductScreen" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('pay-button')]" position="attributes">
+            <attribute name="t-if">!this.pos.scanning and !this.pos.config.comercio_arma_pedidos</attribute>
+        </xpath>
+        <xpath expr="//button[hasclass('pay-button')]" position="before">
+            <button t-if="!this.pos.scanning and this.pos.config.comercio_arma_pedidos"
+                class="btn-switchpane comercio-imprimir-pedido btn btn-lg btn-primary flex-grow-1"
+                t-att-disabled="this.currentOrder.isEmpty()"
+                t-on-click="() => this.pos.comercioImprimirPedido()">
+                <span class="d-block">Imprimir pedido</span>
+                <span t-out="this.total"/>
+            </button>
+        </xpath>
+    </t>
+</templates>

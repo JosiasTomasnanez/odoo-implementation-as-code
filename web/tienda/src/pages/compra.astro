@@ -1,0 +1,16 @@
+---
+// Pagar (tienda y sitio mayorista: el sitio mayorista la sirve tal cual, ver servidor/sitio.ts).
+import { env } from "cloudflare:workers";
+import Base from "../layouts/Base.astro";
+import Compra from "../components/Compra.astro";
+import { clienteActual } from "../servidor/clientes";
+Astro.response.headers.set("Cache-Control", "no-store");
+const cliente = await clienteActual(env.DB, Astro.request);
+if (Astro.locals.sitio === "mayorista" && !(cliente?.mayorista === "aprobado" && cliente.lista_id)) return Astro.redirect("/", 303);
+const sitekey = env.TURNSTILE_SITEKEY ?? "";
+---
+<Base titulo="Datos y pago" actual="carrito" pestanas={false}>
+  <section class="sec">
+    <Compra cliente={cliente} sitekey={sitekey} />
+  </section>
+</Base>

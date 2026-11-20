@@ -1,0 +1,8 @@
+---
+// Encabezado de las páginas de la cuenta: vuelve a «Mi cuenta» y dice dónde se está.
+const { titulo } = Astro.props as { titulo: string };
+---
+<div class="cuenta-enc">
+  <a class="cuenta-atras" href="/cuenta/">‹ Mi cuenta</a>
+  <h1 class="h-disp">{titulo}</h1>
+</div>

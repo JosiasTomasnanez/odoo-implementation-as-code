@@ -1,0 +1,14 @@
+# Tienda online (ADR 0031/0033, módulo comercio_tienda).
+# Lista «Tienda online»: la que ve todo el mundo en la tienda. Sin reglas = el precio de venta
+# del local; las ofertas online se cargan como reglas con fecha de inicio y fin.
+# noupdate: las reglas (ofertas) las carga el negocio en Odoo, no se pisan.
+model: product.pricelist
+match: [name]
+records:
+  - id: lista_tienda_online
+    noupdate: true
+    values:
+      name: Tienda online
+      currency_id: {ref: base.ARS}
+      comercio_tienda_sincronizar: true
+      comercio_tienda_publica: true

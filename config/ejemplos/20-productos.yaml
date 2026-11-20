@@ -1,0 +1,55 @@
+# Productos FICTICIOS que ilustran casos distintos de la realidad multi-rubro.
+# Ninguno representa un producto, precio ni código real del comercio.
+model: product.template
+records:
+  # Unidad cerrada con código de barras de fabricante (EAN ficticio).
+  - id: ej_prod_alimento_15kg
+    values:
+      name: "[EJ] Alimento perro adulto 15 kg"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      default_code: EJ-0001
+      barcode: "7790000000017"
+      list_price: 45000
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_alimento_perro]}   # botón del POS (15-categorias-pos.yaml)
+      uom_id: {ref: uom.product_uom_unit}
+
+  # Venta a granel por peso: candidato a balanza (ver docs/areas/balanzas-lectores.md).
+  - id: ej_prod_alimento_granel
+    values:
+      name: "[EJ] Alimento perro suelto (por kg)"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_mascotas_alimento}
+      default_code: EJ-0002
+      to_weight: true   # pesable en el POS (balanza)
+      barcode: "2000000000022"   # prefijo 2: rango interno
+      list_price: 3500
+      available_in_pos: true
+      pos_categ_ids: {refs: [ej_pos_cat_alimento_perro]}   # botón del POS (15-categorias-pos.yaml)
+      uom_id: {ref: uom.product_uom_kgm}
+
+  # Ferretería vendida por metro.
+  - id: ej_prod_cadena
+    values:
+      name: "[EJ] Cadena galvanizada 4 mm (por metro)"
+      type: consu
+      is_storable: true
+      categ_id: {ref: ej_cat_ferreteria}
+      default_code: EJ-0003
+      list_price: 2100
+      available_in_pos: true
+      uom_id: {ref: uom.product_uom_meter}
+
+  # Servicio veterinario: no maneja stock.
+  - id: ej_prod_consulta
+    noupdate: true             # el precio se podría ajustar desde Odoo sin que se pise
+    values:
+      name: "[EJ] Consulta veterinaria"
+      type: service
+      categ_id: {ref: ej_cat_veterinaria}
+      default_code: EJ-S001
+      list_price: 15000
+      available_in_pos: true

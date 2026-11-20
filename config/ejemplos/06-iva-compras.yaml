@@ -1,0 +1,68 @@
+# Compras SIN IVA incluido (23/10). El ajuste «precios con IVA incluido» de 05-ajustes.yaml es
+# para los precios de VENTA (P-030), pero Odoo 20 lo aplica a todos los impuestos, también a los
+# de compra: la factura A de un proveedor (precios sin IVA) quedaba con el neto achicado
+# (FC: $ 720.926 en lugar de $ 872.321). Cada IVA de compra va «sin incluir», como en la
+# factura del proveedor. A confirmar con el contador junto con P-030 (P-034).
+# Las percepciones sufridas (IIBB de cada provincia, IVA, Ganancias) también: «incluidas», la línea
+# que lleva la percepción en la factura restaba su importe del neto (comercio_factura_proveedor).
+model: account.tax
+match: [name, type_tax_use]
+records:
+  - id: iva_compras_21
+    values: {name: "IVA 21%", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: iva_compras_10_5
+    values: {name: "IVA 10.5%", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: iva_compras_27
+    values: {name: "IVA 27%", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_caba
+    values: {name: "P. IIBB CABA", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_pba
+    values: {name: "P. IIBB PBA", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_c
+    values: {name: "P. IIBB C", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_cba
+    values: {name: "P. IIBB CBA", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_cts
+    values: {name: "P. IIBB CTS", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_er
+    values: {name: "P. IIBB ER", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_j
+    values: {name: "P. IIBB J", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_mza
+    values: {name: "P. IIBB MZA", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_lr
+    values: {name: "P. IIBB LR", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_s
+    values: {name: "P. IIBB S", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_sj
+    values: {name: "P. IIBB SJ", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_sl
+    values: {name: "P. IIBB SL", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_sf
+    values: {name: "P. IIBB SF", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_se
+    values: {name: "P. IIBB SE", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_t
+    values: {name: "P. IIBB T", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_cho
+    values: {name: "P. IIBB CHO", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_cht
+    values: {name: "P. IIBB CHT", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_f
+    values: {name: "P. IIBB F", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_ms
+    values: {name: "P. IIBB MS", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_n
+    values: {name: "P. IIBB N", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_lp
+    values: {name: "P. IIBB LP", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_rn
+    values: {name: "P. IIBB RN", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_sc
+    values: {name: "P. IIBB SC", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_p_iibb_tais
+    values: {name: "P. IIBB TAIS", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_perc_gananc
+    values: {name: "Perc Gananc", type_tax_use: purchase, price_include_override: tax_excluded}
+  - id: percepcion_perc_iva
+    values: {name: "Perc IVA", type_tax_use: purchase, price_include_override: tax_excluded}

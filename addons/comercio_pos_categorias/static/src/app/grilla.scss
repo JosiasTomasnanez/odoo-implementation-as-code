@@ -1,0 +1,16 @@
+// Tarjetas de producto compactas (20/11): sin foto (la mayoría de los productos de las listas)
+// Odoo les deja un hueco 16:9 y entran pocas por pantalla. Más angostas y bajas: entran el doble.
+.pos .rightpane {
+    .product-list {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+    .product:not(:has(.product-img)) {
+        min-height: 3.75rem !important;
+    }
+    .product-name.no-image {
+        aspect-ratio: auto;
+        min-height: 2.5rem;
+        font-size: 0.85rem;
+        --lines-clamp: 3;
+    }
+}

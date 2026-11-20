@@ -1,0 +1,10 @@
+# El depósito principal de Odoo (el que crea al instalar Inventario) lleva el nombre de la
+# empresa: se ve en las recepciones y entregas («Comercio Ejemplo: Recepciones»). Se adopta
+# por su código (WH). Los depósitos de afuera (P-032) se definen más adelante.
+model: stock.warehouse
+match: [code]
+records:
+  - id: deposito_principal
+    values:
+      code: WH
+      name: {valor: empresa.nombre}

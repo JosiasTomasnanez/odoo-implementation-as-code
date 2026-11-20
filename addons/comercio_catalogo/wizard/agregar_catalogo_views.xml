@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="agregar_catalogo_wizard_form" model="ir.ui.view">
+        <field name="name">comercio.agregar.catalogo.wizard.form</field>
+        <field name="model">comercio.agregar.catalogo.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="linea_ids" invisible="1"/>
+                <field name="varias" invisible="1"/>
+                <field name="con_parecidos" invisible="1"/>
+                <p><field name="resumen" readonly="1" nolabel="1"/></p>
+                <field name="opcion" widget="radio" nolabel="1" required="1"/>
+                <p class="text-muted" invisible="opcion != 'uno'">Se crea el producto con la primera fila (o
+                    se usa el nuestro, si alguna ya lo es) y se le suman los demás proveedores con su
+                    código y su precio. Odoo le compra al más barato.</p>
+                <p class="text-muted" invisible="opcion != 'mismo' or con_parecidos">Ninguna de las filas
+                    marcadas se parece a un producto nuestro.</p>
+                <footer>
+                    <button name="action_confirmar" type="object" string="Agregar" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

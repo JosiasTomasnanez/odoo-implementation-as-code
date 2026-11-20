@@ -1,0 +1,30 @@
+# Mail con el que se manda la factura al cliente («Enviar» en la factura). La plantilla de Odoo
+# traía el número interno de la venta, «Customer invoice from Caja 1», «Apreciable…» y la firma
+# del usuario (pedido del implementador, 09/11). La factura es el PDF adjunto; el mail solo la
+# presenta: tipo, letra, número y total. Sin saludo con nombre si es Consumidor Final Anónimo.
+# Se adopta el registro estándar de Odoo (account.email_template_edi_invoice, «Factura: Envío»),
+# que es noupdate: actualizar Odoo no lo pisa.
+model: mail.template
+match: [name]
+records:
+  - id: mail_factura
+    values:
+      name: "Factura: Envío"
+      subject: >-
+        {{ (object.l10n_latam_document_type_id.report_name or 'Factura').capitalize() }}
+        {{ object.l10n_latam_document_type_id.l10n_ar_letter or '' }}
+        {{ object.l10n_latam_document_number or object.name }} - {{ object.company_id.name }}
+      body_html: |
+        <div style="margin: 0px; padding: 0px; font-size: 14px;">
+            <p style="margin: 0px 0px 12px 0px;">Hola<t t-if="object.partner_id != object.env.ref('l10n_ar.par_cfa', raise_if_not_found=False)">, <t t-out="object.partner_id.name or ''"/></t>:</p>
+            <p style="margin: 0px 0px 12px 0px;">
+                Te enviamos tu
+                <strong><t t-out="(object.l10n_latam_document_type_id.report_name or 'Factura').capitalize()"/>
+                <t t-out="object.l10n_latam_document_type_id.l10n_ar_letter or ''"/>
+                Nº <t t-out="object.l10n_latam_document_number or object.name"/></strong>
+                por <strong><t t-out="format_amount(object.amount_total, object.currency_id)"/></strong>.
+                La encontrás adjunta en PDF.
+            </p>
+            <p t-if="object.move_type == 'out_invoice'" style="margin: 0px 0px 12px 0px;">Gracias por tu compra.</p>
+            <p style="margin: 0px;"><strong t-out="object.company_id.name"/></p>
+        </div>

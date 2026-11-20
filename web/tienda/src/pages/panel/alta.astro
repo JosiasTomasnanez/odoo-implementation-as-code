@@ -1,0 +1,22 @@
+---
+// Habilitar esta PC o tablet del local para el panel (una vez). El código lo tiene el administrador.
+import Base from "../../layouts/Base.astro";
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+const e = Astro.url.searchParams.get("e");
+---
+<Base titulo="Habilitar dispositivo" pestanas={false}>
+  <section class="sec">
+    <form class="ingreso" method="post" action="/api/panel/alta">
+      <h1 class="h-disp">Habilitar esta PC</h1>
+      <p>Una sola vez por PC o tablet del local. Después cada empleado entra con su nombre y su PIN.</p>
+      {e === "codigo" && <p class="aviso">El código no es correcto.</p>}
+      {e === "bloqueado" && <p class="aviso">Demasiados intentos. Esperá media hora.</p>}
+      <label for="nombre">Nombre de este equipo</label>
+      <input id="nombre" name="nombre" maxlength="60" placeholder="PC de ferretería" required>
+      <label for="codigo">Código de alta</label>
+      <input id="codigo" name="codigo" type="password" autocomplete="off" required maxlength="200">
+      <button class="btn" type="submit">Habilitar</button>
+    </form>
+  </section>
+</Base>

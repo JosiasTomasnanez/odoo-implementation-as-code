@@ -1,0 +1,19 @@
+---
+// Ayuda: cómo se compra, retiro, cambios y contacto, en una sola página corta.
+import Legal from "../components/Legal.astro";
+import { local, wa, diasRetiro } from "../data/catalogo";
+---
+<Legal titulo="Cómo se compra" borrador={false}>
+  <h2>1. Elegís</h2>
+  <p>Buscá lo que necesitás o entrá por categoría y sumalo al carrito. «Hay en el local» significa que está para retirar; «Consultar disponibilidad» se puede comprar igual y te confirmamos en el día.</p>
+  <h2>2. Pagás</h2>
+  <p>Con Mercado Pago: tarjeta de débito o crédito, o dinero en cuenta. No hace falta crear una cuenta en la tienda; si la creás, ves tus pedidos y repetís lo de siempre.</p>
+  <h2>3. Retirás</h2>
+  <p>Te avisamos por mail cuando está listo. Retirás en <a href={local.mapa} target="_blank" rel="noopener">{local.direccion}, {local.ciudad}</a>{local.horario && <> ({local.horario})</>}, mostrando el mail o diciendo tu número de pedido. Tenés {diasRetiro} días para pasar a buscarlo.</p>
+  <h2>Si falta algo</h2>
+  <p>Si al preparar tu pedido falta un producto, te escribimos y elegís: esperar, cambiarlo por otro o que te devolvamos esa parte.</p>
+  <h2>Cambios y arrepentimiento</h2>
+  <p>Para un cambio, acercate al local con el comprobante. Si te arrepentiste de la compra, tenés 10 días corridos: usá el <a href="/arrepentimiento/">botón de arrepentimiento</a>.</p>
+  <h2>¿Dudas?</h2>
+  <p>Llamanos al <a href={`tel:${local.telefono.replace(/[^0-9+]/g, "")}`}>{local.telefono}</a>{local.whatsapp && <> o <a href={wa("Hola, tengo una consulta sobre la tienda online.")} target="_blank" rel="noopener">escribinos por WhatsApp</a></>}.</p>
+</Legal>

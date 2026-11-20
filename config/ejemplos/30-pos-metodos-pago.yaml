@@ -1,0 +1,22 @@
+# Métodos de pago de los puntos de venta de ejemplo. Solo laboratorio.
+model: pos.payment.method
+match: [name]
+records:
+  # Se adopta por nombre si ya existe (en algunas bases lo crea Odoo al instalar el POS);
+  # si no, se crea completo.
+  - id: ej_pm_tarjeta
+    values:
+      name: Tarjeta
+      type: bank
+      journal_id: {ref: account.1_bank}
+  # El efectivo no se puede compartir entre puntos de venta: uno propio para la caja.
+  - id: ej_pm_efectivo_caja
+    values:
+      name: "[EJ] Efectivo caja"
+      type: cash
+      journal_id: {ref: ej_diario_efectivo_caja}
+  - id: ej_pm_efectivo_caja_2
+    values:
+      name: "[EJ] Efectivo caja 2"
+      type: cash
+      journal_id: {ref: ej_diario_efectivo_caja_2}

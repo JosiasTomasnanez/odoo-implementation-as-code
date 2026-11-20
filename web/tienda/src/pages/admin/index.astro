@@ -1,0 +1,29 @@
+---
+// Inicio de la administración: lo que espera una decisión y accesos a cada sección.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/BaseAdmin.astro";
+import { miembroActual, puede, ROLES } from "../../servidor/equipo";
+const yo = await miembroActual(env.DB, Astro.request);
+if (!yo) return Astro.redirect("/admin/ingresar", 303);
+const n = async (sql: string) => (await env.DB.prepare(sql).first<{ n: number }>())?.n ?? 0;
+const pendientes = puede(yo, "mayoristas") ? await n("SELECT COUNT(*) AS n FROM clientes WHERE mayorista = 'pendiente'") : 0;
+const aprobados = puede(yo, "mayoristas") ? await n("SELECT COUNT(*) AS n FROM clientes WHERE mayorista = 'aprobado'") : 0;
+const listas = puede(yo, "mayoristas") ? await n("SELECT COUNT(*) AS n FROM listas_precios WHERE publica = 0") : 0;
+const arrep = puede(yo, "admin") ? await n("SELECT COUNT(*) AS n FROM arrepentimientos WHERE resuelto IS NULL") : 0;
+const equipo = puede(yo, "admin") ? await n("SELECT COUNT(*) AS n FROM equipo WHERE activo = 1") : 0;
+---
+<Base titulo="Inicio" actual="inicio" miembro={yo}>
+  <h1 class="h-disp">Hola, {yo.nombre.split(" ")[0]}</h1>
+  <p class="adm-sub">Tus permisos: {yo.roles.map((r) => ROLES[r].split(" (")[0]).join(" · ") || "ninguno todavía"}.</p>
+  <div class="adm-tarjetas">
+    {puede(yo, "mayoristas") && (<>
+      <a class={`adm-tarjeta${pendientes ? " llama" : ""}`} href="/admin/mayoristas">
+        <b>{pendientes}</b><span>{pendientes === 1 ? "mayorista espera" : "mayoristas esperan"} aprobación</span><small>{aprobados} aprobados</small>
+      </a>
+      <a class="adm-tarjeta" href="/admin/listas"><b>{listas}</b><span>listas de precios para clientes</span><small>Crear una para un cliente</small></a>
+    </>)}
+    {puede(yo, "admin") && arrep > 0 && <a class="adm-tarjeta llama" href="/admin/arrepentimientos"><b>{arrep}</b><span>{arrep === 1 ? "pedido" : "pedidos"} de arrepentimiento</span><small>Contactar y devolver</small></a>}
+    {puede(yo, "admin") && <a class="adm-tarjeta" href="/admin/equipo"><b>{equipo}</b><span>personas en el equipo</span><small>Sumar o cambiar permisos</small></a>}
+    <a class="adm-tarjeta" href="/panel"><b>→</b><span>Panel de pedidos</span><small>Preparar y entregar (PIN de Odoo)</small></a>
+  </div>
+</Base>

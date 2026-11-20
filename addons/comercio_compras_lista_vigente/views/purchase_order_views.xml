@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Líneas de la orden de compra: en amarillo y con el motivo si el producto no está en
+         la lista vigente del proveedor o la cantidad no llega a su mínimo; cartel si otro
+         proveedor lo tiene más barato -->
+    <record id="purchase_order_form_lista_vigente" model="ir.ui.view">
+        <field name="name">purchase.order.form.comercio.lista.vigente</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_comercio_enviar_whatsapp" type="object" string="Enviar por WhatsApp"
+                        invisible="state not in ('draft', 'sent', 'purchase')"
+                        help="Muestra el mensaje con el pedido para corregirlo y abre WhatsApp (Web o la aplicación) con el chat del proveedor: falta tocar Enviar."/>
+            </xpath>
+            <xpath expr="//notebook" position="before">
+                <div class="alert alert-info mb-2" role="status" invisible="not comercio_mas_barato_resumen">
+                    <field name="comercio_mas_barato_resumen" nolabel="1" readonly="1"/>
+                </div>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/control/button[@name='action_add_from_catalog']" position="after">
+                <button name="action_comercio_lista_proveedor" string="Lista del proveedor" type="object"
+                        class="px-4 btn-link" context="{'order_id': parent.id}"/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list" position="attributes">
+                <attribute name="decoration-warning" add="comercio_aviso_lista or comercio_aviso_minimo or comercio_aviso_bulto" separator=" or "/>
+            </xpath>
+            <xpath expr="//field[@name='order_line']/list/field[@name='price_total']" position="after">
+                <field name="comercio_aviso_lista" optional="show" readonly="1"/>
+                <field name="comercio_aviso_minimo" optional="show" readonly="1"/>
+                <field name="comercio_aviso_bulto" optional="show" readonly="1"/>
+                <field name="comercio_mas_barato" optional="show" readonly="1"
+                       decoration-info="comercio_mas_barato" decoration-bf="comercio_mas_barato"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- «Enviar por WhatsApp»: el mensaje se puede corregir antes de abrir WhatsApp -->
+    <record id="whatsapp_pedido_form" model="ir.ui.view">
+        <field name="name">comercio.whatsapp.pedido.form</field>
+        <field name="model">comercio.whatsapp.pedido</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="order_id" invisible="1"/>
+                    <field name="partner_id" readonly="1" options="{'no_open': True}"/>
+                    <field name="telefono" readonly="1"/>
+                </group>
+                <field name="texto" nolabel="1" placeholder="Mensaje para el proveedor"/>
+                <footer>
+                    <button name="action_abrir" type="object" string="Abrir WhatsApp"
+                            class="btn-primary" close="1"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Recepción: botón a su orden de compra (Odoo solo muestra el número en «Documento
+         origen»). Solo para Compras, como el botón de la factura del proveedor: quien recibe
+         en el depósito no necesita ver los precios. -->
+    <record id="stock_picking_form_ver_compra" model="ir.ui.view">
+        <field name="name">stock.picking.form.comercio.ver.compra</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button name="action_comercio_ver_compra" type="object" class="oe_stat_button"
+                        icon="edit_square" groups="purchase.group_purchase_user"
+                        invisible="not comercio_compra_nombre">
+                    <field name="comercio_compra_nombre" string="Orden de compra" widget="statinfo"/>
+                </button>
+            </div>
+        </field>
+    </record>
+</odoo>

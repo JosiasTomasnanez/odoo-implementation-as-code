@@ -1,0 +1,24 @@
+---
+// Eliminar la cuenta (derecho de supresión, Ley 25.326): la persona lo hace sola, con su sesión.
+import { env } from "cloudflare:workers";
+import Legal from "../../components/Legal.astro";
+import { clienteActual } from "../../servidor/clientes";
+const cliente = await clienteActual(env.DB, Astro.request);
+const hecho = Astro.url.searchParams.get("ok");
+const ingreso = Astro.locals.sitio === "mayorista" ? "/ingresar" : "/cuenta";
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Legal titulo="Eliminar mi cuenta" borrador={false}>
+  {hecho ? (
+    <p class="adm-ok" role="status">Tu cuenta fue eliminada. Gracias por haber comprado con nosotros.</p>
+  ) : !cliente ? (
+    <p>Para eliminar tu cuenta, primero <a href={ingreso}>ingresá</a>. Si no podés entrar, llamanos y la eliminamos nosotros.</p>
+  ) : (<>
+    <p>Vas a eliminar la cuenta de <b>{cliente.email}</b>. Se borran tus datos de cuenta y se cierran tus sesiones; no se puede deshacer.</p>
+    <p>Los comprobantes de las compras que ya hiciste se conservan el tiempo que exige la ley, sin quedar unidos a una cuenta.</p>
+    <form class="ingreso" method="post" action="/api/cuenta/eliminar" style="margin:0">
+      <label class="casilla"><input type="checkbox" name="seguro" value="si" required> Entiendo que no se puede deshacer</label>
+      <button class="btn" type="submit">Eliminar mi cuenta</button>
+    </form>
+  </>)}
+</Legal>

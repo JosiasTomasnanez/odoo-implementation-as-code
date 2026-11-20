@@ -1,0 +1,43 @@
+---
+// Listado paginado con filtros y orden. Los filtros son enlaces (cambian la dirección), así se
+// comparten, «atrás» funciona y anda sin JavaScript. En la PC van al costado; en el celular, en
+// una hoja que sube desde abajo.
+import Tarjeta from "./Tarjeta.astro";
+import Paginacion from "./Paginacion.astro";
+import { FILTROS, ORDENES, type Filtro, type Orden, type Pagina } from "../servidor/consultas";
+const { r, conOfertas = true, vacio = "No hay productos con ese filtro." } = Astro.props as { r: Pagina; conOfertas?: boolean; vacio?: string };
+const enlace = (cambio: Partial<{ filtro: Filtro; orden: Orden }>) => {
+  const u = new URL(Astro.url);
+  for (const [k, v] of Object.entries(cambio)) (v === "todos" || v === "rel") ? u.searchParams.delete(k) : u.searchParams.set(k, v);
+  u.searchParams.delete("pagina");
+  return u.pathname + u.search;
+};
+const filtros = (Object.keys(FILTROS) as Filtro[]).filter((f) => conOfertas || f !== "oferta");
+const activo = r.filtro !== "todos" || r.orden !== "rel";
+---
+<div class="listado">
+  <aside class="filtros-lat" data-hoja-filtros aria-label="Filtrar y ordenar">
+    <div class="hoja-cab"><b>Filtrar y ordenar <button type="button" data-cerrar-filtros>Listo</button></b></div>
+    <fieldset>
+      <legend>Mostrar</legend>
+      {filtros.map((f) => <a class="opcion" href={enlace({ filtro: f })} aria-current={r.filtro === f ? "true" : undefined}>{FILTROS[f]}<span class="cuantos">{r.cuantos[f]}</span></a>)}
+    </fieldset>
+    <fieldset>
+      <legend>Ordenar por</legend>
+      {(Object.keys(ORDENES) as Orden[]).map((o) => <a class="opcion" href={enlace({ orden: o })} aria-current={r.orden === o ? "true" : undefined}>{ORDENES[o]}</a>)}
+    </fieldset>
+  </aside>
+  <div class="velo" data-velo></div>
+  <div class="listado-cuerpo">
+    <div class="filtros-cab">
+      <span class="total">{r.total} {r.total === 1 ? "producto" : "productos"}</span>
+      <button class="abrir-filtros" type="button" data-abrir-filtros aria-expanded="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtrar{activo && <span class="punto" aria-label="(con filtros)"></span>}
+      </button>
+    </div>
+    {r.items.length > 0
+      ? <div class="grilla">{r.items.map((p) => <Tarjeta p={p} />)}</div>
+      : <p class="vacio">{vacio}</p>}
+    <Paginacion r={r} />
+  </div>
+</div>

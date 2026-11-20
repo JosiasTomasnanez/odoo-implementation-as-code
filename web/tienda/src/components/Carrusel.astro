@@ -1,0 +1,22 @@
+---
+import Sello from "./Sello.astro";
+import { anuncios } from "../data/portada";
+---
+<section class="carrusel" aria-roledescription="carrusel" aria-label="Anuncios" data-carrusel>
+  <div class="pista" data-pista>
+    {anuncios.map((a, i) => (
+      <a class={`anuncio ${a.tono}`} href={a.href} aria-roledescription="anuncio" aria-label={`${i + 1} de ${anuncios.length}: ${a.titulo}`}>
+        <span class="pre-t">{a.pre}</span>
+        <h2>{a.titulo}</h2>
+        <p>{a.texto}</p>
+        <span class="ver">{a.boton}</span>
+        {a.sello && <Sello {...a.sello} />}
+      </a>
+    ))}
+  </div>
+  {anuncios.length > 1 && <>
+    <button class="flecha izq" type="button" data-ant aria-label="Anuncio anterior">‹</button>
+    <button class="flecha der" type="button" data-sig aria-label="Anuncio siguiente">›</button>
+    <div class="puntos">{anuncios.map((a, i) => <button type="button" data-ir={i} aria-label={`Ver anuncio ${i + 1}`} aria-current={i === 0 ? "true" : "false"}></button>)}</div>
+  </>}
+</section>

@@ -1,0 +1,16 @@
+---
+// Íconos de línea por categoría; se usan también como «sin foto todavía».
+const { nombre } = Astro.props as { nombre: string };
+const trazos: Record<string, string> = {
+  tornillo: '<path d="M8 3h8l-1 3H9z"/><path d="M10 6v13l2 2 2-2V6"/><path d="M10 9l4 1.5M10 12l4 1.5M10 15l4 1.5"/>',
+  canilla: '<path d="M4 9h9a4 4 0 0 1 4 4v1"/><path d="M4 6v6"/><path d="M9 9V5M6 5h6"/><path d="M17 17.5c0 1-.7 2-1.5 2s-1.5-1-1.5-2 1.5-3 1.5-3 1.5 2 1.5 3z"/>',
+  rayo: '<path d="M13 2 5 14h6l-1 8 8-12h-6z"/>',
+  ola: '<path d="M2 10c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/><path d="M2 20c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>',
+  pincel: '<path d="M14 3l7 7-6 6-7-7z"/><path d="M8 9l-4 4c-1 1-1 3 0 4l3 3c1 1 3 1 4 0l4-4"/>',
+  hoja: '<path d="M5 19C5 10 10 5 20 4c-1 10-6 15-15 15z"/><path d="M5 19l8-8"/>',
+  huella: '<circle cx="7" cy="9" r="1.8"/><circle cx="11" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="18" cy="10" r="1.8"/><path d="M8 16c0-2.5 2-4.5 4.5-4.5S17 13.5 17 16c0 2-1.5 3-3 3h-3c-1.5 0-3-1-3-3z"/>',
+  persona: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',
+  carrito: '<path d="M3 4h2l2.5 11h10L20 8H7"/><circle cx="9" cy="19" r="1.5"/><circle cx="17" cy="19" r="1.5"/>',
+};
+---
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" set:html={trazos[nombre] ?? ""}></svg>

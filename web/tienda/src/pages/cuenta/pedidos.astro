@@ -1,0 +1,57 @@
+---
+// Mis pedidos: los del cliente hechos en este sitio (tienda o mayorista, ADR 0035), con su estado
+// y «Repetir este pedido». Lo usan /cuenta/pedidos y el sitio mayorista (/pedidos).
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import CuentaNav from "../../components/CuentaNav.astro";
+import Foto from "../../components/Foto.astro";
+import { clienteActual } from "../../servidor/clientes";
+import { pesos } from "../../servidor/consultas";
+import { ESTADOS } from "../../servidor/estados";
+Astro.response.headers.set("Cache-Control", "no-store");
+const mayorista = Astro.locals.sitio === "mayorista";
+const cliente = await clienteActual(env.DB, Astro.request);
+if (!cliente) return Astro.redirect(mayorista ? "/ingresar" : "/cuenta?v=/cuenta/pedidos", 303);
+type P = { id: string; numero: number; token: string; estado: string; total: number; creado: string };
+const pedidos = (await env.DB.prepare(`SELECT id, numero, token, estado, total, creado FROM pedidos
+    WHERE cliente_id = ? AND sitio = ? AND estado NOT IN ('pendiente_pago', 'vencido') ORDER BY creado DESC LIMIT 50`).bind(cliente.id, mayorista ? "mayorista" : "tienda").all<P>()).results;
+type L = { pedido_id: string; cantidad: number; nombre: string; precio: number; slug: string | null; imagen: string | null; categoria: string | null; publicado: number | null };
+const lineas = pedidos.length ? (await env.DB.prepare(`SELECT l.pedido_id, l.cantidad, l.nombre, l.precio, p.slug, p.imagen, p.publicado, c.nombre AS categoria
+    FROM pedido_lineas l LEFT JOIN productos p ON p.id_odoo = l.producto_id LEFT JOIN categorias c ON c.id_odoo = p.categoria_id
+   WHERE l.pedido_id IN (${pedidos.map(() => "?").join(",")})`).bind(...pedidos.map((p) => p.id)).all<L>()).results : [];
+const fecha = (f: string) => new Date(f).toLocaleDateString("es-AR", { day: "numeric", month: "long", timeZone: "America/Argentina/Cordoba" });
+---
+<Base titulo="Mis pedidos" actual="pedidos">
+  {mayorista ? <div class="sec-tit"><h1 class="h-disp">Mis pedidos</h1></div> : <CuentaNav titulo="Mis pedidos" />}
+  <section class="sec">
+    {pedidos.length === 0 && <p class="vacio">Todavía no hiciste pedidos{mayorista ? "" : " con este mail"}. <a href={mayorista ? "/" : "/ofertas/"}>{mayorista ? "Ir a la lista de precios" : "Ver ofertas"}</a></p>}
+    {pedidos.map((pe, i) => {
+      const ls = lineas.filter((l) => l.pedido_id === pe.id);
+      const repetibles = ls.filter((l) => l.slug && l.publicado);
+      return (
+        <details class="pedido" open={i === 0}>
+          <summary>
+            <span class="p-num">W-{String(pe.numero).padStart(4, "0")}</span>
+            <span class="p-fecha">{fecha(pe.creado)} · {ls.length} productos</span>
+            <span class={pe.estado === "listo" ? "p-est listo" : "p-est"}>{ESTADOS[pe.estado] ?? pe.estado}</span>
+            <span class="p-tot">{pesos(pe.total)}</span>
+          </summary>
+          <div class="p-lineas">
+            {ls.map((l) => (
+              <div class="p-linea">
+                <Foto p={l} />
+                {l.slug && l.publicado && !mayorista ? <a href={`/producto/${l.slug}/`}>{l.nombre}</a> : <span>{l.nombre}</span>}
+                <span class="cod">{l.cantidad} × {pesos(l.precio)}</span>
+                {l.slug && l.publicado ? <button class="btn lineal chico" type="button" data-agregar={l.slug} data-cant-fija={l.cantidad}>Agregar</button> : <span class="cod">Ya no está</span>}
+              </div>
+            ))}
+          </div>
+          <div class="p-acciones">
+            {repetibles.length > 0 && <button class="btn" type="button" data-repetir={JSON.stringify(repetibles.map((l) => ({ slug: l.slug, cant: l.cantidad })))}>Repetir este pedido</button>}
+            <a class="nota-demo" href={`/pedido/${pe.id}?t=${pe.token}`}>Ver el detalle</a>
+          </div>
+        </details>
+      );
+    })}
+  </section>
+</Base>

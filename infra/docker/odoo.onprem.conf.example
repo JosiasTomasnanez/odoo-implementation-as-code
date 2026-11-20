@@ -1,0 +1,35 @@
+; Copiar fuera del repo (p. ej. /etc/odoo-comercio/odoo.conf), completar y
+; apuntar ODOO_CONF_FILE a ese archivo. Contiene secretos: nunca commitear.
+[options]
+addons_path = /mnt/enterprise-addons,/opt/comercio-addons
+data_dir = /var/lib/odoo
+; Odoo 20 escucha por defecto solo en 127.0.0.1 dentro del contenedor; hay que
+; abrirlo a la red interna de Docker. La exposición al host la limita compose
+; (puerto publicado solo en 127.0.0.1).
+http_interface = 0.0.0.0
+db_host = db
+db_port = 5432
+db_user = odoo
+; Misma contraseña que el archivo DB_PASSWORD_FILE.
+db_password = CAMBIAR
+; Contraseña maestra del gestor de bases: larga y aleatoria.
+admin_passwd = CAMBIAR
+; No exponer el gestor de bases ni listar bases en producción.
+list_db = False
+dbfilter = ^produccion$
+; Detrás del proxy HTTPS (Caddy, ADR 0013): usar X-Forwarded-Host/Proto/For que manda
+; el proxy (URL https y la IP real del puesto). Solo con el proxy delante: Odoo no
+; debe quedar accesible sin él (compose lo publica solo en 127.0.0.1).
+proxy_mode = True
+; Con workers > 0 Odoo atiende el websocket (POS, avisos, chat) en un proceso aparte
+; en este puerto; el proxy manda ahí /websocket. En 8069 el websocket falla.
+gevent_port = 8072
+; Ajustar según CPU/RAM del servidor (regla orientativa: 2 * núcleos + 1).
+workers = 3
+max_cron_threads = 1
+limit_time_cpu = 120
+limit_time_real = 240
+log_level = warn
+; Correo saliente (P-022, 06/11): Resend con el dominio propio. Lo agrega
+; infra/servidor/configurar-correo.sh (smtp_* , email_from y from_filter); la clave de
+; Resend queda solo en este archivo del servidor.

@@ -1,0 +1,15 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import Carrito from "../../components/Carrito.astro";
+import { clienteActual } from "../../servidor/clientes";
+Astro.response.headers.set("Cache-Control", "no-store");
+const cliente = await clienteActual(env.DB, Astro.request);
+if (!(cliente?.mayorista === "aprobado" && cliente.lista_id)) return Astro.redirect("/", 303);
+---
+<Base titulo="Carrito" actual="carrito">
+  <section class="sec">
+    <div class="sec-tit"><h1 class="h-disp">Carrito</h1></div>
+    <Carrito vacio="/" vacioTexto="Ir a la lista de precios" />
+  </section>
+</Base>

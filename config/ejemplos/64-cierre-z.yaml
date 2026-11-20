@@ -1,0 +1,35 @@
+# Cierre Z de las registradoras (P-070, ADR 0038, módulo comercio_cierre_z).
+# - Un diario de ventas por registradora, tipo «Controlador fiscal externo» (l10n_ar: no va a
+#   ARCA), con su punto de venta (P-002: 8 = Sam4s, 13 = Hasar). El Z se carga como «Tique».
+# - Dónde entra lo cobrado según el Z: efectivo en «Efectivo registradoras»; débito y crédito en
+#   «Tarjetas a liquidar» (hasta definir cómo se concilian las liquidaciones, P-045); transferencias
+#   en el banco. Se cambia el código del diario en los parámetros de abajo.
+model: account.journal
+match: [code]
+records:
+  - id: diario_registradora_sam4s
+    values:
+      name: Registradora Sam4s (PV 8)
+      type: sale
+      code: RG08
+      l10n_latam_use_documents: true
+      l10n_ar_afip_pos_system: CF
+      l10n_ar_afip_pos_number: 8
+  - id: diario_registradora_hasar
+    values:
+      name: Registradora Hasar (PV 13)
+      type: sale
+      code: RG13
+      l10n_latam_use_documents: true
+      l10n_ar_afip_pos_system: CF
+      l10n_ar_afip_pos_number: 13
+  - id: diario_efectivo_registradoras
+    values:
+      name: Efectivo registradoras
+      type: cash
+      code: EFRG
+  - id: diario_tarjetas_a_liquidar
+    values:
+      name: Tarjetas a liquidar
+      type: bank
+      code: TARJ

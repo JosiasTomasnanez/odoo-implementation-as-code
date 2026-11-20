@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.comercio.balanza.systel</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//widget[@name='iot_webserial.connect_web_serial_scale']/parent::setting" position="after">
+                <setting string="Balanza Systel Cuora (USB)"
+                         help="Conectar en esta computadora una balanza Systel Cuora Max por USB. Se autoriza una vez por computadora y navegador.">
+                    <div class="content-group">
+                        <div class="mt8">
+                            <label for="pos_comercio_balanza_numero" class="o_light_label me-2"/>
+                            <field name="pos_comercio_balanza_numero"/>
+                        </div>
+                        <div>
+                            <field name="pos_comercio_pesaje_automatico"/>
+                            <label for="pos_comercio_pesaje_automatico" class="o_light_label"/>
+                        </div>
+                        <div class="mt8">
+                            <widget name="comercio_pos_balanza_systel.conectar"/>
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

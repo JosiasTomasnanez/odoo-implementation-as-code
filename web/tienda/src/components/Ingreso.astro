@@ -1,0 +1,92 @@
+---
+// Ingresar, crear cuenta, olvidé mi contraseña y confirmar el código (tienda y sitio mayorista).
+// Se entra con mail y contraseña o con Google; el código por mail es solo para confirmar el mail al
+// crear la cuenta y para cambiar la contraseña.
+import { env } from "cloudflare:workers";
+import { googleActivo } from "../servidor/google";
+import Marco from "./MarcoIngreso.astro";
+const { intro, titulo, puntos, pie } = Astro.props as { intro?: string; titulo: string; puntos?: string[]; pie?: string };
+const q = Astro.url.searchParams;
+const modo = ["crear", "olvide", "codigo"].includes(q.get("modo") ?? "") ? q.get("modo")! : "entrar";
+const p = q.get("p") === "clave" ? "clave" : "alta";
+const e = q.get("e");
+const mail = (q.get("m") ?? "").slice(0, 160);
+const sitekey = env.TURNSTILE_SITEKEY ?? "";
+const google = googleActivo(env);
+const base = Astro.locals.sitio === "mayorista" ? "/ingresar" : "/cuenta";
+const ir = (m: string) => `${base}?modo=${m}${mail ? `&m=${encodeURIComponent(mail)}` : ""}`;
+const btn = Astro.locals.sitio === "mayorista" ? "btn sec2" : "btn";
+---
+<Marco titulo={titulo} puntos={puntos} pie={pie}>
+<div class="ingreso">
+  {modo === "entrar" && (<>
+    <h1 class="h-disp">Ingresar</h1>
+    {intro && <p class="intro">{intro}</p>}
+    {e === "google" && <p class="aviso">No pudimos ingresar con Google. Probá de nuevo o usá tu mail.</p>}
+    {google && <a class="btn-google" href="/api/cuenta/google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>Continuar con Google</a>}
+    {google && <p class="o">o con tu mail</p>}
+    <form method="post" action="/api/cuenta/entrar">
+      {e === "clave" && <p class="aviso">El mail o la contraseña no son correctos. Si antes entrabas con un código, elegí una contraseña con «Olvidé mi contraseña».</p>}
+      <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="email" required maxlength="160" value={mail}></label>
+      <label class="campo"><span>Contraseña</span><input name="clave" type="password" autocomplete="current-password" required maxlength="200"></label>
+      <a class="chico" href={ir("olvide")}>Olvidé mi contraseña</a>
+      <button class={btn} type="submit">Ingresar</button>
+    </form>
+    <p class="cambiar">¿No tenés cuenta? <a href={ir("crear")}>Creala</a></p>
+  </>)}
+
+  {modo === "crear" && (<>
+    <h1 class="h-disp">Crear cuenta</h1>
+    {intro && <p class="intro">{intro}</p>}
+    {google && <a class="btn-google" href="/api/cuenta/google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.1-13.4-9.8l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg>Crear con Google (sin código)</a>}
+    {google && <p class="o">o con tu mail</p>}
+    <form method="post" action="/api/cuenta/codigo">
+      <input type="hidden" name="para" value="alta">
+      {e === "mail" && <p class="aviso">Revisá el mail.</p>}
+      {e === "clave" && <p class="aviso">La contraseña tiene que tener al menos 8 caracteres y no ser demasiado fácil.</p>}
+      {e === "robot" && <p class="aviso">No pudimos comprobar que no sos un robot. Probá de nuevo.</p>}
+      {e === "repetir" && <p class="aviso">Las dos contraseñas no coinciden. Escribilas de nuevo.</p>}
+      <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="email" required maxlength="160" value={mail}></label>
+      <label class="campo"><span>Contraseña</span><input name="clave" type="password" autocomplete="new-password" required minlength="8" maxlength="200"><small>Al menos 8 caracteres.</small></label>
+      <label class="campo"><span>Repetir contraseña</span><input name="clave2" type="password" autocomplete="new-password" required maxlength="200"></label>
+      <div class="cf-turnstile" data-sitekey={sitekey} data-language="es"></div>
+      <button class={btn} type="submit">Crear cuenta</button>
+      <p class="nota-demo">Te mandamos un código de 6 números para confirmar que el mail es tuyo (solo esta vez).</p>
+    </form>
+    <p class="cambiar">¿Ya tenés cuenta? <a href={ir("entrar")}>Ingresá</a></p>
+  </>)}
+
+  {modo === "olvide" && (<>
+    <h1 class="h-disp">Olvidé mi contraseña</h1>
+    <p class="intro">Te mandamos un código al mail y elegís una contraseña nueva.</p>
+    <form method="post" action="/api/cuenta/codigo">
+      <input type="hidden" name="para" value="clave">
+      {e === "mail" && <p class="aviso">Revisá el mail.</p>}
+      {e === "robot" && <p class="aviso">No pudimos comprobar que no sos un robot. Probá de nuevo.</p>}
+      <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="email" required maxlength="160" value={mail}></label>
+      <div class="cf-turnstile" data-sitekey={sitekey} data-language="es"></div>
+      <button class={btn} type="submit">Mandame el código</button>
+    </form>
+    <p class="cambiar"><a href={ir("entrar")}>Volver a ingresar</a></p>
+  </>)}
+
+  {modo === "codigo" && (<>
+    <h1 class="h-disp">Revisá tu mail</h1>
+    <p class="intro">{p === "alta" ? "Para terminar de crear tu cuenta, " : ""}si <b>{mail}</b> es correcto te llegó un código de 6 números (fijate también en spam).</p>
+    <form method="post" action="/api/cuenta/verificar">
+      {e === "codigo" && <p class="aviso">El código no es correcto o venció. Pedí otro si hace falta.</p>}
+      {e === "navegador" && <p class="aviso">Confirmá el código en el mismo navegador donde creaste la cuenta, o creala de nuevo acá.</p>}
+      {e === "repetir" && <p class="aviso">Las dos contraseñas no coinciden. Escribilas de nuevo.</p>}
+      {e === "clave" && <p class="aviso">La contraseña nueva tiene que tener al menos 8 caracteres y no ser demasiado fácil.</p>}
+      <input type="hidden" name="email" value={mail}>
+      <input type="hidden" name="p" value={p}>
+      <label class="campo"><span>Código</span><input class="codigo" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label>
+      {p === "clave" && <label class="campo"><span>Contraseña nueva</span><input name="clave" type="password" autocomplete="new-password" required minlength="8" maxlength="200"><small>Al menos 8 caracteres.</small></label>}
+      {p === "clave" && <label class="campo"><span>Repetir contraseña</span><input name="clave2" type="password" autocomplete="new-password" required maxlength="200"></label>}
+      <button class={btn} type="submit">{p === "alta" ? "Confirmar y entrar" : "Guardar y entrar"}</button>
+    </form>
+    <p class="cambiar"><a href={ir(p === "alta" ? "crear" : "olvide")}>Pedir otro código</a></p>
+  </>)}
+</div>
+</Marco>
+{(modo === "crear" || modo === "olvide") && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}

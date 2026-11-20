@@ -1,0 +1,13 @@
+---
+// Foto del producto: la de su ficha en Odoo (servida desde R2); sin foto, el ícono del rubro.
+import Icono from "./Icono.astro";
+import { iconoDe, type Vista } from "../servidor/consultas";
+// «tam»: qué tan grande se muestra, para que el navegador elija la versión liviana que le alcanza
+// (WebP de 400 u 800 px; la original de 1024 si hace falta). Tarjetas y listas: chica; la ficha: grande.
+const { p, carga = "lazy", tam = "chica" } = Astro.props as { p: Pick<Vista, "imagen" | "categoria" | "nombre">; carga?: "lazy" | "eager"; tam?: "chica" | "grande" };
+const sizes = tam === "grande" ? "(max-width: 720px) 100vw, 560px" : "(max-width: 720px) 50vw, 240px";
+---
+<div class="foto">{p.imagen
+  ? <img src={`/img/p/${p.imagen}-400`} srcset={`/img/p/${p.imagen}-400 400w, /img/p/${p.imagen}-800 800w, /img/p/${p.imagen} 1024w`} sizes={sizes}
+      alt="" loading={carga} decoding="async" width="400" height="400" fetchpriority={carga === "eager" ? "high" : undefined}>
+  : <><Icono nombre={iconoDe(p.categoria)} /><small>Sin foto todavía</small></>}<slot /></div>

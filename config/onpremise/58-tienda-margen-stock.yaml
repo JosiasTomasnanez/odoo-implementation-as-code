@@ -1,0 +1,9 @@
+# Margen de stock por defecto de la tienda online (comercio_tienda): sale de config/valores.yaml
+# («tienda.margen_stock»); cada categoría puede tener el suyo.
+model: ir.config_parameter
+match: [key]
+records:
+  - id: tienda_margen_stock
+    values:
+      key: comercio_tienda.margen_stock
+      value: {valor: tienda.margen_stock}

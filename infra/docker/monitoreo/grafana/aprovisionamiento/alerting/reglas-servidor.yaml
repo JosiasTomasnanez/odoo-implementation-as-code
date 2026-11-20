@@ -1,0 +1,179 @@
+# Alertas del servidor y de Odoo (ADR 0028). Los @UMBRAL_…@ salen de monitoreo/umbrales.env
+# (los reemplaza grafana/iniciar.sh al arrancar): cambiar los números allá, no acá.
+# No se repite lo que ya avisan los scripts del servidor (contenedores, disco > 85 %, RAID,
+# backups, pendrive, certificado, hora, SMART): docs/infraestructura/observabilidad.md.
+# Etiqueta `nivel`: error (🔴) o aviso (⚠️), como avisar.sh. Qué hacer: docs/runbooks/monitoreo.md.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: servidor
+    folder: Alertas
+    interval: 1m
+    rules:
+      - uid: servidor-cpu
+        title: CPU alta
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '100 * (1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m])))'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_CPU_PORCENTAJE@]}}]}}
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'CPU al {{ printf "%.0f" $values.A.Value }} % hace 15 minutos'
+          description: |-
+            El procesador está por encima del @UMBRAL_CPU_PORCENTAJE@ % desde hace 15 minutos.
+            Mirar el tablero «Servidor» → «Contenedores» para ver quién la usa (Odoo con una tarea pesada, una importación grande, el backup).
+
+      - uid: servidor-ram
+        title: Poca RAM disponible
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '100 * node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: lt, params: [@UMBRAL_RAM_DISPONIBLE_PORCENTAJE@]}}]}}
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: error}
+        annotations:
+          summary: 'Queda {{ printf "%.0f" $values.A.Value }} % de RAM disponible'
+          description: |-
+            Menos del @UMBRAL_RAM_DISPONIBLE_PORCENTAJE@ % de la RAM libre desde hace 10 minutos: el sistema puede empezar a cortar procesos.
+            Tablero «Servidor» → «Contenedores» (RAM por contenedor). Odoo con 3 workers usa ~1-2 GB.
+
+      - uid: servidor-swap
+        title: Swap en uso
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '100 * (1 - node_memory_SwapFree_bytes / node_memory_SwapTotal_bytes)'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_SWAP_PORCENTAJE@]}}]}}
+        for: 30m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Swap al {{ printf "%.0f" $values.A.Value }} %'
+          description: |-
+            Más del @UMBRAL_SWAP_PORCENTAJE@ % de la swap usada desde hace 30 minutos: falta RAM o algo pierde memoria.
+            Tablero «Servidor» → «CPU y memoria».
+
+      - uid: servidor-disco-se-llena
+        title: Un disco se llena pronto
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 43200, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'predict_linear(node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*"}[12h], @UMBRAL_DISCO_DIAS_PARA_LLENARSE@ * 86400) / 1073741824'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: lt, params: [0]}}]}}
+        for: 1h
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'El disco {{ $labels.mountpoint }} se llena en menos de @UMBRAL_DISCO_DIAS_PARA_LLENARSE@ días'
+          description: |-
+            Al ritmo de las últimas 12 horas, {{ $labels.mountpoint }} se queda sin espacio antes de @UMBRAL_DISCO_DIAS_PARA_LLENARSE@ días.
+            Buscar qué crece: tablero «PostgreSQL» → «Tablas que más crecieron» y «Adjuntos y mensajes»; en el servidor, sudo du -xh / | sort -h | tail.
+
+      - uid: servidor-disco-ocupado
+        title: Disco saturado
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: '100 * rate(node_disk_io_time_seconds_total{device!~"loop.*|ram.*|dm-.*|sr.*|md.*"}[5m])'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_DISCO_OCUPADO_PORCENTAJE@]}}]}}
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'El disco {{ $labels.device }} está ocupado el {{ printf "%.0f" $values.A.Value }} % del tiempo'
+          description: |-
+            {{ $labels.device }} trabaja más del @UMBRAL_DISCO_OCUPADO_PORCENTAJE@ % del tiempo desde hace 15 minutos: todo se pone lento.
+            Puede ser el RAID reconstruyéndose (cat /proc/mdstat), el backup o una consulta pesada (tablero «PostgreSQL» → «Consultas lentas»).
+
+      - uid: servidor-temperatura
+        title: Temperatura alta
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'max by (chip, sensor) (node_hwmon_temp_celsius)'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_TEMPERATURA_C@]}}]}}
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Temperatura de {{ printf "%.0f" $values.A.Value }} °C ({{ $labels.chip }})'
+          description: |-
+            El sensor {{ $labels.chip }} {{ $labels.sensor }} pasa los @UMBRAL_TEMPERATURA_C@ °C desde hace 10 minutos.
+            Revisar ventilación del rack, polvo y que los ventiladores giren.
+
+      - uid: monitoreo-exportador-caido
+        title: No se leen métricas
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'up'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: lt, params: [1]}}]}}
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Prometheus no puede leer «{{ $labels.job }}»'
+          description: |-
+            Hace 5 minutos que no responde {{ $labels.instance }} (trabajo {{ $labels.job }}): sus tableros y alertas quedan ciegos.
+            docker ps en el servidor; si es «servidor», revisar node-exporter y la regla de ufw de br-monitoreo (configurar-monitoreo.sh).
+
+  - orgId: 1
+    name: odoo
+    folder: Alertas
+    interval: 1m
+    rules:
+      - uid: odoo-lento
+        title: Odoo lento
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'probe_duration_seconds{instance=~".*/web/login"}'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: gt, params: [@UMBRAL_ODOO_SEGUNDOS@]}}]}}
+        for: 5m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: aviso}
+        annotations:
+          summary: 'Odoo tarda {{ printf "%.1f" $values.A.Value }} s en responder'
+          description: |-
+            La página de entrada tarda más de @UMBRAL_ODOO_SEGUNDOS@ s desde hace 5 minutos: los puestos lo sienten.
+            Suele ser que los 3 workers están ocupados (una importación o un informe pesado) o la base lenta: tableros «Servidor» y «PostgreSQL».
+
+      - uid: odoo-no-responde
+        title: Odoo no responde
+        condition: B
+        data:
+          - {refId: A, relativeTimeRange: {from: 600, to: 0}, datasourceUid: prometheus,
+             model: {refId: A, instant: true, expr: 'probe_success{job="odoo"}'}}
+          - {refId: B, datasourceUid: __expr__,
+             model: {refId: B, type: threshold, expression: A, conditions: [{evaluator: {type: lt, params: [1]}}]}}
+        for: 3m
+        noDataState: OK
+        execErrState: Error
+        labels: {nivel: error}
+        annotations:
+          summary: 'Odoo no responde ({{ $labels.instance }})'
+          description: |-
+            Hace 3 minutos que {{ $labels.instance }} no contesta bien. Si sigue, revisar-servidor.sh también avisa del contenedor.
+            En el servidor: STACK=onprem bash -c 'source infra/scripts/lib.sh && compose ps && compose logs --tail 50 odoo'.

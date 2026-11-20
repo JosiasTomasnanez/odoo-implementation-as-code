@@ -1,0 +1,32 @@
+# Laboratorio: puertos expuestos en localhost, addons montados en caliente,
+# modo desarrollo. Se destruye y reconstruye con `make lab-destroy lab-init`.
+# LAB_BIND_IP=0.0.0.0 lo abre a la red local (`make lab-red`); solo para probar desde
+# el celular en una red de confianza. Volver con `make lab-local`.
+# `restart: unless-stopped`: el lab vuelve solo al reiniciar la compu (Docker arranca
+# con el sistema); `make lab-down` lo apaga hasta el próximo `make lab-up`.
+services:
+  db:
+    restart: unless-stopped
+
+  odoo:
+    restart: unless-stopped
+    ports:
+      - "${LAB_BIND_IP:-127.0.0.1}:8069:8069"
+    volumes:
+      - ../../addons:/mnt/extra-addons:ro
+      - ./odoo.lab.conf:/etc/odoo/odoo.conf:ro
+      # Vacía salvo con Enterprise de GitHub (compose.enterprise-git.yml la reemplaza por el clon):
+      # el camino va en odoo.lab.conf para que también lo vean `odoo shell` y `odoo db`
+      - lab-sin-enterprise:/mnt/enterprise-addons:ro
+    command: ["--dev=xml,reload"]
+
+  # Buzón de prueba: atrapa todos los correos que manda Odoo (recibos, facturas) sin
+  # enviarlos a internet. Se ven en http://localhost:8025. Solo laboratorio.
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    restart: unless-stopped
+    ports:
+      - "${LAB_BIND_IP:-127.0.0.1}:8025:8025"
+
+volumes:
+  lab-sin-enterprise:

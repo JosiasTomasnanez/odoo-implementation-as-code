@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Solo para el usuario del conector del local: lee y confirma la cola de cambios. No ve
+         nada más (los datos que manda los arma el propio módulo). -->
+    <record id="group_tienda_conector" model="res.groups">
+        <field name="name">Tienda online: conector</field>
+        <field name="comment">Usuario técnico del conector de la tienda online. No darlo a personas.</field>
+    </record>
+</odoo>

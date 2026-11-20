@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<odoo>
+    <data>
+        <!-- Pie del ticket con la factura electrónica (RG 4291, RG 4892, RG 5614) -->
+        <template id="pos_order_receipt_factura_ar" inherit_id="point_of_sale.pos_order_receipt">
+            <div name="before-footer" position="after">
+                <div t-if="conditions.get('comercio_factura_ar')" class="w-100 text-center mt-2 comercio-factura-ar">
+                    <t t-set="fe" t-value="extra_data['comercio_factura_ar']"/>
+                    <div class="text-bold" t-out="fe['factura']"/>
+                    <div>CAE: <span class="font-monospace" t-out="fe['cae']"/></div>
+                    <div t-if="fe.get('vto')">Vto. CAE: <t t-out="fe['vto']"/></div>
+                    <div t-if="image.get('comercio_qr_arca')" class="mt-2 mb-2">
+                        <img t-att-src="image['comercio_qr_arca']" alt="QR de ARCA" class="mw-50"/>
+                    </div>
+                    <div t-if="fe.get('impuestos')" class="text-start mt-2">
+                        <div class="text-bold text-small" t-out="fe['titulo']"/>
+                        <table class="w-100 text-small">
+                            <tbody>
+                                <tr t-foreach="fe['impuestos']" t-as="imp">
+                                    <td class="text-start w-70" t-out="imp[0]"/>
+                                    <td class="text-end w-30 font-monospace" t-out="imp[1]"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div t-if="conditions.get('comercio_factura_pendiente')" class="w-100 text-center mt-2 comercio-factura-pendiente">
+                    <div class="text-bold">FACTURA PENDIENTE</div>
+                    <div class="text-small">ARCA no respondió: la factura se emite cuando se restablezca el servicio.
+                        Este ticket no es válido como factura.</div>
+                </div>
+            </div>
+        </template>
+    </data>
+</odoo>

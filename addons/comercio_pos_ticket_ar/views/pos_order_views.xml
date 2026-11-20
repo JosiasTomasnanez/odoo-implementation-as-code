@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Filtro para la administración: ventas que la caja no pudo facturar porque ARCA no respondió -->
+    <record id="view_pos_order_filter_sin_factura_arca" model="ir.ui.view">
+        <field name="name">pos.order.filter.comercio.sin.factura.arca</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_order_filter"/>
+        <field name="arch" type="xml">
+            <filter name="invoiced" position="after">
+                <filter name="comercio_sin_factura_arca" string="Sin factura: ARCA no respondió"
+                        domain="[('comercio_sin_factura_arca', '=', True)]"/>
+                <filter name="comercio_factura_pendiente" string="Factura pendiente (ARCA)"
+                        domain="[('comercio_factura_pendiente', '=', True)]"/>
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_pos_pos_form_sin_factura_arca" model="ir.ui.view">
+        <field name="name">pos.order.form.comercio.sin.factura.arca</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_pos_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-warning mb-0" role="alert" invisible="not comercio_factura_pendiente">
+                    ARCA no respondió al cobrar: la factura queda pendiente y se hace sola cuando ARCA vuelva
+                    (o con «Facturar con CAE»). <field name="comercio_motivo_sin_factura" class="d-inline" readonly="1"/>
+                </div>
+                <div class="alert alert-warning mb-0" role="alert"
+                     invisible="not comercio_sin_factura_arca or comercio_factura_pendiente or comercio_factura_odoo">
+                    ARCA no respondió al cobrar: la venta quedó sin factura de Odoo.
+                    <field name="comercio_motivo_sin_factura" class="d-inline" readonly="1"/>
+                </div>
+                <field name="comercio_sin_factura_arca" invisible="1"/>
+                <field name="comercio_factura_pendiente" invisible="1"/>
+                <field name="comercio_factura_odoo" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Administración: facturar ya las pendientes por ARCA (lo mismo que la tarea de cada 10 minutos) -->
+    <record id="view_pos_order_tree_reintentar_facturas" model="ir.ui.view">
+        <field name="name">pos.order.list.comercio.reintentar.facturas</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_order_tree"/>
+        <field name="arch" type="xml">
+            <header position="inside">
+                <button name="action_comercio_reintentar_facturas" type="object" display="always"
+                        string="Reintentar facturas pendientes" groups="account.group_account_invoice"/>
+            </header>
+        </field>
+    </record>
+</odoo>

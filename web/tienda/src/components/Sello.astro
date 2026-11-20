@@ -1,0 +1,4 @@
+---
+const { arriba, num, abajo } = Astro.props as { arriba: string; num: string; abajo?: string };
+---
+<span class="sello" aria-hidden="true"><span class="s-chico">{arriba}</span><span class="s-num">{num}</span>{abajo && <span class="s-chico">{abajo}</span>}</span>

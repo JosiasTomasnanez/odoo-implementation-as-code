@@ -1,0 +1,17 @@
+# Solo laboratorio (ADR 0028): receptor que hace de «Discord» para probar los avisos sin un
+# webhook real. Guarda cada tarjeta que recibe en /capturas (y la muestra en su log):
+#   docker logs odoo-lab-receptor-prueba-1
+# Lo usa infra/scripts/verificar-monitoreo.py --probar-avisos.
+services:
+  receptor-prueba:
+    image: python:3.13.17-alpine3.23
+    command: ["python", "-u", "/app/receptor_prueba.py"]
+    volumes:
+      - ./monitoreo/lab/receptor_prueba.py:/app/receptor_prueba.py:ro
+    networks: [monitoreo]
+    mem_limit: 32m
+
+  # En el lab el «mail» es Mailpit, que está en la red del lab (en el servidor, Resend está en
+  # Internet y alcanza con la red «monitoreo»)
+  relay-discord:
+    networks: [default, monitoreo]

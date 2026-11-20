@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- QR del pedido en el proforma de los puestos que arman pedidos.
+         Los datos los agrega generate_printer_data.js (comercio_pedido_qr). -->
+    <template id="pos_order_receipt_header_pedido_qr" inherit_id="point_of_sale.pos_order_receipt_header">
+        <xpath expr="//div[@t-if=&quot;order['state'] == 'draft'&quot;]" position="after">
+            <div t-if="image.get('comercio_pedido_qr')" class="w-100 text-center mb-2" name="comercio_pedido_qr">
+                <div>Presentar en caja para pagar</div>
+                <img t-att-src="image.get('comercio_pedido_qr')" style="width: 45%;"/>
+                <div class="fs-2" t-out="order['pos_reference']"/>
+            </div>
+            <!-- Se cobra en la registradora (P-046, temporal): sin QR -->
+            <!-- (el número ya está arriba, debajo del logo) -->
+            <div t-if="conditions.get('comercio_pagar_en_registradora')" class="w-100 text-center mb-2"
+                 name="comercio_pagar_en_registradora">
+                <div>Presentar en caja para pagar</div>
+            </div>
+        </xpath>
+        <!-- Ticket del puesto: sin «Recibo proforma», «Atendido por» ni el cliente
+             (siempre es Consumidor Final). Va después del xpath de arriba, que ubica este div. -->
+        <xpath expr="//div[@t-if=&quot;order['state'] == 'draft'&quot;]" position="attributes">
+            <attribute name="t-if">order['state'] == 'draft' and not conditions.get('comercio_ticket_puesto')</attribute>
+        </xpath>
+        <xpath expr="//div[@name='cashier_name']" position="attributes">
+            <attribute name="t-if">extra_data['cashier_name'] and not conditions.get('comercio_ticket_puesto')</attribute>
+        </xpath>
+        <xpath expr="//div[@name='partner_info']" position="attributes">
+            <attribute name="t-if">not conditions.get('comercio_ticket_puesto')</attribute>
+        </xpath>
+        <!-- Ticket del puesto (pedido de Daniel, 17/11): logo más chico y el puesto bien visible
+             debajo de la fecha y hora (en el pie ya no va). -->
+        <xpath expr="//div[@name='logo']/img" position="attributes">
+            <!-- Lo compila Owl en el navegador: sin «x if c else y» de Python -->
+            <attribute name="t-att-class">(conditions.get('comercio_ticket_puesto') and 'w-30') or 'w-50'</attribute>
+            <attribute name="class"/>
+        </xpath>
+        <xpath expr="//span[@t-out=&quot;extra_data['formated_date_order']&quot;]" position="after">
+            <div t-if="conditions.get('comercio_ticket_puesto') and config.get('name')"
+                 class="text-large text-bold mt-1" name="comercio_puesto">
+                Puesto: <t t-out="config['name']"/>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Líneas del ticket del puesto: sin precio por unidad; lo pesado muestra «1,250 kg».
+         comercio_cantidad y comercio_pesada los agrega generate_printer_data.js. El ticket lo
+         arma el navegador: en «line» no hay .get() (en «conditions» sí). -->
+    <template id="pos_orderline_receipt_puesto" inherit_id="point_of_sale.pos_orderline_receipt">
+        <xpath expr="//span[hasclass('qty')]/t" position="replace">
+            <t t-if="conditions.get('comercio_ticket_puesto')" t-out="line['comercio_cantidad']"/>
+            <t t-else="" t-out="line['qty']"/>
+        </xpath>
+    </template>
+    <template id="pos_orderline_receipt_information_puesto" inherit_id="point_of_sale.pos_orderline_receipt_information">
+        <xpath expr="//span[@name='standard-unit-price']" position="attributes">
+            <!-- En el puesto, el precio unitario estándar de Odoo («$ 450,00 / Unidades») solo si el
+                 puesto lo pide (comercio_ticket_unitario, 17/11) -->
+            <attribute name="t-if">not conditions['basic_receipt'] and not len(line['combo_line_ids']) and not line['is_service_fee_line'] and (not conditions.get('comercio_ticket_puesto') or line['comercio_unitario'])</attribute>
+        </xpath>
+        <xpath expr="//span[@name='standard-unit-price']" position="after">
+            <div t-if="conditions.get('comercio_ticket_puesto') and line['comercio_pesada']"
+                 class="text-normal font-monospace" name="comercio_pesada"
+                 t-out="line['comercio_pesada']"/>
+        </xpath>
+    </template>
+
+    <!-- Sin margen de hoja, Chrome no imprime su encabezado y pie (la dirección
+         «localhost…», la fecha y el número de página) debajo del ticket. -->
+    <template id="pos_order_receipt_style_puesto" inherit_id="point_of_sale.pos_order_receipt_style">
+        <xpath expr="//style" position="after">
+            <!-- El ticket de Odoo mide 512 px y en la TM-T88V (Chrome, papel 80 mm, márgenes
+                 «Ninguno», escala predeterminada) se cortaban los costados: el ancho útil medido es
+                 ~400 px, recortado parejo a los dos lados (266 px ocupaba dos tercios; 420 px cortaba la «T» y el último decimal, 17/11).
+                 Al imprimir: 390 px y letras al 76 % (380 px quedaba apenas corrido a la izquierda) y 6 px de margen a la izquierda (390 px sin margen cortaba un pelo la «T» de «Total»). Sin «zoom» (salía en blanco en Windows). -->
+            <style t-if="(conditions or {}).get('comercio_ticket_puesto')">
+                @page { margin: 0; }
+                @media print {
+                    #pos-receipt { width: 390px !important; font-size: 16.8px !important; padding-left: 6px !important; }
+                    #pos-receipt .text-small { font-size: 13.7px !important; line-height: 19.5px !important; }
+                    #pos-receipt .text-normal { font-size: 16.8px !important; line-height: 23.5px !important; }
+                    #pos-receipt .text-large { font-size: 22.9px !important; line-height: 31px !important; }
+                    #pos-receipt .text-huge { font-size: 34.3px !important; line-height: 46px !important; }
+                    #pos-receipt .text-insane { font-size: 38px !important; line-height: 56px !important; }
+                    #pos-receipt .fs-2 { font-size: 27px !important; }
+                }
+            </style>
+        </xpath>
+    </template>
+
+    <!-- Ticket del puesto: sin subtotal (sin IVA), sin CUIT y sin «Con la tecnología de Odoo».
+         Las líneas de impuestos las vacía generate_printer_data.js (comercio_ticket_puesto).
+         company_info_receipt también lo usan tickets sin «conditions»: de ahí el «or {}». -->
+    <template id="pos_order_receipt_sin_iva" inherit_id="point_of_sale.pos_order_receipt">
+        <xpath expr="//td[@name='subtotal']/.." position="attributes">
+            <attribute name="t-if">not conditions.get('comercio_ticket_puesto')</attribute>
+        </xpath>
+    </template>
+    <template id="pos_order_receipt_footer_puesto" inherit_id="point_of_sale.pos_order_receipt_footer">
+        <xpath expr="//div[strong='Odoo']" position="attributes">
+            <attribute name="t-if">not (conditions or {}).get('comercio_ticket_puesto')</attribute>
+        </xpath>
+    </template>
+    <template id="company_info_receipt_puesto" inherit_id="point_of_sale.company_info_receipt">
+        <!-- Ticket del puesto: sin el bloque del local en el pie (nombre del puesto, dirección,
+             teléfono, mail y web; el puesto va arriba, debajo de la fecha). -->
+        <xpath expr="//table" position="attributes">
+            <attribute name="t-if">not (conditions or {}).get('comercio_ticket_puesto')</attribute>
+        </xpath>
+        <xpath expr="//td[@name='company_info_vat']" position="attributes">
+            <attribute name="t-if">company.get('vat') and extra_data.get('vat_label') and not (conditions or {}).get('comercio_ticket_puesto')</attribute>
+        </xpath>
+    </template>
+</odoo>

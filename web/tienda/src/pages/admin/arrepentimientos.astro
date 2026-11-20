@@ -1,0 +1,52 @@
+---
+// Pedidos de arrepentimiento (botón de arrepentimiento): los ve y los marca resueltos la administración.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/BaseAdmin.astro";
+import { miembroActual, puede } from "../../servidor/equipo";
+import { CANCELABLES, ESTADOS } from "../../servidor/estados";
+const yo = await miembroActual(env.DB, Astro.request);
+if (!yo) return Astro.redirect("/admin/ingresar", 303);
+if (!puede(yo, "admin")) return Astro.redirect("/admin", 303);
+type A = { codigo: string; creado: string; nombre: string; email: string; telefono: string | null; pedido: string; motivo: string | null; resuelto: string | null; resuelto_por: string | null; nota: string | null };
+// «coincide»: ese número de pedido existe, está pago y se hizo con ese mail (si no, revisar antes de devolver)
+const lista = (await env.DB.prepare(`SELECT a.*, (SELECT p.estado FROM pedidos p WHERE 'W-' || printf('%04d', p.numero) = a.pedido AND p.email = a.email AND p.pagado IS NOT NULL) AS estado
+    FROM arrepentimientos a ORDER BY a.resuelto IS NOT NULL, a.creado DESC LIMIT 200`).all<A & { estado: string | null }>()).results;
+const fecha = (t: string) => new Date(t).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Cordoba" });
+---
+<Base titulo="Arrepentimientos" actual="arrepentimientos" miembro={yo}>
+  <h1 class="h-disp">Arrepentimientos</h1>
+  <p class="adm-sub">Quien usa el «botón de arrepentimiento» queda acá con su código. Hay que contactarlo y, si corresponde, tocar «Cancelar el pedido»: la tienda y Odoo lo dan de baja y Odoo deja las tareas de recibir la mercadería y devolver el dinero. Si se resolvió de otra forma, «Marcar resuelto». El plazo legal para pedirlo es de 10 días corridos desde que retiró.</p>
+  {lista.length === 0 && <p class="vacio">Nadie pidió arrepentimiento.</p>}
+  <div class="adm-lista">
+    {lista.map((a) => (
+      <article class={`adm-ficha${a.resuelto ? " baja" : ""}`}>
+        <header><div><b>{a.nombre} · pedido {a.pedido}</b><span class="cod">{a.codigo} · {fecha(a.creado)}</span></div>
+          <span class={`estado ${a.resuelto ? "ok" : "pend"}`}>{a.resuelto ? `Resuelto por ${a.resuelto_por}` : "Pendiente"}</span></header>
+        <dl>
+          <div><dt>Mail</dt><dd><a href={`mailto:${a.email}`}>{a.email}</a></dd></div>
+          <div><dt>Teléfono</dt><dd>{a.telefono ?? "—"}</dd></div>
+          <div><dt>Pedido</dt><dd>{a.estado ? `Coincide con una compra de ese mail · ${ESTADOS[a.estado] ?? a.estado}` : <span class="err">No hay una compra paga con ese número y ese mail: revisar</span>}</dd></div>
+          <div><dt>Motivo</dt><dd>{a.motivo ?? "—"}</dd></div>
+          {a.nota && <div><dt>Nota</dt><dd>{a.nota}</dd></div>}
+        </dl>
+        {!a.resuelto && a.estado && CANCELABLES.includes(a.estado) && (
+          <form class="adm-acc" method="post" action="/api/admin/cancelar" style="grid-template-columns:minmax(0,1fr) auto">
+            <input type="hidden" name="codigo" value={a.codigo}>
+            <label class="campo"><span>Cancelar el pedido <i>({a.estado === "retirado"
+              ? "ya lo retiró: Odoo deja preparada la devolución para cuando traiga la mercadería"
+              : "Odoo cancela el pedido y lo separado vuelve al depósito"}; el dinero se devuelve a mano por Mercado Pago)</i></span>
+              <input name="nota" maxlength="300" placeholder="Nota (opcional)"></label>
+            <div class="botones"><label class="chk"><input type="checkbox" required> Confirmo</label><button class="btn" type="submit">Cancelar el pedido</button></div>
+          </form>
+        )}
+        {!a.resuelto && (
+          <form class="adm-acc" method="post" action="/api/admin/arrepentimiento" style="grid-template-columns:minmax(0,1fr) auto">
+            <input type="hidden" name="codigo" value={a.codigo}>
+            <label class="campo"><span>Nota <i>(qué se hizo)</i></span><input name="nota" maxlength="300"></label>
+            <div class="botones"><button class="btn sec2" type="submit">Marcar resuelto</button></div>
+          </form>
+        )}
+      </article>
+    ))}
+  </div>
+</Base>

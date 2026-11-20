@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Ficha del producto: sugerido y «Precio manual» debajo del precio de venta -->
+    <record id="product_template_form_view_precios" model="ir.ui.view">
+        <field name="name">product.template.form.comercio.precios</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='list_price_per_uom_id']" position="after">
+                <field name="comercio_precio_manual"/>
+                <field name="comercio_margen_especial"/>
+                <field name="comercio_margen_propio" invisible="not comercio_margen_especial"/>
+                <field name="comercio_base_especial" invisible="not comercio_margen_especial"
+                       placeholder="La de su rubro"/>
+                <field name="comercio_proveedor_especial_id" options="{'no_create': True}"
+                       invisible="not comercio_margen_especial or comercio_base_especial != 'proveedor'"
+                       required="comercio_margen_especial and comercio_base_especial == 'proveedor'"/>
+                <field name="comercio_precio_calculado" invisible="not comercio_precio_calculado"
+                       decoration-warning="comercio_precio_desactualizado"/>
+                <field name="comercio_precio_detalle" invisible="not comercio_precio_detalle"/>
+                <field name="comercio_precio_desactualizado" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Precios a actualizar: revisar y aplicar el sugerido -->
+    <record id="product_template_list_precios" model="ir.ui.view">
+        <field name="name">product.template.list.comercio.precios</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Precios a actualizar" create="0">
+                <header>
+                    <button name="action_comercio_aplicar_precio" type="object" string="Aplicar precio nuevo"
+                            class="btn-primary"/>
+                    <button name="action_comercio_recalcular_todo" type="object" string="Recalcular"
+                            display="always"/>
+                    <button name="%(action_diferencia_chica_wizard)d" type="action" string="Diferencia chica"
+                            display="always"
+                            help="Hasta qué porcentaje un cambio de precio no vale la pena (sale en naranja y no se muestra)."/>
+                </header>
+                <field name="default_code" optional="show"/>
+                <field name="name"/>
+                <field name="categ_id" optional="show"/>
+                <field name="comercio_proveedor_costo_id" string="Proveedor" optional="show"/>
+                <field name="standard_price" string="Costo" optional="show"/>
+                <field name="taxes_id" string="IVA" widget="many2many_tags" optional="show"/>
+                <field name="list_price" string="Precio actual"/>
+                <field name="comercio_precio_calculado" string="Precio nuevo"/>
+                <field name="comercio_precio_variacion" decoration-warning="comercio_precio_cambio_chico"
+                       decoration-danger="not comercio_precio_cambio_chico and comercio_precio_variacion &gt; 0"
+                       decoration-success="not comercio_precio_cambio_chico and comercio_precio_variacion &lt; 0"/>
+                <field name="comercio_precio_cambio_chico" column_invisible="1"/>
+                <field name="comercio_precio_detalle" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Diferencia chica: los cambios que no la superan (naranja) no se muestran por defecto -->
+    <record id="product_template_search_precios" model="ir.ui.view">
+        <field name="name">product.template.search.comercio.precios</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Producto" filter_domain="['|', '|', ('name', 'ilike', self), ('default_code', 'ilike', self), ('barcode', 'ilike', self)]"/>
+                <field name="categ_id"/>
+                <field name="seller_ids" string="Cualquier proveedor"
+                       filter_domain="[('seller_ids.partner_id.commercial_partner_id.name', 'ilike', self)]"/>
+                <field name="comercio_proveedor_costo_id" string="Proveedor del costo"/>
+                <filter name="para_cambiar" string="Para cambiar" domain="[('comercio_precio_cambio_chico', '=', False)]"/>
+                <filter name="diferencia_chica" string="Diferencia chica (naranja)"
+                        domain="[('comercio_precio_cambio_chico', '=', True)]"/>
+                <separator/>
+                <filter name="sube" string="Suben" domain="[('comercio_precio_variacion', '&gt;', 0)]"/>
+                <filter name="baja" string="Bajan" domain="[('comercio_precio_variacion', '&lt;', 0)]"/>
+                <group>
+                    <filter name="por_proveedor" string="Proveedor (el que da el costo)"
+                            context="{'group_by': 'comercio_proveedor_costo_id'}"/>
+                    <filter name="por_categoria" string="Categoría" context="{'group_by': 'categ_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_precios_a_actualizar" model="ir.actions.act_window">
+        <field name="name">Precios a actualizar</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="product_template_list_precios"/>
+        <field name="domain">[("comercio_precio_desactualizado", "=", True)]</field>
+        <field name="search_view_id" ref="product_template_search_precios"/>
+        <field name="context">{"search_default_para_cambiar": 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Todos los precios de venta coinciden con el margen de su categoría.</p>
+            <p>Acá aparecen los productos cuyo precio sugerido (costo + margen + IVA) cambió.
+               Marcar los que se quieren cambiar y «Aplicar precio nuevo».</p>
+        </field>
+    </record>
+
+    <!-- Etiquetas a reimprimir -->
+    <record id="product_template_list_etiquetas" model="ir.ui.view">
+        <field name="name">product.template.list.comercio.etiquetas</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Etiquetas a reimprimir" create="0">
+                <header>
+                    <button name="action_comercio_imprimir_etiquetas" type="object" string="Imprimir etiquetas"
+                            class="btn-primary"/>
+                    <button name="action_comercio_etiquetas_impresas" type="object" string="Marcar impresas"/>
+                </header>
+                <field name="default_code" optional="show"/>
+                <field name="name"/>
+                <field name="barcode" optional="show"/>
+                <field name="categ_id" optional="show"/>
+                <field name="list_price" string="Precio"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_etiquetas_a_reimprimir" model="ir.actions.act_window">
+        <field name="name">Etiquetas a reimprimir</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="product_template_list_etiquetas"/>
+        <field name="domain">[("comercio_etiqueta_pendiente", "=", True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No hay etiquetas pendientes.</p>
+            <p>Acá aparecen los productos a los que se les cambió el precio de venta.</p>
+        </field>
+    </record>
+
+    <!-- Márgenes especiales: productos con su propio margen (excepciones al rubro) -->
+    <record id="product_template_list_margenes" model="ir.ui.view">
+        <field name="name">product.template.list.comercio.margenes</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <list string="Márgenes especiales" editable="bottom" create="0" delete="0" multi_edit="1">
+                <header>
+                    <button name="%(action_margen_especial_wizard)d" type="action" string="Agregar producto"
+                            class="btn-primary" display="always"/>
+                </header>
+                <field name="comercio_margen_especial" string="Especial" width="80px"/>
+                <field name="default_code" optional="show" readonly="1"/>
+                <field name="name" readonly="1"/>
+                <field name="categ_id" readonly="1"/>
+                <field name="comercio_margen_rubro"/>
+                <field name="comercio_margen_propio" readonly="not comercio_margen_especial"/>
+                <field name="comercio_base_especial" readonly="not comercio_margen_especial"
+                       placeholder="La de su rubro" optional="show"/>
+                <field name="comercio_proveedor_especial_id" options="{'no_create': True}" optional="show"
+                       readonly="not comercio_margen_especial or comercio_base_especial != 'proveedor'"
+                       required="comercio_margen_especial and comercio_base_especial == 'proveedor'"/>
+                <field name="taxes_id" string="IVA" widget="many2many_tags" readonly="1" optional="show"/>
+                <field name="standard_price" string="Costo" readonly="1" optional="show"/>
+                <field name="comercio_precio_calculado" string="Precio sugerido"/>
+                <field name="list_price" string="Precio actual" readonly="1"/>
+                <field name="comercio_precio_detalle" optional="hide"/>
+                <field name="comercio_precio_desactualizado" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="product_template_search_margenes" model="ir.ui.view">
+        <field name="name">product.template.search.comercio.margenes</field>
+        <field name="model">product.template</field>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Producto" filter_domain="['|', '|', ('name', 'ilike', self), ('default_code', 'ilike', self), ('barcode', 'ilike', self)]"/>
+                <field name="categ_id"/>
+                <filter name="margen_especial" string="Con margen especial"
+                        domain="[('comercio_margen_especial', '=', True)]"/>
+                <filter name="para_actualizar" string="Precio para actualizar"
+                        domain="[('comercio_precio_desactualizado', '=', True)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_margenes_especiales" model="ir.actions.act_window">
+        <field name="name">Márgenes especiales</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="product_template_list_margenes"/>
+        <field name="search_view_id" ref="product_template_search_margenes"/>
+        <field name="context">{"search_default_margen_especial": 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Ningún producto tiene margen especial: todos usan el de su rubro.</p>
+            <p>Para darle a un producto su propio margen: «Agregar producto», buscarlo y escribir el
+               porcentaje. El precio nuevo aparece en «Precios a actualizar».</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_precios" name="Precios de venta" parent="comercio_catalogo.menu_raiz" sequence="10"/>
+    <menuitem id="menu_precios_a_actualizar" name="Precios a actualizar" parent="menu_precios" sequence="1"
+              action="action_precios_a_actualizar"/>
+    <menuitem id="menu_etiquetas" name="Etiquetas a reimprimir" parent="menu_precios" sequence="2"
+              action="action_etiquetas_a_reimprimir"/>
+    <menuitem id="menu_margenes" name="Márgenes por categoría" parent="menu_precios" sequence="3"
+              action="action_margenes_por_categoria"/>
+    <menuitem id="menu_margenes_especiales" name="Márgenes especiales" parent="menu_precios" sequence="4"
+              action="action_margenes_especiales"/>
+</odoo>

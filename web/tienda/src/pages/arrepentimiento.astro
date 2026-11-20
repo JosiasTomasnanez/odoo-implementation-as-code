@@ -1,0 +1,34 @@
+---
+// Botón de arrepentimiento (Res. 424/2020 de la Secretaría de Comercio Interior): pedir que se deje
+// sin efecto una compra, sin registrarse ni dar motivos. Se entrega un código de gestión en el
+// momento y por mail.
+import { env } from "cloudflare:workers";
+import Legal from "../components/Legal.astro";
+const sitekey = env.TURNSTILE_SITEKEY ?? "";
+const q = Astro.url.searchParams;
+const codigo = /^AR-[0-9A-F]{8}$/.test(q.get("codigo") ?? "") ? q.get("codigo") : null;
+const e = q.get("e");
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Legal titulo="Botón de arrepentimiento" borrador={false}>
+  {codigo ? (
+    <div class="adm-ok" role="status">
+      <p><b>Recibimos tu pedido de arrepentimiento.</b></p>
+      <p>Tu código de gestión es <b class="num">{codigo}</b>. Guardalo (si el mail es el de tu compra, también te lo mandamos ahí). Te vamos a escribir para coordinar la devolución del producto y del dinero.</p>
+    </div>
+  ) : (<>
+    <p>Si compraste en esta tienda, podés dejar sin efecto la compra dentro de los <b>10 días corridos</b> desde que retiraste el producto, sin dar motivos y sin costo. Completá estos datos y te damos un código de gestión.</p>
+    <form class="ingreso" method="post" action="/api/arrepentimiento" style="margin:0">
+      {e === "datos" && <p class="aviso">Revisá el nombre, el mail y el número de pedido.</p>}
+      {e === "robot" && <p class="aviso">No pudimos comprobar que no sos un robot. Probá de nuevo.</p>}
+      <label class="campo"><span>Nombre y apellido</span><input name="nombre" required minlength="2" maxlength="120" autocomplete="name"></label>
+      <label class="campo"><span>Mail con el que compraste</span><input name="email" type="email" required maxlength="160" autocomplete="email"></label>
+      <label class="campo"><span>Número de pedido</span><input name="pedido" required maxlength="12" placeholder="W-0000" autocomplete="off"><small>Está en el mail de tu compra.</small></label>
+      <label class="campo"><span>Teléfono <i>(opcional)</i></span><input name="telefono" type="tel" maxlength="30" autocomplete="tel"></label>
+      <label class="campo"><span>¿Querés contarnos por qué? <i>(opcional)</i></span><input name="motivo" maxlength="300"></label>
+      <div class="cf-turnstile" data-sitekey={sitekey} data-language="es"></div>
+      <button class="btn sec2" type="submit">Enviar pedido de arrepentimiento</button>
+    </form>
+    <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  </>)}
+</Legal>

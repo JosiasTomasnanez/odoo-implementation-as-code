@@ -1,0 +1,1991 @@
+{
+ "uid": "servidor",
+ "title": "Servidor",
+ "description": "CPU, memoria, discos, red, temperaturas, contenedores, respuesta de Odoo y backups del servidor del local (ADR 0028).",
+ "tags": [
+  "casa-ejemplo"
+ ],
+ "timezone": "America/Argentina/Cordoba",
+ "editable": false,
+ "graphTooltip": 1,
+ "refresh": "1m",
+ "schemaVersion": 41,
+ "version": 1,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "templating": {
+  "list": []
+ },
+ "panels": [
+  {
+   "type": "row",
+   "id": 1,
+   "title": "Resumen",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "type": "stat",
+   "title": "Encendido hace",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "time() - node_boot_time_seconds",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 2,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "CPU",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 3,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "RAM usada",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 80
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 4,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Disco más lleno",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "max(100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"}))",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 75
+       },
+       {
+        "color": "red",
+        "value": 85
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 5,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Temperatura máxima",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "max(node_hwmon_temp_celsius)",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 75
+       },
+       {
+        "color": "red",
+        "value": 85
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 6,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Odoo responde en",
+   "description": "Lo que tarda la página de entrada de Odoo (con la base).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "probe_duration_seconds{instance=~\".*/web/login\"}",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1.5
+       },
+       {
+        "color": "red",
+        "value": 3
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 7,
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   }
+  },
+  {
+   "type": "row",
+   "id": 8,
+   "title": "CPU y memoria",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "CPU por uso",
+     "description": "user = programas (Odoo, PostgreSQL); iowait = esperando al disco.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "100 * sum by (mode) (rate(node_cpu_seconds_total{mode!=\"idle\"}[$__rate_interval])) / scalar(count(count by (cpu) (node_cpu_seconds_total)))",
+       "refId": "A",
+       "legendFormat": "{{mode}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "max": 100,
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 9,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 6
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Carga (procesos esperando CPU)",
+     "description": "Por encima de la cantidad de núcleos, hay procesos haciendo cola.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_load1",
+       "refId": "A",
+       "legendFormat": "1 min"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_load5",
+       "refId": "B",
+       "legendFormat": "5 min"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_load15",
+       "refId": "C",
+       "legendFormat": "15 min"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "count(count by (cpu) (node_cpu_seconds_total))",
+       "refId": "D",
+       "legendFormat": "núcleos"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 10,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 6
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Memoria",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+       "refId": "A",
+       "legendFormat": "usada"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_memory_Cached_bytes + node_memory_Buffers_bytes",
+       "refId": "B",
+       "legendFormat": "caché de disco (se libera sola)"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_memory_MemAvailable_bytes",
+       "refId": "C",
+       "legendFormat": "disponible"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 11,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 14
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Swap",
+     "description": "Si la swap se lee y escribe todo el tiempo, falta RAM.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_memory_SwapTotal_bytes - node_memory_SwapFree_bytes",
+       "refId": "A",
+       "legendFormat": "usada"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_vmstat_pswpin[$__rate_interval]) * 4096",
+       "refId": "B",
+       "legendFormat": "leída por segundo"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_vmstat_pswpout[$__rate_interval]) * 4096",
+       "refId": "C",
+       "legendFormat": "escrita por segundo"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 12,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 14
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 13,
+   "title": "Discos",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 22
+   },
+   "panels": [
+    {
+     "type": "bargauge",
+     "title": "Uso por partición",
+     "description": "Los scripts avisan al pasar el 85 %.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"} / node_filesystem_size_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"})",
+       "refId": "A",
+       "legendFormat": "{{mountpoint}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "min": 0,
+       "max": 100,
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "orange",
+          "value": 75
+         },
+         {
+          "color": "red",
+          "value": 85
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "horizontal",
+      "displayMode": "gradient",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "namePlacement": "left",
+      "sizing": "auto"
+     },
+     "id": 14,
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 0,
+      "y": 23
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Espacio libre",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"}",
+       "refId": "A",
+       "legendFormat": "{{mountpoint}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 15,
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 8,
+      "y": 23
+     }
+    },
+    {
+     "type": "table",
+     "title": "Días hasta llenarse (al ritmo de las últimas 12 h)",
+     "description": "Muy grande = no se está llenando.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"} / clamp_min(-deriv(node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay|squashfs|vfat|ramfs|nsfs|fuse.*\"}[12h]), 0.001) / 86400",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "d",
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "__name__": true,
+         "instance": true,
+         "job": true,
+         "datname": true,
+         "schemaname": true,
+         "device": true,
+         "fstype": true
+        },
+        "renameByName": {
+         "mountpoint": "Partición",
+         "Value": "Días"
+        }
+       }
+      }
+     ],
+     "id": 16,
+     "gridPos": {
+      "h": 8,
+      "w": 8,
+      "x": 16,
+      "y": 23
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Lectura y escritura",
+     "description": "Escritura hacia abajo.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_disk_read_bytes_total{device!~\"loop.*|ram.*|dm-.*|sr.*\"}[$__rate_interval])",
+       "refId": "A",
+       "legendFormat": "{{device}} lee"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "-rate(node_disk_written_bytes_total{device!~\"loop.*|ram.*|dm-.*|sr.*\"}[$__rate_interval])",
+       "refId": "B",
+       "legendFormat": "{{device}} escribe"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "Bps",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 17,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 31
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Disco ocupado",
+     "description": "Porcentaje del tiempo que el disco está trabajando. Cerca de 100 % = saturado.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "100 * rate(node_disk_io_time_seconds_total{device!~\"loop.*|ram.*|dm-.*|sr.*\"}[$__rate_interval])",
+       "refId": "A",
+       "legendFormat": "{{device}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "max": 100,
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 18,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 31
+     }
+    },
+    {
+     "type": "table",
+     "title": "RAID (espejo)",
+     "description": "Discos de cada RAID por estado. Los scripts avisan al instante si se degrada.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_md_disks",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "__name__": true,
+         "instance": true,
+         "job": true,
+         "datname": true,
+         "schemaname": true
+        },
+        "renameByName": {
+         "device": "RAID",
+         "state": "Estado",
+         "Value": "Discos"
+        }
+       }
+      }
+     ],
+     "id": 19,
+     "gridPos": {
+      "h": 6,
+      "w": 12,
+      "x": 0,
+      "y": 39
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Esperas por disco (presión de E/S)",
+     "description": "Porcentaje del tiempo en que algún proceso esperó al disco.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_pressure_io_waiting_seconds_total[$__rate_interval]) * 100",
+       "refId": "A",
+       "legendFormat": "procesos esperando E/S"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 20,
+     "gridPos": {
+      "h": 6,
+      "w": 12,
+      "x": 12,
+      "y": 39
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 21,
+   "title": "Red",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 45
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Tráfico",
+     "description": "Envío hacia abajo.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_network_receive_bytes_total{device!~\"lo|veth.*|br-.*|docker.*|tailscale.*\"}[$__rate_interval]) * 8",
+       "refId": "A",
+       "legendFormat": "{{device}} recibe"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "-rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|br-.*|docker.*|tailscale.*\"}[$__rate_interval]) * 8",
+       "refId": "B",
+       "legendFormat": "{{device}} envía"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bps",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 22,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 46
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Errores y descartes",
+     "description": "Tiene que estar en cero; si no, revisar cable o placa.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_network_receive_errs_total{device!~\"lo|veth.*|br-.*|docker.*|tailscale.*\"}[$__rate_interval]) + rate(node_network_transmit_errs_total{device!~\"lo|veth.*|br-.*|docker.*|tailscale.*\"}[$__rate_interval])",
+       "refId": "A",
+       "legendFormat": "{{device}} errores"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(node_network_receive_drop_total{device!~\"lo|veth.*|br-.*|docker.*|tailscale.*\"}[$__rate_interval]) + rate(node_network_transmit_drop_total{device!~\"lo|veth.*|br-.*|docker.*|tailscale.*\"}[$__rate_interval])",
+       "refId": "B",
+       "legendFormat": "{{device}} descartes"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "pps",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 23,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 46
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 24,
+   "title": "Temperaturas",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 54
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Sensores",
+     "description": "k10temp = procesador (Ryzen); nvme/drivetemp = discos (también los vigila smartd).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "node_hwmon_temp_celsius",
+       "refId": "A",
+       "legendFormat": "{{chip}} {{sensor}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "celsius",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 25,
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 55
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 26,
+   "title": "Contenedores",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 63
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "CPU por contenedor",
+     "description": "100 % = un núcleo entero.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{name!=\"\"}[$__rate_interval])) * 100",
+       "refId": "A",
+       "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 27,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 64
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "RAM por contenedor",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (container_label_com_docker_compose_service) (container_memory_working_set_bytes{name!=\"\"})",
+       "refId": "A",
+       "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 28,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 64
+     }
+    },
+    {
+     "type": "table",
+     "title": "RAM usada contra el límite",
+     "description": "Límites de compose.monitoreo.yml (Odoo y PostgreSQL no tienen).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (container_label_com_docker_compose_service) (container_memory_working_set_bytes{name!=\"\"})",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (container_label_com_docker_compose_service) (container_spec_memory_limit_bytes{name!=\"\"} > 0)",
+       "refId": "B",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [
+      {
+       "id": "merge",
+       "options": {}
+      },
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true
+        },
+        "renameByName": {
+         "container_label_com_docker_compose_service": "Servicio",
+         "Value #A": "Usada",
+         "Value #B": "Límite"
+        }
+       }
+      }
+     ],
+     "id": 29,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 72
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Contenedores sin memoria (OOM)",
+     "description": "Debería estar siempre en cero.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (container_label_com_docker_compose_service) (increase(container_oom_events_total{name!=\"\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "{{container_label_com_docker_compose_service}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 30,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 72
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 31,
+   "title": "Odoo: respuesta y errores",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 80
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Tiempo de respuesta",
+     "description": "/web/health = Odoo vivo; /web/login = página con la base (lo que siente un usuario). Alerta: más de 3 s durante 5 min.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "probe_duration_seconds",
+       "refId": "A",
+       "legendFormat": "{{instance}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 32,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 81
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Odoo responde",
+     "description": "1 = sí, 0 = no.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "probe_success",
+       "refId": "A",
+       "legendFormat": "{{instance}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "min": 0,
+       "max": 1,
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        },
+        "lineInterpolation": "stepAfter"
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 33,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 81
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Errores en el registro de Odoo",
+     "description": "Líneas ERROR y CRITICAL en los últimos 15 min (las cuenta revisar-servidor.sh). Detalle: docker logs del contenedor odoo. Vacío en el lab.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "odoo_log_lineas{nivel=~\"ERROR|CRITICAL\"}",
+       "refId": "A",
+       "legendFormat": "{{nivel}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 34,
+     "gridPos": {
+      "h": 7,
+      "w": 24,
+      "x": 0,
+      "y": 89
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 35,
+   "title": "Backups",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 96
+   },
+   "panels": [
+    {
+     "type": "bargauge",
+     "title": "Último backup bueno, hace",
+     "description": "Por copia (pendrive y R2). Los scripts avisan a las 26 h. Vacío en el lab.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "(time() - odoo_backup_ultimo_ok_timestamp_seconds) / 3600",
+       "refId": "A",
+       "legendFormat": "{{copia}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "h",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "orange",
+          "value": 25
+         },
+         {
+          "color": "red",
+          "value": 26
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "horizontal",
+      "displayMode": "gradient",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "namePlacement": "left",
+      "sizing": "auto"
+     },
+     "id": 36,
+     "gridPos": {
+      "h": 6,
+      "w": 8,
+      "x": 0,
+      "y": 97
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Tamaño del backup",
+     "description": "Lo escribe backup-nocturno.sh cada noche.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "odoo_backup_bytes",
+       "refId": "A",
+       "legendFormat": "base y adjuntos"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "odoo_filestore_bytes",
+       "refId": "B",
+       "legendFormat": "adjuntos (filestore)"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 37,
+     "gridPos": {
+      "h": 6,
+      "w": 8,
+      "x": 8,
+      "y": 97
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Duración del backup",
+     "description": "Volcado + copias a pendrive y R2.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "odoo_backup_duracion_segundos",
+       "refId": "A",
+       "legendFormat": "duración"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 38,
+     "gridPos": {
+      "h": 6,
+      "w": 8,
+      "x": 16,
+      "y": 97
+     }
+    }
+   ]
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "links": []
+}

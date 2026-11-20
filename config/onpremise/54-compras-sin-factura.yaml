@@ -1,0 +1,15 @@
+# Compras sin factura (23/10, módulo comercio_factura_proveedor): para registrar y
+# pagar lo que el proveedor todavía no facturó (presupuesto, remito valorizado, nota de pedido)
+# hasta que la administración cargue la factura real. Sin documentos fiscales: no va al libro
+# IVA ni da crédito fiscal, y las líneas van sin IVA (el módulo se lo saca). Cuando llega la
+# factura real, la administración la carga y anula esta a mano. Uso: docs/runbooks/facturas-proveedor.md.
+model: account.journal
+match: [code]
+records:
+  - id: diario_compras_sin_factura
+    values:
+      name: {valor: diarios.compras_sin_factura}
+      type: purchase
+      code: PROV
+      l10n_latam_use_documents: false
+      comercio_sin_factura: true

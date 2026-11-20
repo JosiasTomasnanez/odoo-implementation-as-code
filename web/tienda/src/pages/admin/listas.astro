@@ -1,0 +1,56 @@
+---
+// Listas de precios para clientes: las que ya existen (sincronizadas desde Odoo) con cuántos
+// clientes las usan, y crear una nueva fácil: «tal lista con X % de descuento» (p. ej. para un
+// cliente que compra seguido). Odoo la crea y vuelve con sus precios en la sincronización.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/BaseAdmin.astro";
+import { miembroActual, puede } from "../../servidor/equipo";
+import { leerReglas, pct } from "../../servidor/listas";
+const yo = await miembroActual(env.DB, Astro.request);
+if (!yo) return Astro.redirect("/admin/ingresar", 303);
+if (!puede(yo, "mayoristas")) return Astro.redirect("/admin", 303);
+const ok = Astro.url.searchParams.get("ok"), e = Astro.url.searchParams.get("e");
+type L = { id_odoo: number; nombre: string; publica: number; clientes: number; productos: number };
+const listas = (await env.DB.prepare(`SELECT l.id_odoo, l.nombre, l.publica,
+    (SELECT COUNT(*) FROM clientes c WHERE c.lista_id = l.id_odoo AND c.mayorista = 'aprobado') AS clientes,
+    (SELECT COUNT(*) FROM precios p WHERE p.lista_id = l.id_odoo) AS productos
+    FROM listas_precios l ORDER BY l.publica DESC, l.nombre`).all<L>()).results;
+type N = { id: string; nombre: string; base_id: number; descuento: number; creada: string; creada_por: string; odoo_id: number | null; resultado: string | null };
+const nuevas = (await env.DB.prepare(`SELECT * FROM listas_nuevas n WHERE n.odoo_id IS NULL OR NOT EXISTS (SELECT 1 FROM listas_precios l WHERE l.id_odoo = n.odoo_id)
+    ORDER BY creada DESC LIMIT 20`).all<N>()).results;
+// Las hechas acá, con sus condiciones resumidas
+const propias = new Map<number, string>();
+for (const n of (await env.DB.prepare("SELECT odoo_id, base_id, descuento, reglas FROM listas_nuevas WHERE odoo_id IS NOT NULL").all<{ odoo_id: number; base_id: number; descuento: number; reglas: string | null }>()).results) {
+  const k = leerReglas(n.reglas).length;
+  propias.set(n.odoo_id, `${listas.find((l) => l.id_odoo === n.base_id)?.nombre ?? "lista base"} − ${pct(n.descuento)}${k ? ` · ${k} ${k === 1 ? "descuento propio" : "descuentos propios"}` : ""}`);
+}
+const nombre = (id: number) => listas.find((l) => l.id_odoo === id)?.nombre ?? `Lista ${id}`;
+const porDefecto = listas.find((l) => !l.publica && /mayorista/i.test(l.nombre))?.id_odoo ?? listas[0]?.id_odoo;
+---
+<Base titulo="Listas" actual="listas" miembro={yo}>
+  <h1 class="h-disp">Listas de precios</h1>
+  <p class="adm-sub">Los precios los calcula Odoo. Tocá una lista para ver qué clientes la usan, pasarle clientes y, en las hechas acá, darle descuentos por rubro o por producto.</p>
+  {ok && <p class="adm-ok" role="status">Pedida. Odoo la crea en unos segundos y aparece acá con sus precios.</p>}
+  {e && <p class="aviso">Revisá los datos: un nombre y un descuento entre 0 y 60 %.</p>}
+  <div class="adm-dos">
+    <section>
+      <table class="adm-tabla">
+        <thead><tr><th>Lista</th><th>Productos</th><th>Clientes</th></tr></thead>
+        <tbody>
+          {listas.map((l) => <tr><td>{l.publica ? l.nombre : <a href={`/admin/listas/${l.id_odoo}`}><b>{l.nombre}</b></a>}{l.publica ? <span class="estado ok">Tienda (público)</span> : null}
+            <small>{l.publica ? "la que ve todo el mundo" : propias.get(l.id_odoo) ?? "armada en Odoo"}</small></td><td class="num">{l.productos}</td><td class="num">{l.publica ? "todos" : l.clientes}</td></tr>)}
+          {nuevas.map((n) => <tr class="espera"><td>{n.nombre}<span class="estado pend">{n.resultado?.startsWith("error") ? "Error en Odoo" : "Creándose en Odoo…"}</span>{n.resultado?.startsWith("error") && <small class="err">{n.resultado}</small>}</td><td class="num" colspan="2">{nombre(n.base_id)} − {n.descuento} %</td></tr>)}
+        </tbody>
+      </table>
+    </section>
+    <form class="adm-form" method="post" action="/api/admin/lista">
+      <h2>Nueva lista para clientes</h2>
+      <label class="campo"><span>Nombre</span><input name="nombre" required maxlength="60" placeholder="Ej.: Mayorista · Corralón López"></label>
+      <label class="campo"><span>Basada en</span>
+        <select name="base">{listas.map((l) => <option value={l.id_odoo} selected={l.id_odoo === porDefecto}>{l.nombre}</option>)}</select></label>
+      <label class="campo"><span>Descuento en toda la lista (%)</span><input name="descuento" type="number" inputmode="decimal" min="0" max="60" step="0.5" required value="5"></label>
+      <p class="nota-demo">Respeta la compra mínima de la lista base. Una vez creada, entrás a la lista y le sumás descuentos por rubro o por producto y los clientes.</p>
+      <button class="btn sec2" type="submit">Crear lista</button>
+    </form>
+  </div>
+</Base>

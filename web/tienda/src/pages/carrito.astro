@@ -1,0 +1,11 @@
+---
+import Base from "../layouts/Base.astro";
+import Carrito from "../components/Carrito.astro";
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Base titulo="Carrito" actual="carrito">
+  <section class="sec">
+    <div class="sec-tit"><h1 class="h-disp">Tu carrito</h1></div>
+    <Carrito />
+  </section>
+</Base>

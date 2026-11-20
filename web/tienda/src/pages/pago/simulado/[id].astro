@@ -1,0 +1,30 @@
+---
+// SOLO DEMO (PAGOS_MODO=simulado): pantalla que hace de Mercado Pago. En producción da 404.
+import { env } from "cloudflare:workers";
+import Base from "../../../layouts/Base.astro";
+import { modo } from "../../../servidor/pagos";
+import { mismoToken } from "../../../servidor/pedidos";
+import { pesos } from "../../../servidor/consultas";
+const id = Astro.params.id ?? "", t = Astro.url.searchParams.get("t") ?? "";
+if (modo(env) !== "simulado" || !/^[0-9a-f]{32}$/.test(id)) return Astro.rewrite("/404");
+const p = await env.DB.prepare("SELECT numero, token, total, estado FROM pedidos WHERE id = ?").bind(id).first<{ numero: number; token: string; total: number; estado: string }>();
+if (!p || !mismoToken(t, p.token)) return Astro.rewrite("/404");
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Base titulo="Pago de prueba">
+  <section class="sec">
+    <div class="ingreso">
+      <h1 class="h-disp">Pago de prueba</h1>
+      <p class="aviso">Esto reemplaza a Mercado Pago mientras no esté conectado. Nadie paga nada.</p>
+      <p>Pedido <b>W-{String(p.numero).padStart(4, "0")}</b> · Total <b>{pesos(p.total)}</b></p>
+      {p.estado === "pendiente_pago" ? (
+        <form method="post" action="/api/pago/simulado" class="pago-sim">
+          <input type="hidden" name="id" value={id}>
+          <input type="hidden" name="t" value={t}>
+          <button class="btn" name="decision" value="aprobar">Aprobar el pago</button>
+          <button class="btn lineal" name="decision" value="rechazar">Rechazar el pago</button>
+        </form>
+      ) : <p>Este pedido ya no espera pago (estado: {p.estado}). <a href={`/pedido/${id}?t=${t}`}>Ver el pedido</a></p>}
+    </div>
+  </section>
+</Base>

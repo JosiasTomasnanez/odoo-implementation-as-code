@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Abre la «Declaración fiscal»; en una empresa argentina arranca en «Reporte: Libro de IVA (AR)» -->
+    <menuitem id="menu_libro_iva" name="Libro de IVA"
+              parent="account.account_reports_taxes_and_fiscal_menu"
+              action="account_reports.action_account_report_gt"
+              groups="account.group_account_readonly" sequence="1"/>
+</odoo>

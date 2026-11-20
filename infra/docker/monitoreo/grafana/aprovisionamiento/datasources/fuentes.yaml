@@ -1,0 +1,33 @@
+# Fuentes de datos de Grafana (ADR 0028). Las claves vienen de variables de entorno
+# (monitoreo.env), nunca del repo.
+apiVersion: 1
+
+prune: true
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: 30s
+
+  # Base de Odoo con el usuario de solo lectura (usuarios.sql): tableros y alertas del negocio
+  - name: Odoo (solo lectura)
+    uid: odoo
+    type: grafana-postgresql-datasource
+    url: db:5432
+    user: grafana_lector
+    editable: false
+    jsonData:
+      database: ${MONITOREO_DB}
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: false
+      maxOpenConns: 3
+      maxIdleConns: 1
+    secureJsonData:
+      password: ${GRAFANA_DB_CLAVE}

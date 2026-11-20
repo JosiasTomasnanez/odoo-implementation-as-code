@@ -1,0 +1,113 @@
+---
+// Panel de pedidos del local (fase 4). Sin dispositivo habilitado → alta; sin sesión → nombre + PIN;
+// con sesión → los pedidos por estado, con botones grandes. Todo lo hace Odoo por detrás: cada
+// botón deja una acción que el conector aplica en Odoo.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import { dispositivo, sesion } from "../../servidor/panel";
+import { pesos } from "../../servidor/consultas";
+
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+const d = await dispositivo(env.DB, Astro.request);
+if (!d) return Astro.redirect("/panel/alta", 303);
+const s = await sesion(env.DB, Astro.request);
+const error = Astro.url.searchParams.get("e");
+
+type Pedido = { id: string; numero: number; estado: string; nombre: string; telefono: string | null; total: number; pagado: string | null; listo: string | null; odoo_nombre: string | null; eleccion: string | null };
+type Linea = { pedido_id: string; producto_id: number; nombre: string; cantidad: number; consultar: number; disponible: number | null };
+const COLUMNAS: { clave: string; titulo: string; estados: string[] }[] = [
+  { clave: "nuevos", titulo: "Para preparar", estados: ["revisar", "pagado", "en_odoo", "pagado_faltante"] },
+  { clave: "preparando", titulo: "Preparando", estados: ["preparando"] },
+  { clave: "faltante", titulo: "Falta algo", estados: ["faltante"] },
+  { clave: "listos", titulo: "Listos para retirar", estados: ["listo"] },
+];
+let empleados: { id_odoo: number; nombre: string }[] = [];
+let pedidos: Pedido[] = [], lineas: Linea[] = [];
+if (!s) {
+  empleados = (await env.DB.prepare("SELECT id_odoo, nombre FROM empleados WHERE activo = 1 ORDER BY nombre").all<{ id_odoo: number; nombre: string }>()).results;
+} else {
+  // Las líneas con una subconsulta (no un IN con un parámetro por pedido: D1 acepta hasta 100)
+  const ABIERTOS = `SELECT id FROM pedidos WHERE estado IN ('revisar','pagado','en_odoo','pagado_faltante','preparando','faltante','listo') ORDER BY pagado LIMIT 200`;
+  pedidos = (await env.DB.prepare(`SELECT id, numero, estado, nombre, telefono, total, pagado, listo, odoo_nombre, eleccion FROM pedidos
+      WHERE id IN (${ABIERTOS}) ORDER BY pagado`).all<Pedido>()).results;
+  if (pedidos.length) {
+    lineas = (await env.DB.prepare(`SELECT pedido_id, producto_id, nombre, cantidad, consultar, disponible FROM pedido_lineas
+        WHERE pedido_id IN (${ABIERTOS})`).all<Linea>()).results;
+  }
+}
+const DIAS_AVISO = Number((env as unknown as { DIAS_AVISO_LOCAL?: string }).DIAS_AVISO_LOCAL ?? "7") || 7;
+const nro = (n: number) => `W-${String(n).padStart(4, "0")}`;
+const hora = (t: string | null) => t ? new Date(t).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Cordoba" }) : "";
+---
+<Base titulo="Panel de pedidos" pestanas={false}>
+  <section class="sec panel">
+    <div class="sec-tit">
+      <h1 class="h-disp">Pedidos online</h1>
+      {s && <form method="post" action="/api/panel/salir"><span class="cod">{s.nombre} · {d.nombre}</span> <button class="btn lineal chico">Salir</button></form>}
+    </div>
+
+    {!s && (
+      <form class="ingreso" method="post" action="/api/panel/entrar">
+        <h2 class="h-disp">¿Quién sos?</h2>
+        {error === "pin" && <p class="aviso">El PIN no es correcto.</p>}
+        {error === "bloqueado" && <p class="aviso">Demasiados intentos. Esperá unos minutos.</p>}
+        {empleados.length === 0 && <p class="aviso">No hay empleados habilitados. En Odoo: ficha del empleado → «Usa el panel de pedidos de la tienda» y su PIN.</p>}
+        <div class="quien">
+          {empleados.map((e, i) => (
+            <label class="chip-grande"><input type="radio" name="empleado" value={e.id_odoo} required checked={empleados.length === 1 && i === 0}> {e.nombre}</label>
+          ))}
+        </div>
+        <label for="pin">PIN</label>
+        <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" autocomplete="off" required maxlength="8">
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+    )}
+
+    {s && (
+      <div class="tablero">
+        {COLUMNAS.map((col) => {
+          const lista = pedidos.filter((p) => col.estados.includes(p.estado));
+          return (
+            <section class="columna" aria-label={col.titulo}>
+              <h2>{col.titulo} <span class="n">{lista.length}</span></h2>
+              {lista.length === 0 && <p class="vacio">Nada por acá.</p>}
+              {lista.map((p) => {
+                const ls = lineas.filter((l) => l.pedido_id === p.id);
+                const enOdoo = !!p.odoo_nombre;
+                return (
+                  <article class="tarjeta-pedido" data-estado={p.estado} data-viejo={p.estado === "listo" && p.listo && Date.now() - Date.parse(p.listo) > DIAS_AVISO * 86_400_000 ? "" : undefined}>
+                    <header><b>{nro(p.numero)}</b><span>{p.nombre}</span><span class="cod">{hora(p.pagado)}</span></header>
+                    {p.estado === "revisar" && <p class="aviso">Pago con un monto distinto o repetido: lo revisa la administración antes de prepararlo.</p>}
+                    {p.estado === "pagado_faltante" && <p class="aviso">Se pagó cuando ya no había stock de algo: revisar y marcar «Falta algo».</p>}
+                    {p.estado === "listo" && p.listo && Date.now() - Date.parse(p.listo) > DIAS_AVISO * 86_400_000 && <p class="aviso">Hace más de {DIAS_AVISO} días que está listo: llamar al cliente o decidir.</p>}
+                    {p.estado === "faltante" && <p class={p.eleccion ? "aviso" : "cod"}>{p.eleccion ? `El cliente eligió: ${({ esperar: "esperar", reemplazo: "otro producto (llamarlo)", devolucion: "devolución de lo que falta" } as Record<string, string>)[p.eleccion]}` : "Esperando que el cliente elija (le llegó el mail)."}</p>}
+                    {!enOdoo && p.estado !== "revisar" && <p class="cod">Todavía no llegó a Odoo (el local estaba sin conexión): se puede preparar igual.</p>}
+                    <ul>
+                      {ls.map((l) => <li><b>{l.cantidad} ×</b> {l.nombre}{l.consultar ? <em> · confirmar disponibilidad</em> : null}{l.disponible !== null && l.disponible < l.cantidad ? <em class="falta"> · hay {l.disponible}</em> : null}</li>)}
+                    </ul>
+                    <div class="acciones-pedido">
+                      {["pagado", "en_odoo", "pagado_faltante"].includes(p.estado) && <form method="post" action="/api/panel/accion"><input type="hidden" name="pedido" value={p.id}><button class="btn sec2" name="tipo" value="preparar">Empezar a preparar</button></form>}
+                      {["preparando", "faltante"].includes(p.estado) && <form method="post" action="/api/panel/accion"><input type="hidden" name="pedido" value={p.id}><button class="btn" name="tipo" value="listo" disabled={!enOdoo} title={enOdoo ? "" : "Espera a que llegue a Odoo"}>Listo para retirar</button></form>}
+                      {["preparando", "pagado_faltante", "en_odoo"].includes(p.estado) && (
+                        <details class="falta-algo"><summary class="btn lineal">Falta algo</summary>
+                          <form method="post" action="/api/panel/accion">
+                            <input type="hidden" name="pedido" value={p.id}><input type="hidden" name="tipo" value="faltante">
+                            {ls.map((l) => <label>{l.nombre} <span class="cod">(pidió {l.cantidad}) hay:</span> <input type="number" name={`hay_${l.producto_id}`} min="0" max={l.cantidad} value={l.cantidad} inputmode="numeric"></label>)}
+                            <button class="btn">Avisar al cliente</button>
+                          </form>
+                        </details>
+                      )}
+                      {p.estado === "listo" && <form method="post" action="/api/panel/accion"><input type="hidden" name="pedido" value={p.id}><button class="btn sec2" name="tipo" value="retirado">Ya lo retiró</button></form>}
+                    </div>
+                    <footer class="cod">{pesos(p.total)}{p.telefono && ` · ${p.telefono}`}{p.odoo_nombre && ` · Odoo ${p.odoo_nombre}`}</footer>
+                  </article>
+                );
+              })}
+            </section>
+          );
+        })}
+      </div>
+    )}
+  </section>
+</Base>

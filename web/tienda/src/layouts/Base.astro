@@ -1,0 +1,11 @@
+---
+// Elige el layout según el sitio (ADR 0035): las páginas compartidas (pedido, pago, 404) vistas
+// desde el sitio mayorista usan el suyo.
+import BaseTienda from "./BaseTienda.astro";
+import BaseMayorista from "./BaseMayorista.astro";
+interface Props { titulo: string; actual?: string; descripcion?: string; pestanas?: boolean; imagen?: string; datos?: Record<string, unknown> }
+const props = Astro.props;
+---
+{Astro.locals.sitio === "mayorista"
+  ? <BaseMayorista titulo={props.titulo} actual={props.actual}><slot /></BaseMayorista>
+  : <BaseTienda {...props}><slot /></BaseTienda>}

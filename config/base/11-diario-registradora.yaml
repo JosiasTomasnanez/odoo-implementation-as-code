@@ -1,0 +1,13 @@
+# Medio de pago «Cobrado en registradora» (P-046, decisión temporal del 21/10): los
+# puestos dan por cobrado el pedido al imprimirlo, porque lo cobran las registradoras
+# (config/onpremise/40-puestos.yaml).
+# Su propio diario (tipo banco, Odoo no admite otro para un medio de pago) para que estas
+# ventas queden separadas y se puedan revisar o reclasificar cuando entre lo fiscal.
+model: account.journal
+match: [code]
+records:
+  - id: diario_registradora
+    values:
+      name: {valor: medios_de_pago.registradora}
+      type: bank
+      code: REGI

@@ -1,0 +1,18 @@
+// Venta sin factura de Odoo (ADR 0024): una franja de color al costado de la pantalla de pago,
+// sin texto ni cambios en el importe (26/10, pedido del implementador: antes el importe en gris).
+// Va encima de los paneles (un borde o sombra del contenedor quedaba tapado por ellos).
+.payment-screen:has(.comercio-sin-factura) {
+    position: relative;
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 8px;
+        background-color: #7d93ab;
+        z-index: 10;
+        pointer-events: none;
+    }
+}

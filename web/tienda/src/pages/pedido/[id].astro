@@ -1,0 +1,67 @@
+---
+// Estado del pedido para el cliente (link del mail o vuelta del pago). Sin cuenta: con el token.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import { mismoToken } from "../../servidor/pedidos";
+import { pesos } from "../../servidor/consultas";
+import { local } from "../../data/catalogo";
+import Foto from "../../components/Foto.astro";
+const id = Astro.params.id ?? "", t = Astro.url.searchParams.get("t") ?? "";
+if (!/^[0-9a-f]{32}$/.test(id)) return Astro.rewrite("/404");
+type P = { numero: number; token: string; total: number; estado: string; nombre: string; vence: string; eleccion: string | null };
+const p = await env.DB.prepare("SELECT numero, token, total, estado, nombre, vence, eleccion FROM pedidos WHERE id = ?").bind(id).first<P>();
+if (!p || !mismoToken(t, p.token)) return Astro.rewrite("/404");
+const lineas = (await env.DB.prepare(`SELECT l.nombre, l.cantidad, l.precio, l.consultar, l.disponible, p.imagen, c.nombre AS categoria
+    FROM pedido_lineas l LEFT JOIN productos p ON p.id_odoo = l.producto_id LEFT JOIN categorias c ON c.id_odoo = p.categoria_id
+   WHERE l.pedido_id = ?`).bind(id)
+  .all<{ nombre: string; cantidad: number; precio: number; consultar: number; disponible: number | null; imagen: string | null; categoria: string | null }>()).results;
+const textos: Record<string, [string, string]> = {
+  pendiente_pago: ["Esperando el pago", "Tenés el stock reservado unos minutos mientras pagás."],
+  pagado: ["¡Recibimos tu pedido!", "Ya está pago. Te avisamos por mail cuando esté listo para retirar."],
+  en_odoo: ["¡Recibimos tu pedido!", "Ya está pago y en preparación. Te avisamos por mail cuando esté listo para retirar."],
+  pagado_faltante: ["Recibimos tu pago", "Mientras pagabas se vendió algo de tu pedido en el local. Te escribimos para que elijas: esperar, otro producto o la devolución."],
+  rechazado: ["El pago no se aprobó", "No se cobró nada. Podés volver al carrito e intentar de nuevo."],
+  vencido: ["Se venció la reserva", "No llegó el pago a tiempo y liberamos el stock. Podés armar el pedido de nuevo."],
+  revisar: ["Estamos revisando tu pago", "Algo no coincide con el pago. Te escribimos enseguida."],
+  preparando: ["Estamos preparando tu pedido", "Te avisamos por mail cuando esté listo para retirar."],
+  listo: ["¡Tu pedido está listo!", "Ya podés retirarlo con el número de pedido y tu nombre."],
+  retirado: ["Pedido retirado", "¡Gracias por tu compra!"],
+  cancelado: ["Pedido cancelado", "Cancelamos tu pedido. Te devolvemos el dinero por el mismo medio con que pagaste."],
+  devolucion: ["Compra cancelada", "Cuando traigas el producto al local te devolvemos el dinero por el mismo medio con que pagaste."],
+  faltante: ["Nos falta algo de tu pedido", "Al prepararlo vimos que no tenemos todo. Elegí qué preferís:"],
+};
+const [titulo, bajada] = textos[p.estado] ?? ["Tu pedido", ""];
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+<Base titulo={`Pedido W-${String(p.numero).padStart(4, "0")}`}>
+  <section class="sec" data-limpiar-carrito={["pagado", "en_odoo", "pagado_faltante"].includes(p.estado) ? "" : undefined}>
+    <div class="miga">Pedido W-{String(p.numero).padStart(4, "0")}</div>
+    <h1 class="h-disp">{titulo}</h1>
+    <p>{bajada}</p>
+    {p.estado === "faltante" && !p.eleccion && (
+      <form method="post" action="/api/pedido/eleccion" class="eleccion">
+        <input type="hidden" name="id" value={id}><input type="hidden" name="t" value={t}>
+        <button class="btn sec2" name="opcion" value="esperar">Espero a que llegue</button>
+        <button class="btn lineal" name="opcion" value="reemplazo">Quiero otro producto (llámenme)</button>
+        <button class="btn lineal" name="opcion" value="devolucion">Devuélvanme lo que falta</button>
+      </form>
+    )}
+    {p.eleccion && <p class="aviso">Elegiste: {({ esperar: "esperar a que llegue", reemplazo: "otro producto: te llamamos", devolucion: "la devolución de lo que falta" } as Record<string, string>)[p.eleccion]}. ¡Gracias!</p>}
+    <div class="carrito">
+      <div class="lineas">
+        {lineas.map((l) => (
+          <div class="linea">
+            <Foto p={l} />
+            <div><span class="nom">{l.nombre}</span><div class="cod">{l.cantidad} × {pesos(l.precio)}</div>{l.consultar ? <div class="stock consultar">Te confirmamos disponibilidad en el día</div> : null}{l.disponible !== null && l.disponible < l.cantidad ? <div class="stock no">Hay {l.disponible} de {l.cantidad}</div> : null}</div>
+            <div class="der"><span class="precio">{pesos(l.precio * l.cantidad)}</span></div>
+          </div>
+        ))}
+      </div>
+      <aside class="resumen">
+        <div class="fila total"><span>Total</span><span>{pesos(p.total)}</span></div>
+        <div class="retiro"><div><b>Retirás en {local.direccion}</b>Con el número de pedido y tu nombre.</div></div>
+        {["rechazado", "vencido"].includes(p.estado) && <a class="btn" href="/carrito/">Volver al carrito</a>}
+      </aside>
+    </div>
+  </section>
+</Base>

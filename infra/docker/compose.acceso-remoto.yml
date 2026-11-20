@@ -1,0 +1,51 @@
+# Acceso desde fuera del local (ADR 0020): túnel de Cloudflare + Cloudflare Access.
+# Solo en el servidor (STACK=onprem) y solo con ACCESO_REMOTO=1 en onprem.env; lo agrega
+# infra/scripts/lib.sh y lo configura infra/servidor/configurar-acceso-remoto.sh.
+#
+# cloudflared abre conexiones DE SALIDA hacia Cloudflare: no publica puertos ni se abre nada
+# en el router. Cloudflare manda por el túnel solo lo que pasó por Access (mail autorizado,
+# desde Argentina) y cloudflared vuelve a comprobarlo (originRequest.access) antes de pasarlo
+# al proxy. Va a https://proxy:443 con el nombre remoto.<dominio> (certificado válido de
+# Let's Encrypt, sin noTLSVerify); el proxy aplica los bloqueos de ese nombre
+# (caddy/remoto.caddy). No ve a Odoo directo: está solo en la red «remoto».
+services:
+  cloudflared:
+    # Versión fija (sin actualizaciones solas: --no-autoupdate). Cloudflare da soporte a cada
+    # versión por un año; actualizar como el resto de las imágenes (primero probar).
+    image: cloudflare/cloudflared:2026.9.3
+    restart: unless-stopped
+    # La imagen es distroless (sin shell): no se puede filtrar con `env -i` como en el monitoreo.
+    # Por eso tunel.env tiene UNA sola variable, TUNNEL_TOKEN (la escribe el script; 640 root:docker).
+    env_file:
+      - path: ${TUNEL_ENV_FILE:-/etc/odoo-comercio/tunel.env}
+    # Métricas solo dentro del contenedor (para el healthcheck); sin diagnósticos remotos (pprof).
+    command: ["tunnel", "--metrics", "127.0.0.1:20241", "--management-diagnostics=false", "run"]
+    healthcheck:
+      # /ready responde 200 cuando hay al menos una conexión con Cloudflare
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:20241", "ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    depends_on: [proxy]
+    networks:
+      remoto:
+        # IP fija: es la única en la que Caddy confía (encabezados de IP, nombre remoto)
+        ipv4_address: ${REMOTO_TUNEL_IP:-172.31.251.10}
+    mem_limit: 128m
+
+  proxy:
+    environment:
+      # Segundo nombre de Odoo, solo para el túnel (caddy/remoto.caddy)
+      REMOTO_HOST: ${REMOTO_HOST:-remoto.comercio-ejemplo.example}
+      REMOTO_TUNEL_IP: ${REMOTO_TUNEL_IP:-172.31.251.10}
+    volumes:
+      - ./caddy/remoto.caddy:/etc/caddy/sitios/remoto.caddy:ro
+    networks: [default, remoto]
+
+networks:
+  # Red propia con rango fijo, solo cloudflared y el proxy
+  remoto:
+    ipam:
+      config:
+        - subnet: ${REMOTO_SUBNET:-172.31.251.0/24}

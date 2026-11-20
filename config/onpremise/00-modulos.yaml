@@ -1,0 +1,31 @@
+# Módulos propios (addons/) que solo se instalan en el servidor propio.
+modules:
+  - comercio_pos_pedido_qr   # pedido del puesto con QR, cobrado en la caja (ADR 0009)
+  - comercio_pos_balanza_systel   # balanza Systel Cuora por USB en el POS (P-040)
+  - comercio_catalogo   # listas de precios de proveedores: importar, revisar, actualizar (ADR 0014/0015)
+  - comercio_compras_lista_vigente   # compras según la lista vigente del proveedor, «Lista del proveedor», WhatsApp (ADR 0015)
+  - comercio_precios    # precio de venta sugerido por margen de la categoría, revisado y aplicado (ADR 0016)
+  - comercio_catalogo_ia   # «Verificar con IA» (Gemini) los posibles duplicados; necesita GEMINI_API_KEY (ADR 0018)
+  - comercio_pos_categorias   # «Categorizar con IA / a mano» la categoría del POS (botones de arriba; ADR 0018)
+  - account_3way_match   # «¿Pagar?» en la factura de proveedor: Sí / No (falta recibir) / Excepción (precio o cantidad distintos de la orden y la recepción). Enterprise, nativo
+  - comercio_factura_proveedor   # leer la factura del proveedor (PDF sin IA, foto con Gemini) y agregar sus productos (ADR 0021)
+  - comercio_codigos_fabrica   # «Códigos de fábrica»: escanear el código del envase en lugar del propio 20… (ADR 0025, P-058)
+  - comercio_pos_factura   # caja: «Factura» marcado = factura de Odoo con CAE; desmarcado = la emite la registradora o 3C, aparte para el contador (ADR 0024)
+  - comercio_pos_ticket_ar   # ticket de la caja con factura, CAE, QR de ARCA y Ley 27.743; ARCA caído = cobrada sin factura de Odoo y aviso (02/11)
+  - comercio_factura_mail   # mail de la factura sin botón al portal, sin firma ni «Powered by Odoo» (09/11)
+  - comercio_libro_iva   # menú «Libro de IVA» en Reportes → Impuestos y finanzas (Odoo 20 no lo trae, 09/11)
+  - comercio_etiquetas   # etiqueta ZPL propia para la Zebra: nombre en 2 líneas, medida del rollo en valores.yaml (P-062, ADR 0030)
+  - comercio_carteles   # carteles de precio en A4 (1/2/4/8 por hoja), texto libre, precio de Odoo con IVA, vista previa y «Para reimprimir» (ADR 0039)
+  # Enterprise: imprimir directo en la Zebra (USB en una PC Windows) sin descargar archivos: «IoT de
+  # Windows» que se baja desde Odoo (docs/runbooks/etiquetas-zebra.md, ADR 0030)
+  - iot
+  # Enterprise: «Fusionar» dos productos que resultaron ser el mismo (proveedores, stock e
+  # historial pasan al que queda; el otro se archiva). Probado en el lab el 21/10.
+  - data_cleaning
+  - data_merge_product
+  # Enterprise: app «Código de barras» para contar el stock escaneando con el lector («Contar
+  # inventario»: cada lectura suma 1 o se escribe la cantidad). Lee también los 20… alternativos
+  # (02/11, docs/runbooks/contar-stock.md)
+  - stock_barcode
+  - comercio_conteo_catalogo   # al contar, un código que no es nuestro se busca en las listas («¿Agregar?») o se le pone a un producto nuestro (02/11)
+  - comercio_tienda   # tienda online: qué se publica, lista «Tienda online» y cola de cambios para el conector (ADR 0033)

@@ -1,0 +1,25 @@
+# Secretos y datos locales
+.env
+*.local.yaml
+secrets/
+backups/
+data/privado/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+
+# Claves del conector de la tienda en el lab (nunca en git)
+infra/docker/conector-tienda.lab.env
+
+# Instaladores grandes de Windows (IoT de Odoo): se guardan acá, fuera de git; su SHA256 está en el script
+infra/windows/descargas/
+
+# Caché y estado local de Wrangler (traen el ID de la cuenta de Cloudflare)
+**/.wrangler/

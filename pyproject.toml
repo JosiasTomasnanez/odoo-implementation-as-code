@@ -1,0 +1,50 @@
+[project]
+name = "odoo-iac"
+version = "0.1.0"
+description = "Configuración como código para la implementación de Odoo del comercio"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+]
+# Diagnóstico de la balanza Systel por USB (integrations/balanza_systel)
+balanza = [
+    "pyserial>=3.5",
+]
+# Importación de productos desde Excel de proveedores (integrations/catalogo)
+catalogo = [
+    "openpyxl>=3.1",
+    "xlrd>=2.0",  # listas en Excel 97-2003 (.xls); la imagen de Odoo 20 trae la 2.0.1
+    "pdfminer.six>=20221105",  # listas en PDF con texto; la imagen de Odoo 20 trae la 20221105
+]
+
+[project.scripts]
+odoo-iac = "odoo_iac.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "lab: pruebas de integración contra el laboratorio (requieren ODOO_IAC_LAB=1)",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+# Los módulos Odoo siguen las convenciones de Odoo, no las de esta herramienta.
+extend-exclude = ["addons"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]

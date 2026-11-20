@@ -1,0 +1,19 @@
+// Diseño del cartel: el mismo en el PDF (web.report_assets_common) y en la vista previa de la ficha
+// (web.assets_backend). Todo bajo .o_cartel, para no tocar el resto de la pantalla.
+.o_cartel_hoja { position: relative; width: 210mm; height: 296mm; page-break-after: always; overflow: hidden; }
+.o_cartel_hoja:last-child { page-break-after: auto; }
+.o_cartel { position: absolute; box-sizing: border-box; border: 0.3mm dashed #b5b5b5; background: #fff;
+            font-family: "DejaVu Sans", Arial, sans-serif; color: #111; text-align: center; overflow: hidden; }
+.o_cartel .c_marco { position: absolute; left: 4%; right: 4%; top: 4%; bottom: 4%; border: 1.2mm solid #111; border-radius: 3mm; }
+.o_cartel.oferta .c_marco { border-color: #c4161c; }
+.o_cartel .c_banda { position: absolute; left: 0; right: 0; top: 0; height: 16%; background: #c4161c; color: #fff;
+                     font-weight: bold; letter-spacing: 0.08em; }
+.o_cartel .c_zona { position: absolute; left: 3%; right: 3%; display: table; table-layout: fixed; width: 94%; }
+.o_cartel .c_zona > div { display: table-cell; vertical-align: middle; }
+.o_cartel .c_titulo { font-weight: bold; text-transform: uppercase; line-height: 1.05; word-wrap: break-word; }
+.o_cartel .c_precio { font-weight: bold; line-height: 1; white-space: nowrap; }
+.o_cartel.oferta .c_precio { color: #c4161c; }
+.o_cartel .c_aclaracion { font-weight: normal; }
+.o_cartel .c_antes { color: #555; text-decoration: line-through; }
+.o_cartel .c_barras { position: absolute; right: 3%; bottom: 3%; height: 12%; width: 40%; text-align: right; }
+

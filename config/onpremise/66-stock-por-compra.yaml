@@ -1,0 +1,20 @@
+# Favorito «Stock por compra» en Inventario → Informes → Análisis de movimientos (P-073, 16/11,
+# consulta de la administración): de cada producto, las compras de las que todavía queda algo.
+# Odoo 20 reparte el stock actual entre los últimos ingresos suponiendo que sale primero lo más
+# viejo, con cualquier método de costo (stock_account: _get_remaining_moves). No cambia nada.
+# En la lista, activar una vez (menú de columnas, a la derecha) «Cantidad restante» y «Valor»:
+# Valor es el total de esa compra (factura del proveedor, si no la orden de compra, si no el costo);
+# precio unitario = Valor ÷ Cantidad. NO usar «Valor restante»: con nuestro método de costo lo
+# calcula al costo de hoy, no al de la compra. Probado en el lab el 16/11 (5 u a $100, 10 u a $90,
+# salen 8 → 7 de la segunda compra, Valor 900 de 10 u).
+# Compartido con todos los usuarios que ven el informe (responsables de inventario).
+model: ir.filters
+match: [name, model_id]
+records:
+  - id: filtro_stock_por_compra
+    values:
+      name: Stock por compra
+      model_id: stock.move
+      action_id: {ref: stock.stock_move_action}
+      domain: "[('is_in', '=', True), ('remaining_qty', '=', True)]"
+      context: "{'group_by': ['product_id']}"

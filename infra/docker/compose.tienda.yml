@@ -1,0 +1,32 @@
+# Conector de la tienda online (ADR 0033): sale del local hacia la tienda; no publica puertos.
+# Se suma con TIENDA=1 en onprem.env (servidor) o en el .env del repo (lab); lo agrega
+# infra/scripts/lib.sh. Claves en conector-tienda.env (las crea infra/scripts/crear-conector-tienda.sh).
+#
+# Usa la misma imagen de Odoo (ya trae Python; el conector no necesita nada más) y solo monta el
+# código del conector, de solo lectura. Sin permisos: usuario odoo, sistema de archivos de solo
+# lectura, sin capacidades.
+services:
+  conector-tienda:
+    image: ${ODOO_IMAGE:-odoo:20.0}
+    restart: unless-stopped
+    entrypoint: ["python3", "-m", "tienda.conector"]
+    working_dir: /app
+    user: odoo
+    env_file:
+      - path: ${CONECTOR_TIENDA_ENV:?definir CONECTOR_TIENDA_ENV}
+    environment:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ../../integrations:/app:ro
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    depends_on:
+      odoo:
+        condition: service_healthy
+    mem_limit: 128m
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }

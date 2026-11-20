@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="elegir_mismo_wizard_form" model="ir.ui.view">
+        <field name="name">comercio.elegir.mismo.wizard.form</field>
+        <field name="model">comercio.elegir.mismo.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="linea_id" invisible="1"/>
+                <group>
+                    <field name="del_proveedor" readonly="1"/>
+                    <field name="opcion_id" widget="radio" required="1"/>
+                </group>
+                <p class="text-muted">Si no es ninguno: «Cancelar» y «Agregar como nuevo» en la fila.</p>
+                <footer>
+                    <button name="action_confirmar" type="object" string="Es este" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

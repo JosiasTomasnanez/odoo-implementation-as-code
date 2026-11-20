@@ -1,0 +1,5 @@
+# Ajustes generales (pantalla Ajustes) para el experimento de Ventas. Solo laboratorio.
+settings:
+  account_price_include: tax_included   # precios de venta con IVA incluido (P-030; a confirmar con el contador)
+  group_product_pricelist: true    # listas de precios (mayorista; las usan Ventas, POS y ecommerce)
+  group_discount_per_so_line: true # columna «Desc. %» en presupuestos y facturas: se ve el descuento de la lista

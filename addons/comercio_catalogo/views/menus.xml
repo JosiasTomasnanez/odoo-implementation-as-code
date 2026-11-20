@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- App «Costos y precios»: costos que entran por las listas de proveedores y precios de
+         venta que salen de ellos (comercio_precios agrega «Precios de venta»).
+         Al entrar se ve la lista de proveedores (no el diálogo de importar). -->
+    <menuitem id="menu_raiz" name="Costos y precios" sequence="45" action="action_listas_proveedores"
+              groups="group_listas_proveedores" web_icon="product,static/description/icon.png"/>
+    <menuitem id="menu_seccion_listas" name="Listas de proveedores" parent="menu_raiz" sequence="1"/>
+    <menuitem id="menu_listas" name="Proveedores" parent="menu_seccion_listas" sequence="1"
+              action="action_listas_proveedores"/>
+    <menuitem id="menu_importar" name="Importar lista" parent="menu_seccion_listas" sequence="2"
+              action="action_importar_lista_wizard"/>
+    <menuitem id="menu_importaciones" name="Importaciones" parent="menu_seccion_listas" sequence="3"
+              action="action_importaciones"/>
+    <menuitem id="menu_historial" name="Historial de costos" parent="menu_seccion_listas" sequence="4"
+              action="action_historial_costos"/>
+</odoo>

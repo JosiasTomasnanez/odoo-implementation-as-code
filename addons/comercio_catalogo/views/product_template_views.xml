@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Costo manual» al lado del costo: marcado, las listas no lo cambian (P-044) -->
+    <record id="product_template_form_view_costo_manual" model="ir.ui.view">
+        <field name="name">product.template.form.comercio.costo.manual</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='standard_price_uom']" position="after">
+                <field name="comercio_costo_manual"/>
+                <field name="comercio_proveedores_ids" invisible="1"/>
+                <field name="comercio_costo_de_id" invisible="comercio_costo_manual"
+                       placeholder="El más barato" options="{'no_create': True, 'no_open': True}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

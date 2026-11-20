@@ -1,0 +1,25 @@
+# Solo laboratorio: empleados ficticios en los puntos de venta reales, para mostrar el
+# flujo completo (quien atiende entra con PIN 1111 y no puede cobrar; en la caja, PIN 2222).
+# Los empleados reales se cargan cuando el negocio los defina (P-005).
+#
+# Se adoptan por nombre con ids propios (no se redefine el id de config/base): un registro
+# redefinido se procesa en la posición de la base, antes de que existan estos empleados.
+# El nombre sale de config/valores.yaml, así sigue encontrando el punto de venta si se renombra.
+model: pos.config
+match: [name]
+records:
+  - id: lab_pos_mostrador_1
+    values:
+      name: {valor: puestos.mostrador_1}
+      supervised_employee_ids: {refs: [ej_emp_atencion]}
+      manager_employee_ids: {refs: [ej_emp_encargado]}
+  - id: lab_pos_caja_1
+    values:
+      name: {valor: cajas.caja_1}
+      cashier_employee_ids: {refs: [ej_emp_cajero]}
+      manager_employee_ids: {refs: [ej_emp_encargado]}
+  - id: lab_pos_caja_2
+    values:
+      name: {valor: cajas.caja_2}
+      cashier_employee_ids: {refs: [ej_emp_cajero]}
+      manager_employee_ids: {refs: [ej_emp_encargado]}

@@ -1,0 +1,9 @@
+# Le dice a Odoo que la fusión de productos está habilitada («Can Be Merged»), apuntando a la
+# acción de 50-fusionar-productos.yaml; así su pantalla no ofrece crear otra.
+model: ir.model
+match: [model]
+records:
+  - id: modelo_producto
+    values:
+      model: product.template
+      ref_merge_ir_act_server_id: {ref: fusionar_productos}

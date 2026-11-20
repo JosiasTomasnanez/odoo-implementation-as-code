@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Etiqueta ZPL de Comercio Ejemplo (P-062). Las posiciones las calcula el asistente
+         (ProductLabelLayout._comercio_posiciones) según la medida del rollo. Variables de Odoo: name,
+         barcode_value, reference, primary_value (precio).
+         ^FB ancho,2 = el nombre en hasta 2 líneas; ^BC…,A = Code 128 automático (números de a pares). -->
+    <template id="barcode_comercio_label">
+        <t t-set="z" t-value="comercio_zpl"/>
+^PW<t t-out="z['ancho']"/>
+^LL<t t-out="z['alto']"/>
+^FO<t t-out="z['margen']"/>,<t t-out="z['nombre_y']"/>^A0N,<t t-out="z['nombre_letra']"/>^FB<t t-out="z['nombre_ancho']"/>,2,<t t-out="z['nombre_interlinea']"/>,C^FH^FD<t t-out="name"/>^FS
+        <t t-if="barcode_value">
+^FO<t t-out="z['barras_x']"/>,<t t-out="z['barras_y']"/>^BY<t t-out="z['barras_modulo']"/>^BCN,<t t-out="z['barras_alto']"/>,Y,N,N,A^FH^FD<t t-out="barcode_value"/>^FS
+        </t>
+        <t t-if="reference">
+^FO<t t-out="z['margen']"/>,<t t-out="z['ref_y']"/>^A0N,<t t-out="z['ref_letra']"/>^FH^FD<t t-out="reference"/>^FS
+        </t>
+        <t t-if="primary_value">
+^FO<t t-out="z['precio_x']"/>,<t t-out="z['precio_y']"/>,1^A0N,<t t-out="z['precio_letra']"/>^FH^FD<t t-out="primary_value"/>^FS
+        </t>
+    </template>
+</odoo>

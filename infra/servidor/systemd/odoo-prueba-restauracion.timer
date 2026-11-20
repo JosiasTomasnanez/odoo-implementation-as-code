@@ -1,0 +1,10 @@
+# ADR 0027. Lo instala configurar-respaldo-y-avisos.sh.
+[Unit]
+Description=Prueba de restauración del backup de Odoo (programado)
+
+[Timer]
+OnCalendar=*-*-01 05:30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

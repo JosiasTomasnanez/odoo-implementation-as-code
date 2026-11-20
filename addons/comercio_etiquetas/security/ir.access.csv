@@ -1,0 +1,4 @@
+id,name,model_id,group_id/id,operation,domain
+access_rollo_user,rollo usuario,comercio.etiqueta.rollo,base.group_user,r,
+access_rollo_productos,rollo gerencia,comercio.etiqueta.rollo,product.group_product_manager,cru,
+access_rollo_system,rollo administrador,comercio.etiqueta.rollo,base.group_system,crud,

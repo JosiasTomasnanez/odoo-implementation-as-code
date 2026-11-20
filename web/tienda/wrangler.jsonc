@@ -1,0 +1,49 @@
+// Tienda online (ADR 0032/0033). Publicar: make web-tienda-demo.
+// Entorno por defecto = demo (demo.comercio-ejemplo.example, conectado al lab, noindex).
+// Producción (comercio-ejemplo.example) se agrega al salir (fase 8).
+{
+  "name": "comercio-ejemplo-tienda-demo",
+  "main": "./src/worker.ts",
+  "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "demo.comercio-ejemplo.example", "custom_domain": true },
+    // Sitio mayorista de prueba (ADR 0035): mismo Worker, otro dominio (un nivel: lo cubre el certificado)
+    { "pattern": "mayoristas-demo.comercio-ejemplo.example", "custom_domain": true }
+  ],
+  "assets": { "directory": "./dist", "binding": "ASSETS" },
+  "durable_objects": { "bindings": [{ "name": "INVENTARIO", "class_name": "Inventario" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Inventario"] }],
+  // Base D1 de la demo (región ENAM, la más cercana a Argentina que ofrece D1).
+  "d1_databases": [{ "binding": "DB", "database_name": "comercio-ejemplo-tienda-demo", "database_id": "<D1_DATABASE_ID>", "migrations_dir": "migrations" }],
+  "r2_buckets": [{ "binding": "IMAGENES", "bucket_name": "comercio-ejemplo-tienda-demo" }],
+  // KV que el adaptador de Astro usa para sus sesiones (lo creó el primer despliegue).
+  "kv_namespaces": [{ "binding": "SESSION", "id": "<KV_NAMESPACE_ID>" }],
+  // Pagos: «simulado» en la demo; para Mercado Pago: "mercadopago" + secretos MP_ACCESS_TOKEN y
+  // MP_WEBHOOK_SECRET. Turnstile: claves de PRUEBA de Cloudflare (siempre aprueban) en la demo;
+  // en producción, las del widget propio (TURNSTILE_SECRET como secreto).
+  "vars": {
+    "PAGOS_MODO": "simulado",
+    "TURNSTILE_SITEKEY": "1x00000000000000000000AA",
+    "TURNSTILE_SECRET": "1x0000000000000000000000000000000AA",
+    "ORIGEN": "https://demo.comercio-ejemplo.example",
+    "DIAS_RECORDATORIO": "3",
+    "DIAS_AVISO_LOCAL": "7",
+    // Reporte diario de uso de Cloudflare contra el plan gratis (uso-cloudflare.ts, P-066). Uno solo
+    // por cuenta: pasarlo a la tienda de producción cuando exista. Necesita el secreto CF_ANALYTICS_TOKEN.
+    "REPORTE_USO": "1",
+    "CF_ACCOUNT_ID": "<CLOUDFLARE_ACCOUNT_ID>"
+  },
+  "triggers": { "crons": ["* * * * *"] },
+  // Límite de pedidos por IP: 10 por minuto
+  // Dos límites por IP y por minuto: armar pedidos (10) y, aparte, ingresos y códigos (20), para que
+  // varios clientes detrás de la misma IP (el wifi del local) no se frenen entre sí.
+  "ratelimits": [
+    { "name": "LIMITE_PEDIDOS", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } },
+    { "name": "LIMITE_INGRESO", "namespace_id": "1002", "simple": { "limit": 20, "period": 60 } }
+  ],
+  // Registros siempre; trazas de 1 de cada 10 pedidos (alcanza para ver dónde se va el tiempo sin
+  // gastar el cupo gratis de eventos)
+  "observability": { "enabled": true, "traces": { "enabled": true, "head_sampling_rate": 0.1 } }
+}

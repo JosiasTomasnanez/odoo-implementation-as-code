@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="corregir_fila_wizard_form" model="ir.ui.view">
+        <field name="name">comercio.corregir.fila.wizard.form</field>
+        <field name="model">comercio.corregir.fila.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <p class="text-muted">Para cuando la lista trae mal una fila: sin precio, precio 0, «Consultar»
+                    o un texto mal copiado. Si el proveedor no lo vende más, mejor <b>Ignorar</b>.</p>
+                <div class="alert alert-info" role="status" invisible="not mismo_barras">
+                    La lista trae el mismo código de barras en dos productos distintos (un error del proveedor).
+                    Confirmá sin cambiar nada y este se carga como <b>otro producto, sin ese código</b>: recibe uno
+                    propio y después se escanea el del envase en «Códigos de fábrica».
+                </div>
+                <div class="alert alert-info" role="status" invisible="not repetida">
+                    El proveedor repite este código en la lista: se usa la <b>primera</b> fila. Confirmá sin
+                    cambiar nada y esta queda resuelta (no se carga dos veces).
+                </div>
+                <group>
+                    <field name="linea_id" invisible="1"/>
+                    <field name="repetida" invisible="1"/>
+                    <field name="mismo_barras" invisible="1"/>
+                    <field name="problema"/>
+                    <field name="codigo"/>
+                    <field name="original" invisible="not original"/>
+                    <field name="descripcion"/>
+                    <field name="precio"/>
+                    <field name="precio_antes" invisible="1"/>
+                </group>
+                <footer>
+                    <button name="action_corregir" type="object" string="Corregir y volver a simular la fila"
+                            class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

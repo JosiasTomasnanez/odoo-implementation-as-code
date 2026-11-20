@@ -1,0 +1,40 @@
+---
+// Política de privacidad (borrador a revisar; Ley 25.326 de Protección de Datos Personales).
+import Legal from "../../components/Legal.astro";
+import { local } from "../../data/catalogo";
+const quien = local.razonSocial ? `${local.razonSocial}, CUIT ${local.cuit}` : "Comercio Ejemplo";
+---
+<Legal titulo="Política de privacidad" actualizado="10 de noviembre de 2026">
+  <h2>Quién es responsable de tus datos</h2>
+  <p>{quien}, {local.direccion}, {local.ciudad}, Argentina. Teléfono: {local.telefono}{local.mail && <>. Mail: {local.mail}</>}.</p>
+
+  <h2>Qué datos guardamos y para qué</h2>
+  <ul>
+    <li><b>Para tu compra:</b> nombre, mail, teléfono (opcional) y lo que pediste. Los usamos para preparar el pedido, avisarte cuando está listo, facturar y atender cambios o reclamos.</li>
+    <li><b>Si creás una cuenta:</b> tu mail y tu contraseña (guardada de forma que nadie la puede leer, ni nosotros), y tus pedidos anteriores. Si entrás con Google, recibimos de Google tu mail y tu nombre; nunca tu contraseña.</li>
+    <li><b>Cuentas mayoristas:</b> razón social, CUIT, condición frente al IVA, actividad, dirección, teléfono y persona de contacto, para evaluar el alta, asignar tu lista de precios y facturar.</li>
+    <li><b>Seguridad:</b> la dirección de internet (IP) de cada pedido, por poco tiempo, para frenar abusos e intentos de ingreso indebidos.</li>
+  </ul>
+  <p>No guardamos datos de tarjetas: el pago lo procesa Mercado Pago. No vendemos ni alquilamos tus datos, y no te mandamos publicidad si no la pediste.</p>
+
+  <h2>Con quién se comparten</h2>
+  <p>Solo con quienes hacen falta para que la tienda funcione, y solo lo necesario:</p>
+  <ul>
+    <li><b>Mercado Pago</b>, para cobrar.</li>
+    <li><b>Cloudflare</b>, donde está alojado el sitio y su base de datos, y que nos ayuda a frenar robots.</li>
+    <li><b>Brevo</b> y <b>Resend</b>, que entregan los mails de la compra y de la cuenta.</li>
+    <li><b>Google</b>, solo si elegís ingresar con tu cuenta de Google.</li>
+    <li>El sistema de gestión del local (propio, en el local), donde se registran los pedidos y las facturas.</li>
+  </ul>
+  <p>Algunos de estos servicios guardan datos fuera de la Argentina.</p>
+
+  <h2>Cookies</h2>
+  <p>Usamos solo las necesarias: una para mantener tu sesión si ingresás y otra de seguridad al crear la cuenta. El carrito se guarda en tu propio navegador. Medimos las visitas de forma anónima, sin cookies ni seguimiento entre sitios.</p>
+
+  <h2>Cuánto tiempo los guardamos</h2>
+  <p>Los datos de las compras, el tiempo que exigen las normas fiscales y contables. Los de tu cuenta, hasta que la elimines.</p>
+
+  <h2>Tus derechos</h2>
+  <p>Podés pedir ver, corregir o borrar tus datos en cualquier momento, sin costo: escribinos o llamanos, o <a href="/legales/eliminar-cuenta/">eliminá tu cuenta</a> vos mismo. Al eliminarla se borran tu cuenta y tus sesiones; los comprobantes de compras ya hechas se conservan por obligación legal.</p>
+  <p>La AGENCIA DE ACCESO A LA INFORMACIÓN PÚBLICA, en su carácter de Órgano de Control de la Ley N° 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.</p>
+</Legal>

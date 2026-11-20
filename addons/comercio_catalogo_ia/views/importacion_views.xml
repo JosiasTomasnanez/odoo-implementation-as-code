@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Filas: botones con casillas y columnas de la sugerencia -->
+    <record id="importacion_linea_list_ia" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.list.ia</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.importacion_linea_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_abrir_verificar_ia" type="object" string="Revisar con IA"
+                        help="Abre «¿Qué querés revisar con la IA?»: las filas marcadas, los posibles duplicados, lo que ya tenemos, las filas con problemas o aceptar lo que sugirió. La IA solo sugiere."/>
+            </xpath>
+            <xpath expr="//field[@name='producto_elegido_id']" position="before">
+                <field name="ia_veredicto" optional="hide" widget="badge"
+                       decoration-success="ia_veredicto == 'mismo'" decoration-info="ia_veredicto == 'distinto'"
+                       decoration-warning="ia_veredicto == 'dudoso'"/>
+                <field name="ia_producto_id" optional="hide"/>
+                <field name="ia_confianza" optional="hide" widget="percentage"/>
+                <field name="ia_motivo" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Detalle de la fila: lo que dijo la IA -->
+    <record id="importacion_linea_form_ia" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.form.ia</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.importacion_linea_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='calculo']" position="before">
+                <group string="Lo que dijo la IA" invisible="not ia_veredicto">
+                    <field name="ia_veredicto" readonly="1" widget="badge"
+                           decoration-success="ia_veredicto == 'mismo'" decoration-info="ia_veredicto == 'distinto'"
+                           decoration-warning="ia_veredicto == 'dudoso'"/>
+                    <field name="ia_producto_id" readonly="1" invisible="not ia_producto_id"/>
+                    <field name="ia_confianza" readonly="1" widget="percentage"/>
+                    <field name="ia_motivo" readonly="1"/>
+                    <field name="unida_por_ia" readonly="1" invisible="not unida_por_ia"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Importación: botón para todos los posibles duplicados y columnas en la pestaña «Filas» -->
+    <record id="importacion_form_ia" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.form.ia</field>
+        <field name="model">comercio.lista.importacion</field>
+        <field name="inherit_id" ref="comercio_catalogo.importacion_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_revisar_filas']" position="after">
+                <field name="ia_disponible" invisible="1"/>
+                <button name="action_abrir_verificar_ia" type="object" string="Revisar con IA"
+                        invisible="not ia_disponible or estado not in ('simulada', 'aplicada') or not es_vigente"
+                        help="Abre «¿Qué querés revisar con la IA?»: los posibles duplicados, lo que ya tenemos, las filas con problemas o aceptar lo que sugirió. La IA solo sugiere."/>
+            </xpath>
+            <xpath expr="//field[@name='linea_ids']/list/field[@name='producto_elegido_id']" position="before">
+                <field name="ia_veredicto" optional="show" widget="badge"
+                       decoration-success="ia_veredicto == 'mismo'" decoration-info="ia_veredicto == 'distinto'"
+                       decoration-warning="ia_veredicto == 'dudoso'"/>
+                <field name="ia_motivo" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+    <!-- «Buscar producto»: verificar con IA lo marcado sin abrir la lista -->
+    <record id="catalogo_busqueda_list_ia" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.busqueda.ia</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.catalogo_busqueda_list"/>
+        <field name="arch" type="xml">
+            <!-- En amarillo también lo que la IA retuvo al agregar (cree que ya lo tenemos) -->
+            <xpath expr="/list" position="attributes">
+                <attribute name="decoration-warning">estado == 'pendiente' and (accion == 'posible duplicado' or ia_veredicto == 'mismo')</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_abrir_verificar_ia" type="object" string="Revisar con IA"
+                        help="Abre «¿Qué querés revisar con la IA?»: las filas marcadas, los posibles duplicados, lo que ya tenemos, las filas con problemas o aceptar lo que sugirió. La IA solo sugiere."/>
+            </xpath>
+            <xpath expr="//field[@name='producto_elegido_id']" position="before">
+                <!-- Secundarias (19/11, Daniel): a la vista la descripción entera; esto se abre a pedido -->
+                <field name="ia_veredicto" optional="hide" widget="badge" invisible="not ia_veredicto"
+                       decoration-success="ia_veredicto == 'mismo'" decoration-info="ia_veredicto == 'distinto'"
+                       decoration-warning="ia_veredicto == 'dudoso'"/>
+                <field name="ia_producto_id" optional="hide"/>
+                <field name="ia_motivo" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Filtro para lo nuestro que la IA no confirma -->
+    <record id="importacion_linea_search_ia" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.search.ia</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.importacion_linea_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="ia_duda" string="La IA duda"
+                        domain="[('registrado', '=', True), ('ia_veredicto', 'in', ('distinto', 'dudoso'))]"
+                        help="Filas unidas a un producto nuestro que la IA no reconoce como el mismo."/>
+                <filter name="ia_sugiere_mismo" string="La IA dice que ya lo tenemos"
+                        domain="[('registrado', '=', False), ('ia_veredicto', '=', 'mismo')]"/>
+                <filter name="unidas_por_ia" string="Unidas por la IA" domain="[('unida_por_ia', '=', True)]"
+                        help="Las que la IA unió sola a un producto que ya teníamos. Se pueden deshacer."/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="catalogo_busqueda_search_ia" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.busqueda.search.ia</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.catalogo_busqueda_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="ia_retuvo" string="Retenidas por la IA"
+                        domain="[('estado', '=', 'pendiente'), ('registrado', '=', False), ('ia_veredicto', '=', 'mismo')]"
+                        help="No se agregaron: la IA cree que ya lo tenemos. Si es el mismo, «Es el mismo»; si no, marcarlas y «Agregar a nuestro catálogo» (ahí se agregan)."/>
+                <filter name="ia_sugiere_mismo" string="La IA dice que ya lo tenemos"
+                        domain="[('registrado', '=', False), ('ia_veredicto', '=', 'mismo')]"/>
+                <filter name="unidas_por_ia" string="Unidas por la IA" domain="[('unida_por_ia', '=', True)]"
+                        help="Las que la IA unió sola a un producto que ya teníamos. Se pueden deshacer."/>
+                <filter name="ia_duda" string="La IA duda"
+                        domain="[('registrado', '=', True), ('ia_veredicto', 'in', ('distinto', 'dudoso'))]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="verificar_ia_wizard_form" model="ir.ui.view">
+        <field name="name">comercio.verificar.ia.wizard.form</field>
+        <field name="model">comercio.verificar.ia.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <p>Marcado = se revisa ahora. Va todo junto, solo lo que todavía no tiene sugerencia.</p>
+                <div class="d-flex flex-column gap-2 mb-3">
+                    <div class="d-flex align-items-center gap-2" invisible="not cant_marcadas">
+                        <field name="revisar_marcadas" nolabel="1"/>
+                        <label for="revisar_marcadas" class="mb-0"/>
+                        <span class="text-muted">(<field name="cant_marcadas" class="d-inline" readonly="1"/> filas)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" invisible="not importacion_id">
+                        <field name="revisar_duplicados" nolabel="1"/>
+                        <label for="revisar_duplicados" class="mb-0"/>
+                        <span class="text-muted">(<field name="cant_duplicados" class="d-inline" readonly="1"/> sin revisar)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" invisible="not importacion_id">
+                        <field name="revisar_nuestros" nolabel="1"/>
+                        <label for="revisar_nuestros" class="mb-0"/>
+                        <span class="text-muted">(<field name="cant_nuestros" class="d-inline" readonly="1"/> sin revisar)</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2" invisible="not importacion_id">
+                        <field name="revisar_problemas" nolabel="1"/>
+                        <label for="revisar_problemas" class="mb-0"/>
+                        <span class="text-muted">(<field name="cant_problemas" class="d-inline" readonly="1"/> sin revisar)</span>
+                    </div>
+                </div>
+                <p class="text-muted">La IA solo sugiere: nada cambia hasta que alguien acepta. Lo sugerido queda en
+                    el detalle de cada fila («Lo que dijo la IA»). A Google van solo descripciones y códigos (ADR 0018).</p>
+                <field name="importacion_id" invisible="1"/>
+                <field name="linea_ids" invisible="1"/>
+                <field name="cant_sugeridas" invisible="1"/>
+                <footer>
+                    <button name="action_revisar" type="object" string="Revisar con IA" class="btn-primary"/>
+                    <button name="action_aceptar" type="object" string="Aceptar lo que sugirió la IA"
+                            invisible="not cant_sugeridas"
+                            help="«Es el mismo» une al producto que dijo la IA. Nunca agrega productos: lo que es otro queda para decidir. Las dudosas no se tocan."/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

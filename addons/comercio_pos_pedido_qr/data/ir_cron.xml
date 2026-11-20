@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Todas las noches cierra los puestos que quedaron abiertos (no manejan plata).
+         nextcall en UTC: 02:30 UTC = 23:30 en Argentina (UTC-3). La hora se cambia en
+         Ajustes → Técnico → Acciones planificadas. La caja nunca se cierra sola. -->
+    <record id="ir_cron_cerrar_puestos" model="ir.cron">
+        <field name="name">Comercio: cerrar puestos abiertos por la noche</field>
+        <field name="model_id" ref="point_of_sale.model_pos_session"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_comercio_cerrar_puestos()</field>
+        <field name="active" eval="True"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall" eval="(DateTime.now().replace(hour=2, minute=30, second=0) + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+    </record>
+</odoo>

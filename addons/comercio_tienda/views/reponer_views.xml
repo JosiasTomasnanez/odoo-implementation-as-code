@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «A reponer»: productos de la tienda que llegaron al mínimo. Se ofrecen solos como
+         «Consultar disponibilidad»; acá se decide qué hacer, de a uno o marcando varios. -->
+    <record id="reponer_list" model="ir.ui.view">
+        <field name="name">product.template.list.comercio.tienda.reponer</field>
+        <field name="model">product.template</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list string="A reponer" create="false" delete="false" default_order="comercio_tienda_bajo_desde">
+                <header>
+                    <button name="action_comercio_tienda_pedir" type="object" string="Pedir al proveedor" class="btn-primary"
+                            groups="purchase.group_purchase_user"/>
+                    <button name="action_comercio_tienda_consultar" type="object" string="Dejar siempre a consultar"
+                            groups="purchase.group_purchase_user,stock.group_stock_user"/>
+                    <button name="action_comercio_tienda_no_reponer" type="object" string="No reponer por ahora"
+                            groups="purchase.group_purchase_user,stock.group_stock_user"/>
+                    <button name="action_comercio_tienda_quitar" type="object" string="Quitar de la tienda"
+                            groups="purchase.group_purchase_user,stock.group_stock_user"/>
+                </header>
+                <field name="name"/>
+                <field name="default_code" optional="hide"/>
+                <field name="categ_id" optional="show"/>
+                <field name="comercio_tienda_stock_libre" string="Stock libre"/>
+                <field name="comercio_tienda_margen" string="Mínimo"/>
+                <field name="comercio_tienda_bajo_desde" string="Desde" widget="remaining_days" optional="show"/>
+                <field name="comercio_tienda_reponer" string="Estado"
+                       decoration-warning="comercio_tienda_reponer == 'pendiente'"
+                       decoration-info="comercio_tienda_reponer == 'pedido'"
+                       decoration-muted="comercio_tienda_reponer == 'no_reponer'" widget="badge"/>
+                <button name="action_comercio_tienda_pedir" type="object" string="Pedir" class="btn-link"
+                        groups="purchase.group_purchase_user" invisible="comercio_tienda_reponer == 'pedido'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="reponer_search" model="ir.ui.view">
+        <field name="name">product.template.search.comercio.tienda.reponer</field>
+        <field name="model">product.template</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="default_code"/>
+                <filter name="para_decidir" string="Para decidir" domain="[('comercio_tienda_reponer', '=', 'pendiente')]"/>
+                <filter name="pedidos" string="Pedido al proveedor" domain="[('comercio_tienda_reponer', '=', 'pedido')]"/>
+                <filter name="no_reponer" string="No reponer por ahora" domain="[('comercio_tienda_reponer', '=', 'no_reponer')]"/>
+                <group>
+                    <filter name="por_categoria" string="Categoría" context="{'group_by': 'categ_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="accion_reponer" model="ir.actions.act_window">
+        <field name="name">Tienda: a reponer</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('comercio_tienda_bajo_minimo', '=', True)]</field>
+        <field name="context">{'search_default_para_decidir': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'list', 'view_id': ref('reponer_list')})]"/>
+        <field name="search_view_id" ref="reponer_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nada para reponer</p>
+            <p>Acá aparecen los productos de la tienda online que llegaron al mínimo. Mientras tanto la
+               tienda los ofrece como «Consultar disponibilidad», así no se vende lo que no hay.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_reponer_compras" name="Tienda: a reponer" action="accion_reponer"
+              parent="purchase.menu_procurement_management" sequence="90" groups="purchase.group_purchase_user"/>
+    <menuitem id="menu_reponer_inventario" name="Tienda: a reponer" action="accion_reponer"
+              parent="stock.menu_stock_inventory_control" sequence="90" groups="stock.group_stock_user"/>
+</odoo>

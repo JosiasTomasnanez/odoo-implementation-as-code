@@ -1,0 +1,54 @@
+---
+// Sitio mayorista (ADR 0035): sobrio y práctico. Logo, a quién se le vende, lista, pedidos y
+// carrito; sin carrusel, sellos ni pestañas de app.
+import "@fontsource/public-sans/400";
+import "@fontsource/public-sans/600";
+import "@fontsource/public-sans/700";
+import "@fontsource/ibm-plex-mono/500";
+import "../styles/global.css";
+import { env } from "cloudflare:workers";
+import { local } from "../data/catalogo";
+import { clienteActual } from "../servidor/clientes";
+import Icono from "../components/Icono.astro";
+interface Props { titulo: string; actual?: string }
+const { titulo, actual } = Astro.props;
+const cliente = await clienteActual(env.DB, Astro.request);
+const aprobado = cliente?.mayorista === "aprobado";
+const razon = cliente ? (await env.DB.prepare("SELECT razon_social FROM clientes WHERE id = ?").bind(cliente.id).first<{ razon_social: string | null }>())?.razon_social : null;
+const marca = (s: string) => (actual === s ? "page" : undefined);
+---
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{`${titulo} · Comercio Ejemplo Mayoristas`}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+<body class="may" data-sitio="mayorista">
+  <header class="may-enc">
+    <div class="cont">
+      <a class="may-marca" href="/"><img src="/logo.webp" width="36" height="36" alt="Comercio Ejemplo"><span>Mayoristas</span></a>
+      {aprobado && (
+        <nav class="may-nav" aria-label="Secciones">
+          <a href="/" aria-current={marca("lista")}>Lista de precios</a>
+          <a href="/pedidos" aria-current={marca("pedidos")}>Mis pedidos</a>
+          <a class="may-carr" href="/carrito" aria-current={marca("carrito")}><Icono nombre="carrito" />Carrito<b data-contador>0</b></a>
+        </nav>
+      )}
+      {cliente && (
+        <form class="may-quien" method="post" action="/api/cuenta/salir">
+          {cliente.mayorista ? <a href="/cuenta" aria-current={marca("cuenta")} title="Mi cuenta">{razon ?? cliente.email}</a> : <span>{razon ?? cliente.email}</span>}<button type="submit">Salir</button>
+        </form>
+      )}
+    </div>
+  </header>
+  <main class="cont"><slot /></main>
+  <footer class="may-pie">
+    <div class="cont">Comercio Ejemplo · {local.direccion}, {local.ciudad} · <span class="num">{local.telefono}</span> · Precios con IVA incluido · <a href="/legales/terminos/">Términos</a> · <a href="/legales/privacidad/">Privacidad</a> · <a href="/arrepentimiento/">Botón de arrepentimiento</a></div>
+  </footer>
+  <script src="../scripts/carrito.ts"></script>
+</body>
+</html>

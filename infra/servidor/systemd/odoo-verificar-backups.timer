@@ -1,0 +1,10 @@
+# ADR 0027. Lo instala configurar-respaldo-y-avisos.sh.
+[Unit]
+Description=Verificación de las copias de Odoo (programado)
+
+[Timer]
+OnCalendar=Sun *-*-* 05:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+---
+// Fila deslizable de productos (dedo en el celular, flechas en la PC).
+import Tarjeta from "./Tarjeta.astro";
+import type { Vista } from "../servidor/consultas";
+const { items } = Astro.props as { items: Vista[] };
+---
+<div class="fila-wrap" data-fila>
+  <div class="fila-prod" data-pista>{items.map((p) => <Tarjeta p={p} />)}</div>
+  <button class="flecha izq" type="button" data-ant aria-label="Anteriores">‹</button>
+  <button class="flecha der" type="button" data-sig aria-label="Siguientes">›</button>
+</div>

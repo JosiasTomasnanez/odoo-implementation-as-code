@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="comercio_pos_balanza_systel.ConectarBalanzaSystel">
+        <button type="button" class="btn btn-primary" t-att-disabled="this.cargando()" t-on-click="this.onClick">
+            Conectar balanza Systel
+        </button>
+    </t>
+</templates>

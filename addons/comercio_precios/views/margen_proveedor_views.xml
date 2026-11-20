@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Margen de venta por proveedor (06/11): orden producto → proveedor → rubro -->
+    <record id="res_partner_list_margenes" model="ir.ui.view">
+        <field name="name">res.partner.list.comercio.margenes</field>
+        <field name="model">res.partner</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0">
+                <field name="name" readonly="1"/>
+                <field name="comercio_margen_proveedor" string="Margen (%)" width="110px"/>
+                <field name="comercio_base_proveedor" placeholder="Como su rubro"
+                       invisible="not comercio_margen_proveedor"/>
+                <field name="comercio_proveedor_base_id" placeholder="Este mismo"
+                       invisible="comercio_base_proveedor != 'proveedor'"
+                       options="{'no_create': True, 'no_open': True}"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_margenes_por_proveedor" model="ir.actions.act_window">
+        <field name="name">Márgenes por proveedor</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="res_partner_list_margenes"/>
+        <field name="domain">[('supplier_rank', '&gt;', 0), ('parent_id', '=', False)]</field>
+        <field name="help" type="html">
+            <p>Margen para los productos cuyo costo sale de ese proveedor (el más barato vigente, o el elegido en
+               «Costo de»). Se puede calcular sobre el costo o sobre el precio de un proveedor.
+               Vacío = el de su rubro. Un producto con «Margen especial» usa el suyo. Al cambiarlo, los
+               productos afectados aparecen en «Precios a actualizar»: el precio no cambia hasta aplicarlo.</p>
+        </field>
+    </record>
+
+    <record id="res_partner_form_margen" model="ir.ui.view">
+        <field name="name">res.partner.form.comercio.margen</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="comercio_margen_proveedor" invisible="not supplier_rank" groups="comercio_catalogo.group_listas_proveedores,product.group_product_manager"/>
+                <field name="supplier_rank" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="lista_proveedor_form_margen" model="ir.ui.view">
+        <field name="name">comercio.lista.proveedor.form.margen</field>
+        <field name="model">comercio.lista.proveedor</field>
+        <field name="inherit_id" ref="comercio_catalogo.lista_proveedor_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categoria_id']" position="after">
+                <field name="margen_proveedor"/>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_margenes_proveedor" name="Márgenes por proveedor" parent="menu_precios" sequence="5"
+              action="action_margenes_por_proveedor"/>
+</odoo>

@@ -1,0 +1,29 @@
+# Tablero de Contabilidad más limpio (09/11, pedido del implementador): se ocultan del tablero
+# los diarios que crea la localización argentina y que hoy no se usan. Solo se ocultan
+# (simplificar sin quitar): siguen activos y se ven en Contabilidad → Configuración → Diarios.
+# Para volver a mostrar uno, borrarlo de esta lista o poner `show_on_dashboard: true`.
+# - Ventas Preimpreso: facturas en talonario de papel; se va a facturar con el diario
+#   electrónico (docs/runbooks/datos-fiscales-y-bancos.md, paso 4).
+# - Cheques de terceros y rechazados: el negocio no anotó cheques como medio de cobro (P-016).
+# - Declaración fiscal: el Libro de IVA se abre desde su menú (comercio_libro_iva).
+# El diario «Point of Sale Closing» (POSC) lo crea el PdV al cerrar la primera caja y no
+# existe en un lab nuevo: se ocultó a mano en producción (GUIA-EJEMPLO.md, bitácora 09/11).
+model: account.journal
+match: [code]
+records:
+  - id: tablero_oculto_ventas_preimpreso
+    values:
+      code: "0001"
+      show_on_dashboard: false
+  - id: tablero_oculto_cheques_terceros
+    values:
+      code: CSH1
+      show_on_dashboard: false
+  - id: tablero_oculto_cheques_rechazados
+    values:
+      code: CSH2
+      show_on_dashboard: false
+  - id: tablero_oculto_declaracion_fiscal
+    values:
+      code: TAX
+      show_on_dashboard: false

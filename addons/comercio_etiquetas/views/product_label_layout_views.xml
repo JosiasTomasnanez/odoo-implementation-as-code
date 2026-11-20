@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Rollo nuevo desde el campo «Rollo» («Crear y editar…»): nombre y medida. -->
+    <record id="rollo_form" model="ir.ui.view">
+        <field name="name">comercio.etiqueta.rollo.form</field>
+        <field name="model">comercio.etiqueta.rollo</field>
+        <field name="arch" type="xml">
+            <form string="Rollo de etiquetas">
+                <group>
+                    <field name="name" placeholder="p. ej. Mediano"/>
+                    <field name="ancho_mm"/>
+                    <field name="alto_mm"/>
+                </group>
+                <div class="text-muted">
+                    Medir UNA etiqueta: ancho de costado a costado y alto de corte a corte, sin el
+                    espacio entre etiquetas. Después de cambiar el rollo en la Zebra, calibrarla
+                    (FEED apretado hasta dos parpadeos).
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- «Rollo» en el asistente de etiquetas, solo con la plantilla propia en ZPL. -->
+    <record id="product_label_layout_form_rollo" model="ir.ui.view">
+        <field name="name">product.label.layout.form.comercio.rollo</field>
+        <field name="model">product.label.layout</field>
+        <field name="inherit_id" ref="product.product_label_layout_form"/>
+        <field name="arch" type="xml">
+            <field name="zpl_template" position="after">
+                <field name="comercio_rollo_id" options="{'no_quick_create': True, 'no_open': True}"
+                       invisible="print_format != 'zpl' or zpl_template != 'comercio'"
+                       required="print_format == 'zpl' and zpl_template == 'comercio'"/>
+            </field>
+        </field>
+    </record>
+</odoo>

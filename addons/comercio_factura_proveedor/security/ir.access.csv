@@ -1,0 +1,4 @@
+id,name,model_id,group_id/id,operation,domain
+access_factura_linea_facturacion,factura linea facturacion,comercio.factura.linea,account.group_account_invoice,crud,
+access_factura_linea_compras,factura linea compras,comercio.factura.linea,purchase.group_purchase_user,r,
+access_elegir_proveedor_facturacion,elegir proveedor facturacion,comercio.factura.elegir.proveedor,account.group_account_invoice,crud,

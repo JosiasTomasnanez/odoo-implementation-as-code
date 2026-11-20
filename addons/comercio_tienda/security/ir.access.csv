@@ -1,0 +1,3 @@
+id,name,model_id,group_id/id,operation,domain
+access_tienda_cambio_conector,cambio tienda conector,comercio.tienda.cambio,group_tienda_conector,r,
+access_tienda_cambio_admin,cambio tienda admin,comercio.tienda.cambio,base.group_system,crud,

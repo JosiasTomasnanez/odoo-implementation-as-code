@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Diseño del mail de la factura: el texto de la plantilla «Factura: Envío»
+         (config/base/08-mail-factura.yaml) y un pie con la dirección, el teléfono y la web de la empresa (si están cargados). Sin imágenes:
+         el logo se pide a Odoo, que no está abierto a internet, y el cliente lo vería roto. -->
+    <template id="layout_mail_factura">
+<html t-att-lang="lang">
+<head><meta http-equiv="Content-Type" content="text/html charset=UTF-8"/></head>
+<body>
+<t t-call="mail.notification_preview"/>
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" style="padding: 16px 0px; background-color: #F1F1F1; font-family: Verdana, Arial, sans-serif; color: #333333; width: 100%;"><tr><td align="center">
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="590" style="padding: 24px; background-color: white; border-collapse: separate;">
+    <tr><td style="font-size: 14px;"><t t-out="message.body"/></td></tr>
+    <tr t-if="company and (company.street or company.phone or company.website)"><td style="padding-top: 16px; border-top: 1px solid #DDDDDD; font-size: 11px; color: #888888;">
+        <t t-if="company.street"><t t-out="company.street"/><t t-if="company.city">, <t t-out="company.city"/></t></t>
+        <t t-if="company.phone"><t t-if="company.street"> · </t><t t-out="company.phone"/></t>
+        <t t-if="company.website"><t t-if="company.street or company.phone"> · </t><a t-att-href="company.website" style="color: #888888;" t-out="company.website"/></t>
+    </td></tr>
+</table>
+</td></tr></table>
+</body>
+</html>
+    </template>
+</odoo>

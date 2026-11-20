@@ -1,0 +1,23 @@
+---
+// Carrito (tienda y sitio mayorista): las líneas las arma scripts/carrito.ts con los precios que da
+// la tienda (/api/productos: en el sitio mayorista, los de su lista). Pagar es otra pantalla (/compra).
+import { local } from "../data/catalogo";
+const { vacio = "/ofertas/", vacioTexto = "Ver ofertas de la semana" } = Astro.props as { vacio?: string; vacioTexto?: string };
+---
+    <div class="vacio" data-carrito-vacio hidden>
+      <p>Todavía no agregaste nada.</p>
+      <p><a class="btn sec2" href={vacio}>{vacioTexto}</a></p>
+    </div>
+    <div class="carrito" data-carrito-lleno hidden>
+      <div class="lineas"><p class="aviso" data-quitados hidden>Sacamos del carrito lo que ya no está a la venta.</p><p class="aviso" data-ajustados hidden>Ajustamos algunas cantidades a la compra mínima o al bulto cerrado.</p><div class="lineas" data-lineas></div></div>
+      <aside class="resumen" aria-label="Resumen">
+        <div class="fila"><span data-unidades>0 artículos</span><span data-subtotal>$ 0</span></div>
+        <div class="fila" hidden={Astro.locals.sitio === "mayorista"}><span>Ahorro en ofertas</span><span data-ahorro>$ 0</span></div>
+        <div class="fila"><span>Retiro en el local</span><span>Sin cargo</span></div>
+        <div class="fila total"><span>Total</span><span data-total>$ 0</span></div>
+        <div class="retiro"><div><b>Retirás en {local.direccion}</b>Te avisamos por mail cuando está listo.</div></div>
+        <p class="aviso" data-falta hidden>De algún producto pediste más de lo que queda. Bajá esa cantidad para seguir.</p>
+        <a class="btn" href="/compra" data-seguir>Continuar con la compra</a>
+        <p class="nota-demo">Precios con IVA incluido.</p>
+      </aside>
+    </div>

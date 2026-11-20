@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Dólar» (30/10, pedido del cliente): la cotización del dólar en una pantalla propia de
+         Costos y precios, porque cambia seguido. Es la tabla nativa de cotizaciones del USD. -->
+    <record id="dolar_list" model="ir.ui.view">
+        <field name="name">res.currency.rate.list.dolar.comercio</field>
+        <field name="model">res.currency.rate</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list editable="top" default_order="name desc">
+                <header>
+                    <button name="action_comercio_recalcular_listas" type="object" display="always"
+                            string="Recalcular listas en dólares" class="btn-secondary"
+                            help="Vuelve a calcular ahora los costos de las listas en dólares con la última cotización (si no, se hace solo a las 7)."/>
+                </header>
+                <field name="name" string="Fecha"/>
+                <field name="inverse_company_rate" string="Pesos por dólar" digits="[16, 2]"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="company_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_dolar" model="ir.actions.act_window">
+        <field name="name">Dólar</field>
+        <field name="res_model">res.currency.rate</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="dolar_list"/>
+        <field name="domain">[("currency_id.name", "=", "USD")]</field>
+        <field name="context">{"comercio_dolar": True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cargá el dólar de hoy</p>
+            <p>«Nuevo» → fecha y <b>pesos por dólar</b> (Banco Nación, vendedor). Las listas de proveedores en
+               dólares usan la última cotización: se recalculan solas a las 7 o con «Recalcular listas en
+               dólares». Si Odoo puede traerla de ARCA, aparece sola cada mañana.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_dolar" name="Dólar" parent="menu_raiz" sequence="2" action="action_dolar"/>
+</odoo>

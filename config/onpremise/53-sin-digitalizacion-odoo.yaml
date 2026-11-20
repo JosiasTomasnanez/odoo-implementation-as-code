@@ -1,0 +1,12 @@
+# Facturas de proveedor: sin la digitalización de Odoo (IAP), que cobra créditos por cada
+# factura subida. Las lee el módulo comercio_factura_proveedor: un PDF con texto sin IA y
+# una foto con Gemini (clave propia). ADR 0021. Es el ajuste «Digitalización de documentos:
+# no digitalizar» de Contabilidad (también para las de cliente, que no se suben).
+model: res.company
+match: [parent_id]
+records:
+  - id: empresa_sin_digitalizacion
+    values:
+      parent_id: false
+      extract_in_invoice_digitalization_mode: no_send
+      extract_out_invoice_digitalization_mode: no_send

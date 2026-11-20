@@ -1,0 +1,19 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import Listado from "../../components/Listado.astro";
+import { rubroPorSlug, listadoRubro, opcionesDe } from "../../servidor/consultas";
+
+const slug = Astro.params.slug ?? "";
+const rubro = /^[a-z0-9-]{1,90}$/.test(slug) ? await rubroPorSlug(env.DB, slug) : null;
+if (!rubro) return Astro.rewrite("/404");
+const r = await listadoRubro(env.DB, rubro.id, opcionesDe(Astro.url));
+Astro.response.headers.set("Cache-Control", "private, max-age=60");
+---
+<Base titulo={rubro.nombre} actual={rubro.slug}>
+  <section class="sec">
+    <div class="miga"><a href="/">Inicio</a> / <a href="/categorias/">Categorías</a> / {rubro.nombre}</div>
+    <div class="sec-tit"><h1 class="h-disp">{rubro.nombre}</h1></div>
+    <Listado r={r} />
+  </section>
+</Base>

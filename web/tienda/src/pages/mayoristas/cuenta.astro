@@ -1,0 +1,48 @@
+---
+// Mi cuenta en el sitio mayorista: los datos de la empresa. Los de contacto se cambian acá (queda
+// registro); el CUIT, la razón social y la condición de IVA se piden al comercio.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/BaseMayorista.astro";
+import { local } from "../../data/catalogo";
+import { clienteActual } from "../../servidor/clientes";
+Astro.response.headers.set("Cache-Control", "no-store");
+const cliente = await clienteActual(env.DB, Astro.request);
+if (!cliente) return Astro.redirect("/ingresar", 303);
+if (!cliente.mayorista) return Astro.redirect("/", 303);
+type D = { razon_social: string | null; cuit: string | null; condicion_iva: string | null; actividad: string | null; contacto: string | null; telefono: string | null; direccion: string | null; localidad: string | null; lista: string | null };
+const d = (await env.DB.prepare(`SELECT c.razon_social, c.cuit, c.condicion_iva, c.actividad, c.contacto, c.telefono, c.direccion, c.localidad,
+    (SELECT nombre FROM listas_precios WHERE id_odoo = c.lista_id) AS lista FROM clientes c WHERE c.id = ?`).bind(cliente.id).first<D>())!;
+const IVA: Record<string, string> = { ri: "Responsable inscripto", monotributo: "Monotributo", exento: "Exento" };
+const cuit = d.cuit ? d.cuit.replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3") : "—";
+const ESTADO: Record<string, string> = { aprobado: "Cuenta aprobada", pendiente: "Esperando aprobación", rechazado: "Cuenta sin aprobar" };
+const q = Astro.url.searchParams;
+const pedir = `mailto:${local.mailCuentas}?subject=${encodeURIComponent(`Cambio de datos de mi cuenta mayorista (CUIT ${cuit})`)}`;
+---
+<Base titulo="Mi cuenta" actual="cuenta">
+  <div class="sec-tit"><h1 class="h-disp">Mi cuenta</h1></div>
+  <section class="sec may-cuenta">
+    <div class="mc-bloque">
+      <h2>Datos de la empresa</h2>
+      <dl>
+        <div><dt>Razón social</dt><dd>{d.razon_social ?? "—"}</dd></div>
+        <div><dt>CUIT o CUIL</dt><dd class="num">{cuit}</dd></div>
+        <div><dt>Condición de IVA</dt><dd>{IVA[d.condicion_iva ?? ""] ?? "—"}</dd></div>
+        <div><dt>Actividad</dt><dd>{d.actividad ?? "—"}</dd></div>
+        <div><dt>Mail de la cuenta</dt><dd>{cliente.email}</dd></div>
+        <div><dt>Estado</dt><dd>{ESTADO[cliente.mayorista] ?? "—"}{cliente.mayorista === "aprobado" && d.lista ? ` · ${d.lista}` : ""}</dd></div>
+      </dl>
+      <p class="chico-nota">Con estos datos aprobamos tu cuenta y hacemos tus facturas, por eso no se cambian desde acá. Si alguno cambió, escribinos a <a href={pedir}>{local.mailCuentas}</a> desde el mail de tu cuenta, con el dato nuevo, y lo actualizamos.</p>
+    </div>
+    <form class="mc-bloque perfil-form" method="post" action="/api/cuenta/datos">
+      <h2>Contacto y entrega</h2>
+      {q.has("ok") && <p class="aviso bien" role="status">Listo, guardamos tus datos.</p>}
+      {q.has("e") && <p class="aviso" role="alert">Revisá los datos: todos son obligatorios y el teléfono va solo con números.</p>}
+      <label class="campo"><span>Persona de contacto</span><input name="contacto" type="text" autocomplete="name" required minlength="2" maxlength="80" value={d.contacto ?? ""}></label>
+      <label class="campo"><span>Teléfono</span><input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required minlength="6" maxlength="30" value={d.telefono ?? ""}></label>
+      <label class="campo"><span>Dirección</span><input name="direccion" type="text" autocomplete="street-address" required minlength="2" maxlength="120" value={d.direccion ?? ""}></label>
+      <label class="campo"><span>Localidad</span><input name="localidad" type="text" autocomplete="address-level2" required minlength="2" maxlength="80" value={d.localidad ?? ""}></label>
+      <button class="btn sec2" type="submit">Guardar</button>
+    </form>
+    <p class="perfil-baja"><a href={`/ingresar?modo=olvide&m=${encodeURIComponent(cliente.email)}`}>Cambiar mi contraseña</a> · <a href="/legales/eliminar-cuenta/">Eliminar mi cuenta</a></p>
+  </section>
+</Base>

@@ -1,0 +1,12 @@
+# Qué diario usa cada medio de pago del cierre Z (código del diario; ver 64-cierre-z.yaml).
+model: ir.config_parameter
+match: [key]
+records:
+  - id: cierre_z_diario_efectivo
+    values: {key: comercio_cierre_z.diario_efectivo, value: EFRG}
+  - id: cierre_z_diario_debito
+    values: {key: comercio_cierre_z.diario_debito, value: TARJ}
+  - id: cierre_z_diario_credito
+    values: {key: comercio_cierre_z.diario_credito, value: TARJ}
+  - id: cierre_z_diario_transferencia
+    values: {key: comercio_cierre_z.diario_transferencia, value: BNK1}

@@ -1,0 +1,71 @@
+---
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import Foto from "../../components/Foto.astro";
+import Fila from "../../components/Fila.astro";
+import Sello from "../../components/Sello.astro";
+import Disponibilidad from "../../components/Disponibilidad.astro";
+import { local } from "../../data/catalogo";
+import { porSlug, slugActual, deRubro, descuento, pesos } from "../../servidor/consultas";
+
+const slug = Astro.params.slug ?? "";
+const p = /^[a-z0-9-]{1,90}$/.test(slug) ? await porSlug(env.DB, slug) : null;
+if (!p) {
+  // Link viejo de un producto renombrado: al slug de hoy (mismo número al final)
+  const nuevo = /^[a-z0-9-]{1,90}$/.test(slug) ? await slugActual(env.DB, slug) : null;
+  if (nuevo) return Astro.redirect(`/producto/${nuevo}/`, 301);
+  return Astro.rewrite("/404");
+}
+const d = descuento(p);
+const vendible = p.consultar || p.disponible;
+const otros = p.categoria_id ? (await deRubro(env.DB, p.categoria_id, 13)).filter((x) => x.slug !== p.slug).slice(0, 12) : [];
+Astro.response.headers.set("Cache-Control", "private, max-age=60");
+// Para compartir y para buscadores: foto, precio y si hay
+const imagen = p.imagen && /^[0-9a-f]{40,64}$/.test(p.imagen) ? `/img/p/${p.imagen}` : undefined;
+const descripcion = p.descripcion ?? `${p.nombre} a ${pesos(p.precio)}${d > 0 ? ` (${d}% OFF)` : ""}. Pedilo online y retiralo en ${local.direccion}, ${local.ciudad}.`;
+const datos = {
+  "@context": "https://schema.org", "@type": "Product", name: p.nombre, description: descripcion,
+  ...(imagen ? { image: Astro.url.origin + imagen } : {}),
+  // Solo códigos de barras de fábrica (los propios, que empiezan con 2, no son un GTIN)
+  ...(p.codigo && /^(?!2)\d{13}$|^\d{12}$/.test(p.codigo) ? { gtin: p.codigo } : {}),
+  ...(p.categoria ? { category: p.categoria } : {}),
+  offers: {
+    "@type": "Offer", url: Astro.url.origin + Astro.url.pathname, priceCurrency: "ARS", price: (p.precio / 100).toFixed(2),
+    availability: `https://schema.org/${p.disponible ? "InStock" : p.consultar ? "PreOrder" : "OutOfStock"}`,
+    itemCondition: "https://schema.org/NewCondition",
+  },
+};
+---
+<Base titulo={p.nombre} actual={p.categoria_slug ?? undefined} descripcion={descripcion} imagen={imagen} datos={datos}>
+  <div class="miga"><a href="/">Inicio</a>{p.categoria && <> / <a href={`/categoria/${p.categoria_slug}/`}>{p.categoria}</a></>}</div>
+  <section class="ficha">
+    <Foto p={p} carga="eager" tam="grande">{d > 0 && <Sello arriba="Ahorrás" num={`${d}%`} />}</Foto>
+    <div class="ficha-info">
+      <h1>{p.nombre}</h1>
+      <div>
+        {d > 0 && p.precio_anterior && <s class="ant">{pesos(p.precio_anterior)}</s>}
+        <div class="precio-fila"><span class="precio">{pesos(p.precio)}</span>{d > 0 && <span class="off">{d}% OFF</span>}</div>
+        <span class="cod">por {p.unidad.toLowerCase()} · IVA incluido</span>
+      </div>
+      {d > 0 && p.precio_anterior && <span class="ahorro">Ahorrás {pesos(p.precio_anterior - p.precio)}{p.oferta_hasta && ` · hasta el ${new Date(p.oferta_hasta + "Z").toLocaleDateString("es-AR", { day: "numeric", month: "long", timeZone: "America/Argentina/Cordoba" })}`}</span>}
+      <Disponibilidad p={p} />
+      {p.consultar && <p class="aviso">Lo podés comprar igual: te confirmamos la disponibilidad en el día.{p.dias_encargo ? ` Si hay que encargarlo, tarda unos ${p.dias_encargo} días.` : ""}</p>}
+      {p.descripcion && <p class="desc">{p.descripcion}</p>}
+      <div class="comprar">
+        <span class="cant" data-cant><button type="button" data-d="-1" aria-label="Uno menos">−</button><output id="cant">1</output><button type="button" data-d="1" aria-label="Uno más">+</button></span>
+        <button class="btn" type="button" data-agregar={p.slug} data-cantidad="#cant" disabled={!vendible}>{vendible ? "Agregar al carrito" : "Avisame cuando llegue"}</button>
+      </div>
+      <div class="retiro"><div><b>Retiro en el local</b>{local.direccion}, {local.ciudad}. Te avisamos cuando está listo.</div></div>
+      <dl class="datos">
+        {p.categoria && <><dt>Categoría</dt><dd>{p.categoria}</dd></>}
+        <dt>Se vende por</dt><dd>{p.unidad.toLowerCase()}</dd>
+      </dl>
+    </div>
+  </section>
+  {otros.length > 0 && (
+    <section class="sec relacionados">
+      <div class="sec-tit"><h2>Más de {p.categoria}</h2><a href={`/categoria/${p.categoria_slug}/`}>Ver todo</a></div>
+      <Fila items={otros} />
+    </section>
+  )}
+</Base>

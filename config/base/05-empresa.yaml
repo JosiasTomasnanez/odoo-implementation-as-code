@@ -1,0 +1,17 @@
+# La empresa (un solo CUIT, sin multi-company: P-001). Se adopta la única empresa raíz
+# de la base (parent_id vacío); si hubiera más de una, el plan falla en lugar de elegir.
+# Logo en color y sin fondo (de NextFlow/imagenes/logo-sin-fondo.png, achicado): es el de
+# Odoo en general (documentos, correos, sitio). Los tickets usan el blanco y negro
+# (config/imagenes/logo-ticket.png, en 30-puntos-de-venta.yaml).
+model: res.company
+match: [parent_id]
+records:
+  - id: empresa
+    values:
+      parent_id: false
+      name: {valor: empresa.nombre}
+      logo: {archivo: ../imagenes/logo.png}
+      # Sin el bloque «¿Necesita factura?» de Odoo (QR a /pos/ticket, dirección y código): en
+      # Argentina el cliente no puede facturarse desde ahí (P-037) y confunde. Sin factura: sin QR;
+      # con factura: solo el QR de ARCA con el CAE (comercio_pos_ticket_ar). Pedido del 09/11.
+      point_of_sale_use_ticket_qr_code: false

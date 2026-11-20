@@ -1,0 +1,16 @@
+# Sitio mayorista (ADR 0035, módulo comercio_tienda).
+# Lista «Mayorista»: la de todos los clientes mayoristas por defecto; si alguno tiene condiciones
+# especiales se le asigna otra lista (con «Sincronizar con la tienda»). Las reglas las carga el
+# negocio en Odoo (noupdate): el precio de cada producto y su «Cantidad mínima», que la tienda
+# exige (nunca se vende suelto). El bulto sale de los «Embalajes» del producto.
+# Sin reglas, el precio es el de venta del local (a definir con Daniel, P-015).
+model: product.pricelist
+match: [name]
+records:
+  - id: lista_tienda_mayorista
+    noupdate: true
+    values:
+      name: Mayorista
+      currency_id: {ref: base.ARS}
+      comercio_tienda_sincronizar: true
+      comercio_tienda_publica: false

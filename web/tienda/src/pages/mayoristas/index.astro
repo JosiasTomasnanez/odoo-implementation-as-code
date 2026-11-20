@@ -1,0 +1,183 @@
+---
+// Inicio del sitio mayorista: sin sesión, a ingresar; sin aprobación, el pedido de alta; aprobado,
+// la lista de precios (su lista de Odoo) para cargar el pedido de una vez.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/Base.astro";
+import { clienteActual } from "../../servidor/clientes";
+import { local } from "../../data/catalogo";
+import { condiciones, listaDeOdoo, resumen } from "../../servidor/listas";
+import { buscar, comoSeVende, conLista, contarPublicados, listadoRubro, preciosDeLista, primeraValida, rubros, todos, pesos,
+  type Opciones, type Pagina, type Rubro, type Vista } from "../../servidor/consultas";
+Astro.response.headers.set("Cache-Control", "no-store");
+const cliente = await clienteActual(env.DB, Astro.request);
+if (!cliente) return Astro.redirect("/ingresar", 303);
+const aprobado = cliente.mayorista === "aprobado" && !!cliente.lista_id;
+// Con pocos productos, la lista entera en una pantalla (se filtra al escribir). Con muchos, por
+// partes: una categoría por vez o una búsqueda, de a 100, para que cargue rápido y no se corte.
+// Las cantidades cargadas van directo al carrito, así no se pierden al cambiar de categoría.
+const ENTERA = 600, POR = 100;
+const sp = Astro.url.searchParams;
+const total = aprobado ? await contarPublicados(env.DB) : 0;
+const porPartes = total > ENTERA;
+let publicos: Vista[] = [], pag: Pagina | null = null, cats: Rubro[] = [], catActual: Rubro | undefined;
+const q = porPartes ? (sp.get("q") ?? "").trim().slice(0, 100) : "";
+if (aprobado && !porPartes) publicos = await todos(env.DB, ENTERA);
+if (aprobado && porPartes) {
+  cats = await rubros(env.DB);
+  const n = Number(sp.get("pagina") ?? "1");
+  const op: Opciones = { filtro: "todos", orden: "rel", pagina: Number.isInteger(n) && n >= 1 && n <= 10_000 ? n : 1 };
+  if (q) pag = await buscar(env.DB, q, op, POR);
+  else {
+    catActual = cats.find((c) => c.slug === sp.get("cat")) ?? cats[0];
+    pag = catActual ? await listadoRubro(env.DB, catActual.id, op, POR) : null;
+  }
+  publicos = pag?.items ?? [];
+}
+const enlace = (n: number) => `?${q ? `q=${encodeURIComponent(q)}` : `cat=${catActual?.slug ?? ""}`}${n > 1 ? `&pagina=${n}` : ""}`;
+const precios = aprobado ? await preciosDeLista(env.DB, cliente.lista_id!, publicos.map((p) => p.id)) : new Map();
+const productos = publicos.map((p) => ({ ...conLista(p, precios), publico: p.precio_anterior ?? p.precio }));
+const grupos = [...new Set(productos.map((p) => p.categoria ?? "Otros"))].map((nombre) => ({
+  nombre, slug: productos.find((p) => (p.categoria ?? "Otros") === nombre)?.categoria_slug ?? "otros",
+  items: productos.filter((p) => (p.categoria ?? "Otros") === nombre),
+}));
+// Sus condiciones, si su lista se armó en la administración (descuento general, por rubro, por producto)
+const propia = aprobado ? await listaDeOdoo(env.DB, cliente.lista_id!) : null;
+const suResumen = propia ? resumen(await condiciones(env.DB, propia)) : "";
+const ahorro = (p: { publico: number; precio: number }) => p.publico > p.precio ? Math.round((1 - p.precio / p.publico) * 100) : 0;
+const hoy = new Date().toLocaleDateString("es-AR", { timeZone: "America/Argentina/Cordoba" });
+const e = sp.get("e");
+const TEXTO: Record<string, string> = {
+  cuit: "El CUIT o CUIL no es válido: son 11 números y el último tiene que coincidir. Revisá que no haya uno cambiado.",
+  razon: "Razón social o nombre del negocio.", iva: "Condición frente al IVA.", actividad: "Actividad.", direccion: "Dirección.",
+  localidad: "Localidad.", contacto: "Persona de contacto.", telefono: "Teléfono, con característica.",
+};
+const mal = (e ?? "").split(",").map((k) => TEXTO[k]).filter(Boolean);
+---
+<Base titulo={aprobado ? "Lista de precios" : "Cuenta mayorista"} actual="lista">
+  {!aprobado && (
+    <section class="sec">
+      {cliente.mayorista === "pendiente" ? (
+        <div class="ingreso">
+          <h1 class="h-disp">Estamos revisando tu cuenta</h1>
+          <p style="margin:0">Recibimos tus datos. La revisamos a mano y te avisamos por mail cuando esté aprobada; ahí vas a ver tu lista de precios.</p>
+        </div>
+      ) : cliente.mayorista === "rechazado" ? (
+        <div class="ingreso">
+          <h1 class="h-disp">Tu cuenta mayorista no está activa</h1>
+          <p style="margin:0">Si creés que es un error, comunicate con el local: {local.telefono}.</p>
+        </div>
+      ) : (
+        <form class="ingreso alta-may" method="post" action="/api/cuenta/mayorista">
+          <h1 class="h-disp">Pedir cuenta mayorista</h1>
+          <p class="intro">Para obras, ferreterías y negocios. Con estos datos revisamos tu cuenta a mano y te avisamos por mail.</p>
+          {mal.length > 0 && <div class="aviso"><b>Falta corregir:</b><ul>{mal.map((t) => <li>{t}</li>)}</ul></div>}
+          <p class="oblig">Los datos con <b>*</b> son obligatorios.</p>
+          <fieldset><legend>Empresa</legend>
+            <label class="campo"><span>Razón social o nombre del negocio</span><input name="razon" required minlength="2" maxlength="120" autocomplete="organization"></label>
+            <div class="dos">
+              <label class="campo"><span>CUIT o CUIL</span><input name="cuit" inputmode="numeric" required maxlength="13" placeholder="20-12345678-9"><small>Los 11 números, de empresa o de persona.</small></label>
+              <label class="campo"><span>Condición frente al IVA</span>
+                <select name="iva" required><option value="">Elegí…</option><option value="ri">Responsable inscripto</option><option value="monotributo">Monotributo</option><option value="exento">Exento</option></select></label>
+            </div>
+            <label class="campo"><span>Actividad</span>
+              <select name="actividad" required><option value="">Elegí…</option>{["Ferretería", "Corralón o materiales", "Constructora u obra", "Instalador o técnico", "Comercio", "Veterinaria o pet shop", "Otra"].map((a) => <option>{a}</option>)}</select></label>
+          </fieldset>
+          <fieldset><legend>Dónde y con quién</legend>
+            <label class="campo"><span>Dirección</span><input name="direccion" required maxlength="120" autocomplete="street-address"></label>
+            <div class="dos">
+              <label class="campo"><span>Localidad</span><input name="localidad" required maxlength="80" autocomplete="address-level2"></label>
+              <label class="campo"><span>Teléfono</span><input name="telefono" type="tel" required minlength="6" maxlength="30" autocomplete="tel"></label>
+            </div>
+            <label class="campo"><span>Persona de contacto</span><input name="contacto" required maxlength="80" autocomplete="name"></label>
+          </fieldset>
+          <button class="btn sec2" type="submit">Enviar pedido de cuenta</button>
+        </form>
+      )}
+    </section>
+  )}
+  {aprobado && (<>
+  <section class="sec lista-may">
+    <div class="lista-cab">
+      <div>
+        <h1 class="h-disp">Lista de precios</h1>
+        <p class="nota-demo">Actualizada {hoy} · {total} productos · precios con IVA · se compra desde la cantidad mínima y en bultos cerrados</p>
+        {suResumen && <p class="tus-cond"><b>Tus condiciones:</b> {suResumen}, sobre la lista mayorista.</p>}
+      </div>
+      <div class="lista-acc">
+        <a class="btn sec2" href="/lista.xlsx" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg>Descargar en Excel</a>
+      </div>
+      {porPartes
+        ? <form class="filtro-form" method="get" action="/" role="search"><input id="filtro-servidor" name="q" type="search" value={q} placeholder="Buscar por nombre, código o marca" aria-label="Buscar en la lista" autocomplete="off"><button class="btn sec2" type="submit">Buscar</button></form>
+        : <input id="filtro-lista" type="search" placeholder="Filtrar por nombre, código o marca" aria-label="Filtrar la lista" autocomplete="off">}
+    </div>
+    <nav class="saltos" aria-label="Categorías">{porPartes
+      ? cats.map((c) => <a href={`?cat=${c.slug}`} aria-current={!q && c.id === catActual?.id ? "page" : undefined}>{c.nombre} <small>{c.productos}</small></a>)
+      : grupos.map((g) => <a href={`#${g.slug}`}>{g.nombre}</a>)}</nav>
+    {porPartes && q && <p class="nota-demo">{pag?.total ?? 0} resultados para «{q}» · <a href="/">ver por categoría</a></p>}
+    <div class="tabla-wrap">
+      <table class="tabla">
+        <thead><tr><th>Producto</th><th>Código</th><th>Se vende</th><th class="num">Público</th><th class="num">Tu precio</th><th class="num">Cantidad</th></tr></thead>
+        {grupos.map((g) => (
+          <tbody id={g.slug} data-grupo>
+            <tr class="t-grupo"><th colspan="6">{g.nombre}</th></tr>
+            {g.items.map((p) => (
+              <tr data-fila-lista={`${p.nombre} ${p.codigo ?? ""}`.toLowerCase()} class={p.disponible || p.consultar ? "" : "sin"}>
+                <td><span class="t-nom">{p.nombre}</span><span class="t-marca">{p.consultar ? "consultar disponibilidad" : !p.disponible ? (p.libre && p.libre >= 1 ? `quedan ${Math.floor(p.libre)}: se vende desde ${primeraValida(p)}` : "sin stock") : ""}</span></td>
+                <td class="cod">{p.codigo}</td>
+                <td class="t-vende">{comoSeVende(p, p.unidad === "unidad" ? "u." : p.unidad)}</td>
+                <td class="num"><s class="ant">{pesos(p.publico)}</s>{ahorro(p) > 0 && <span class="t-dto">−{ahorro(p)} %</span>}</td>
+                <td class="num precio-t">{pesos(p.precio)}<span class="t-marca">{p.unidad === "unidad" ? "c/u" : `por ${p.unidad}`}</span></td>
+                <td class="num"><input class="cant-in" type="number" inputmode="numeric" min="0" step={p.bulto && p.bulto > 1 ? p.bulto : 1} value="" placeholder={!(p.disponible || p.consultar) ? "" : primeraValida(p) > 1 ? `mín ${primeraValida(p)}` : "0"} aria-label={`Cantidad de ${p.nombre} (${comoSeVende(p, p.unidad === "unidad" ? "u." : p.unidad)})`} data-slug={p.slug} data-precio={p.precio} data-desde={primeraValida(p)} data-paso={p.bulto && p.bulto > 1 ? p.bulto : 1} disabled={!(p.disponible || p.consultar)}><span class="t-aviso" data-aviso-cant aria-live="polite"></span></td>
+              </tr>
+            ))}
+          </tbody>
+        ))}
+      </table>
+    </div>
+    {pag && pag.paginas > 1 && (
+      <nav class="paginas" aria-label="Páginas">
+        {pag.pagina > 1 && <a class="ir" href={enlace(pag.pagina - 1)} rel="prev">‹ Anterior</a>}
+        <span aria-current="page">Página {pag.pagina} de {pag.paginas}</span>
+        {pag.pagina < pag.paginas && <a class="ir" href={enlace(pag.pagina + 1)} rel="next">Siguiente ›</a>}
+      </nav>
+    )}
+  </section>
+  <div class="barra-lista" data-barra-lista hidden>
+    <div class="barra-in">
+      <span>En tu pedido: <b data-lista-n>0</b> productos · <b data-lista-total>$ 0</b></span>
+      <a class="btn" href="/carrito">Ver el pedido</a>
+    </div>
+  </div>
+  </>)}
+</Base>
+
+<script>
+  // Alta mayorista: revisa el CUIT/CUIL antes de enviar y guarda lo escrito en este navegador, para
+  // que un error no obligue a cargar todo de nuevo (se borra al enviar bien o al cerrar la pestaña).
+  const f = document.querySelector<HTMLFormElement>("form.alta-may");
+  if (f) {
+    const K = "alta-may";
+    // (los desplegables también tienen nombre y valor; se tratan igual que los campos de texto)
+    const campos = () => Array.from(f.querySelectorAll<HTMLInputElement>("input[name], select[name]"));
+    try {
+      const g = JSON.parse(sessionStorage.getItem(K) ?? "{}") as Record<string, string>;
+      for (const c of campos()) if (g[c.name] && !c.value) c.value = g[c.name];
+    } catch { /* sin almacenamiento: se sigue igual */ }
+    const guardar = () => { try { sessionStorage.setItem(K, JSON.stringify(Object.fromEntries(campos().map((c) => [c.name, c.value])))); } catch { /* idem */ } };
+    const cuit = f.querySelector<HTMLInputElement>('input[name="cuit"]')!;
+    const valido = (t: string) => {
+      const d = t.replace(/\D/g, "");
+      if (!/^(20|23|24|25|26|27|30|33|34)\d{9}$/.test(d)) return false;
+      const s = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2].reduce((a, p, i) => a + p * Number(d[i]), 0);
+      const v = 11 - (s % 11);
+      return (v === 11 ? 0 : v) === Number(d[10]);
+    };
+    const ver = () => {
+      const n = cuit.value.replace(/\D/g, "").length;
+      cuit.setCustomValidity(!cuit.value || valido(cuit.value) ? "" : n !== 11 ? `Son 11 números (pusiste ${n})` : "Ese número no es válido: revisá que no haya uno cambiado");
+    };
+    f.addEventListener("input", () => { ver(); guardar(); });
+    f.addEventListener("change", guardar);
+    ver();
+  } else { try { sessionStorage.removeItem("alta-may"); } catch { /* idem */ } }
+</script>

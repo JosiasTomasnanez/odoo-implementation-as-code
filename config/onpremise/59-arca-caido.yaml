@@ -1,0 +1,9 @@
+# Qué pasa si ARCA no responde al cobrar con «Factura» marcado (comercio_pos_ticket_ar, P-029):
+# registradora (hoy) o facturar_despues (sin registradoras). Se cambia en config/valores.yaml.
+model: ir.config_parameter
+match: [key]
+records:
+  - id: arca_caido
+    values:
+      key: comercio_pos_ticket_ar.arca_caido
+      value: {valor: facturacion.arca_caido}

@@ -1,0 +1,21 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [
+    ".astro/types.d.ts",
+    "**/*"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules",
+    "src/scripts",
+    "scripts",
+    "test"
+  ],
+  "compilerOptions": {
+    "types": [
+      "./worker-configuration.d.ts"
+    ],
+    "allowImportingTsExtensions": true
+  },
+  "//": "src/scripts corre en el navegador (tipos DOM); el resto, en el Worker"
+}

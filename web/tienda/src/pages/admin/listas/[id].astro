@@ -1,0 +1,112 @@
+---
+// Una lista de precios: qué condiciones tiene (descuento general y descuentos propios por rubro o
+// por producto), qué clientes la usan y pasar más clientes a ella. Las listas hechas acá se cambian
+// acá; las que vienen armadas de Odoo se cambian en Odoo (acá solo se ven sus clientes).
+import { env } from "cloudflare:workers";
+import Base from "../../../layouts/BaseAdmin.astro";
+import { miembroActual, puede } from "../../../servidor/equipo";
+import { condiciones, listaDeOdoo, pct } from "../../../servidor/listas";
+import { pesos } from "../../../servidor/consultas";
+const yo = await miembroActual(env.DB, Astro.request);
+if (!yo) return Astro.redirect("/admin/ingresar", 303);
+if (!puede(yo, "mayoristas")) return Astro.redirect("/admin", 303);
+Astro.response.headers.set("Cache-Control", "no-store");
+const id = Number(Astro.params.id);
+const lista = Number.isInteger(id) && id > 0
+  ? await env.DB.prepare("SELECT id_odoo, nombre, publica FROM listas_precios WHERE id_odoo = ?").bind(id).first<{ id_odoo: number; nombre: string; publica: number }>() : null;
+if (!lista || lista.publica) return Astro.redirect("/admin/listas", 303);
+const sp = Astro.url.searchParams;
+const ok = sp.get("ok"), e = sp.get("e");
+const propia = await listaDeOdoo(env.DB, id);
+const cond = propia ? await condiciones(env.DB, propia) : null;
+const rubros = propia ? (await env.DB.prepare(`SELECT c.id_odoo, c.nombre, (SELECT COUNT(*) FROM productos p WHERE p.categoria_id = c.id_odoo AND p.publicado = 1) AS n
+    FROM categorias c ORDER BY c.nombre`).all<{ id_odoo: number; nombre: string; n: number }>()).results.filter((r) => r.n > 0) : [];
+// Buscar un producto para darle un descuento propio (nombre, código de barras o código interno)
+const q = (sp.get("q") ?? "").trim().slice(0, 60);
+const como = `%${q.replace(/[%_\\]/g, "")}%`;
+type P = { id_odoo: number; nombre: string; codigo: string | null; base: number | null; suyo: number | null };
+const hallados = propia && q.length >= 2 ? (await env.DB.prepare(`SELECT p.id_odoo, p.nombre, p.codigo,
+    (SELECT precio FROM precios WHERE producto_id = p.id_odoo AND lista_id = ?) AS base,
+    (SELECT precio FROM precios WHERE producto_id = p.id_odoo AND lista_id = ?) AS suyo
+    FROM productos p WHERE p.publicado = 1 AND (p.nombre LIKE ? OR p.codigo LIKE ? OR p.referencia LIKE ?) ORDER BY p.nombre LIMIT 12`)
+  .bind(propia.base_id, id, como, como, como).all<P>()).results : [];
+type C = { id: string; email: string; razon_social: string | null; cuit: string | null; lista_id: number | null; lista: string | null };
+const aprobados = (await env.DB.prepare(`SELECT c.id, c.email, c.razon_social, c.cuit, c.lista_id, l.nombre AS lista FROM clientes c
+    LEFT JOIN listas_precios l ON l.id_odoo = c.lista_id WHERE c.mayorista = 'aprobado' ORDER BY COALESCE(c.razon_social, c.email) LIMIT 500`).all<C>()).results;
+const suyos = aprobados.filter((c) => c.lista_id === id), otros = aprobados.filter((c) => c.lista_id !== id);
+const cuit = (c: string | null) => c ? c.replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3") : "";
+const OK: Record<string, string> = { cambio: "Guardado. Odoo recalcula los precios y en unos segundos se ven en la lista del cliente.", clientes: "Listo: esos clientes ya ven esta lista." };
+const MAL: Record<string, string> = { datos: "Revisá los datos: un nombre y un descuento entre 0 y 60 %.", tope: "Esta lista ya tiene demasiados descuentos propios." };
+---
+<Base titulo={lista.nombre} actual="listas" miembro={yo}>
+  <p class="adm-volver"><a href="/admin/listas">‹ Listas de precios</a></p>
+  <h1 class="h-disp">{lista.nombre}</h1>
+  {ok && OK[ok] && <p class="adm-ok" role="status">{OK[ok]}</p>}
+  {e && MAL[e] && <p class="aviso">{MAL[e]}</p>}
+  {propia?.pendiente === 1 && <p class="aviso" role="status">Hay cambios pasando a Odoo. Los precios nuevos aparecen en unos segundos.</p>}
+  {propia?.pendiente === 2 && <p class="aviso">Odoo no pudo aplicar el último cambio: {propia.resultado}. Guardá de nuevo para reintentar.</p>}
+
+  {!propia && <p class="adm-sub">Esta lista está armada en Odoo: sus precios y descuentos se cambian allá. Acá podés ver qué clientes la usan y pasarle más. Para darle a un cliente descuentos propios, creá una lista nueva basada en esta desde «Listas».</p>}
+
+  {propia && cond && (<>
+    <p class="adm-sub">Parte de la lista «{cond.base}» y le aplica estos descuentos. El de un producto le gana al de su rubro, y el del rubro al general. La compra mínima es la de la lista base.</p>
+    <div class="adm-dos">
+      <section class="adm-cond">
+        <h2 class="adm-h2">Condiciones</h2>
+        <table class="adm-tabla">
+          <thead><tr><th>Dónde</th><th class="num">Descuento</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><b>Toda la lista</b><small>sobre «{cond.base}»</small></td><td class="num">{pct(cond.general)}</td><td></td></tr>
+            {cond.rubros.map((r) => <tr><td>{r.nombre}<small>rubro</small></td><td class="num">{pct(r.descuento)}</td>
+              <td><form method="post" action="/api/admin/lista"><input type="hidden" name="id" value={propia.id}><input type="hidden" name="tipo" value="rubro"><input type="hidden" name="ref" value={r.id}><button class="btn chico lineal" name="accion" value="quitar" aria-label={`Quitar el descuento de ${r.nombre}`}>Quitar</button></form></td></tr>)}
+            {cond.productos.map((p) => <tr><td>{p.nombre}<small>producto{p.codigo ? ` · ${p.codigo}` : ""}</small></td><td class="num">{pct(p.descuento)}</td>
+              <td><form method="post" action="/api/admin/lista"><input type="hidden" name="id" value={propia.id}><input type="hidden" name="tipo" value="producto"><input type="hidden" name="ref" value={p.id}><button class="btn chico lineal" name="accion" value="quitar" aria-label={`Quitar el descuento de ${p.nombre}`}>Quitar</button></form></td></tr>)}
+          </tbody>
+        </table>
+
+        <h2 class="adm-h2">Descuento para un rubro</h2>
+        <form class="adm-linea" method="post" action="/api/admin/lista">
+          <input type="hidden" name="id" value={propia.id}><input type="hidden" name="tipo" value="rubro">
+          <label class="campo"><span>Rubro</span><select name="ref" required><option value="">Elegí…</option>{rubros.map((r) => <option value={r.id_odoo}>{r.nombre} ({r.n})</option>)}</select></label>
+          <label class="campo corto"><span>Descuento (%)</span><input name="descuento" type="number" inputmode="decimal" min="0" max="60" step="0.5" required></label>
+          <button class="btn sec2" name="accion" value="regla">Agregar</button>
+        </form>
+
+        <h2 class="adm-h2">Descuento para un producto</h2>
+        <form class="adm-linea" method="get" role="search">
+          <label class="campo"><span>Buscar el producto</span><input name="q" type="search" value={q} minlength="2" placeholder="Nombre o código" required></label>
+          <button class="btn sec2" type="submit">Buscar</button>
+        </form>
+        {q.length >= 2 && hallados.length === 0 && <p class="vacio">No hay productos publicados con «{q}».</p>}
+        {hallados.length > 0 && (
+          <table class="adm-tabla">
+            <thead><tr><th>Producto</th><th class="num">En «{cond.base}»</th><th class="num">Hoy en esta lista</th><th>Descuento propio</th></tr></thead>
+            <tbody>{hallados.map((p) => <tr><td>{p.nombre}<small>{p.codigo}</small></td><td class="num">{p.base != null ? pesos(p.base) : "—"}</td><td class="num">{p.suyo != null ? pesos(p.suyo) : "—"}</td>
+              <td><form class="adm-mini" method="post" action="/api/admin/lista"><input type="hidden" name="id" value={propia.id}><input type="hidden" name="tipo" value="producto"><input type="hidden" name="ref" value={p.id_odoo}>
+                <input name="descuento" type="number" inputmode="decimal" min="0" max="60" step="0.5" required aria-label={`Descuento para ${p.nombre}`} placeholder="%"><button class="btn chico sec2" name="accion" value="regla">Aplicar</button></form></td></tr>)}</tbody>
+          </table>
+        )}
+      </section>
+      <form class="adm-form" method="post" action="/api/admin/lista">
+        <h2>Nombre y descuento general</h2>
+        <input type="hidden" name="id" value={propia.id}>
+        <label class="campo"><span>Nombre</span><input name="nombre" required minlength="3" maxlength="60" value={propia.nombre}></label>
+        <label class="campo"><span>Descuento en toda la lista (%)</span><input name="descuento" type="number" inputmode="decimal" min="0" max="60" step="0.5" required value={propia.descuento}></label>
+        <button class="btn sec2" name="accion" value="general">Guardar</button>
+      </form>
+    </div>
+  </>)}
+
+  <h2 class="adm-h2">Clientes con esta lista <span class="cuenta">{suyos.length}</span></h2>
+  {suyos.length === 0 ? <p class="vacio">Todavía nadie. Sumá clientes acá abajo, o elegila al aprobar una cuenta en «Mayoristas».</p> : (
+    <ul class="adm-clientes">{suyos.map((c) => <li><a href={`/admin/mayoristas?ver=aprobado&q=${encodeURIComponent(c.cuit ?? c.email)}`}>{c.razon_social ?? c.email}</a><small>{cuit(c.cuit)}</small></li>)}</ul>
+  )}
+  {otros.length > 0 && (
+    <form class="adm-form adm-sumar" method="post" action="/api/admin/lista">
+      <h2>Pasar clientes a esta lista</h2>
+      <input type="hidden" name="lista" value={id}>
+      <div class="adm-checks">{otros.map((c) => <label class="casilla"><input type="checkbox" name="cliente" value={c.id}><span>{c.razon_social ?? c.email}<small>hoy: {c.lista ?? "sin lista"}</small></span></label>)}</div>
+      <button class="btn sec2" name="accion" value="clientes">Pasar los marcados</button>
+    </form>
+  )}
+</Base>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Hoja A4 sin márgenes: cada cartel se ubica en milímetros (models/cartel.py: ubicaciones) -->
+    <record id="paperformat_carteles_a4" model="report.paperformat">
+        <field name="name">Carteles A4</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">0</field>
+        <field name="dpi">96</field>
+        <field name="disable_shrinking" eval="True"/>
+    </record>
+
+    <record id="action_report_carteles" model="ir.actions.report">
+        <field name="name">Carteles (A4)</field>
+        <field name="model">comercio.cartel</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">comercio_carteles.cartel_a4</field>
+        <field name="print_report_name">'Carteles'</field>
+        <field name="paperformat_id" ref="paperformat_carteles_a4"/>
+        <field name="binding_model_id" ref="model_comercio_cartel"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Un cartel: `c` (comercio.cartel) y `l` (posición en mm y letras: models/cartel.py) -->
+    <template id="cartel_uno">
+        <div t-attf-class="o_cartel #{c.estilo}"
+             t-attf-style="left: #{l['x']}mm; top: #{l['y']}mm; width: #{l['ancho']}mm; height: #{l['alto']}mm;">
+            <div class="c_marco">
+                <t t-set="arriba" t-value="18 if c.estilo == 'oferta' else 4"/>
+                <div t-if="c.estilo == 'oferta'" class="c_banda c_zona" style="top: 0; left: 0; right: 0; width: 100%;">
+                    <div t-attf-style="font-size: #{round(l['titulo_pt'] * 0.75, 1)}pt;">OFERTA</div>
+                </div>
+                <div class="c_zona" t-attf-style="top: #{arriba}%; height: #{40 if c.estilo == 'oferta' else 44}%;">
+                    <div class="c_titulo" t-attf-style="font-size: #{l['titulo_pt']}pt;">
+                        <t t-foreach="l['lineas_titulo']" t-as="linea"><t t-out="linea"/><br t-if="not linea_last"/></t>
+                    </div>
+                </div>
+                <div class="c_zona" t-attf-style="top: #{60 if c.estilo == 'oferta' else 50}%; height: #{30 if c.mostrar_codigo_barras else 36}%;">
+                    <div>
+                        <div t-if="l['texto_antes']" class="c_antes" t-attf-style="font-size: #{round(l['precio_pt'] * 0.28, 1)}pt;">
+                            Antes <t t-out="l['texto_antes']"/>
+                        </div>
+                        <div class="c_precio" t-attf-style="font-size: #{l['precio_pt']}pt;" t-out="l['texto_precio']"/>
+                        <div t-if="c.aclaracion" class="c_aclaracion" t-attf-style="font-size: #{round(min(l['precio_pt'] * 0.3, l['titulo_pt']), 1)}pt;">
+                            <t t-out="c.aclaracion"/>
+                        </div>
+                    </div>
+                </div>
+                <t t-set="codigo" t-value="c.mostrar_codigo_barras and c.product_tmpl_id.barcode"/>
+                <div t-if="codigo" class="c_barras" t-out="codigo"
+                     t-options="{'widget': 'barcode', 'quiet': 0, 'symbology': 'auto', 'img_style': 'height: 100%; max-width: 100%;'}"/>
+            </div>
+        </div>
+    </template>
+
+    <!-- Vista previa en la ficha: el mismo cartel, con medidas y letras ya achicadas (models/cartel.py) -->
+    <template id="cartel_vista">
+        <div t-attf-style="position: relative; display: inline-block; flex: none; width: #{l['ancho']}mm; min-width: #{l['ancho']}mm; max-width: none; height: #{l['alto']}mm; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.18);">
+            <t t-call="comercio_carteles.cartel_uno"/>
+        </div>
+    </template>
+
+    <template id="cartel_a4">
+        <t t-call="web.html_container">
+            <!-- Dentro de «article»: Odoo le pone el encabezado del reporte (UTF-8: si no, la «Ñ» sale mal) -->
+            <div class="article" data-oe-model="comercio.cartel">
+                        <t t-foreach="hojas" t-as="hoja">
+                    <div class="o_cartel_hoja">
+                        <t t-foreach="hoja" t-as="l">
+                            <t t-set="c" t-value="l['cartel']"/>
+                            <t t-call="comercio_carteles.cartel_uno"/>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

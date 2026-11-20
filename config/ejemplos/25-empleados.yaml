@@ -1,0 +1,23 @@
+# Empleados FICTICIOS para probar el inicio de sesión en el POS (pos_hr). Solo laboratorio.
+# Los PIN son de prueba: nunca usar PIN reales en el repositorio.
+model: hr.employee
+# Odoo crea solo un empleado para el administrador al instalar Empleados: se lo adopta por
+# usuario (en lugar de crear otro, que Odoo rechaza). Sin user_id, se crea uno nuevo.
+match: [user_id]
+records:
+  # Vinculado al usuario administrador: puede abrir y cerrar sesiones.
+  - id: ej_emp_encargado
+    values:
+      name: "[EJ] Encargado"
+      user_id: {ref: base.user_admin}
+  # Atiende en el puesto: arma pedidos pero no puede cobrar (rol supervisado).
+  - id: ej_emp_atencion
+    values:
+      name: "[EJ] Atención mascotas"
+      pin: "1111"
+  # Cobra en las cajas (rol cajero). PIN ficticio.
+  - id: ej_emp_cajero
+    values:
+      name: "[EJ] Cajero"
+      pin: "2222"
+      comercio_tienda_panel: true   # también entra al panel de pedidos de la tienda (fase 4)

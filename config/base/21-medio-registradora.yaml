@@ -1,0 +1,9 @@
+# Ver 11-diario-registradora.yaml.
+model: pos.payment.method
+match: [name]
+records:
+  - id: pm_registradora
+    values:
+      name: {valor: medios_de_pago.registradora}
+      type: bank
+      journal_id: {ref: diario_registradora}

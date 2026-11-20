@@ -1,0 +1,10 @@
+# ADR 0027. Lo instala configurar-respaldo-y-avisos.sh.
+[Unit]
+Description=Chequeo del servidor de Odoo (programado)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+
+[Install]
+WantedBy=timers.target

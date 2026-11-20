@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- «Buscar producto» y productos del proveedor: sumar al pedido de ese proveedor -->
+    <record id="catalogo_busqueda_list_pedido" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.busqueda.pedido</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.catalogo_busqueda_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_agregar_a_pedido" type="object" string="Agregar al pedido"
+                        groups="purchase.group_purchase_user"
+                        help="Suma lo marcado a la solicitud de cotización en borrador de cada proveedor (o la crea)."/>
+            </xpath>
+            <xpath expr="//list" position="inside">
+                <button name="action_agregar_a_pedido" type="object" string="Pedir"
+                        class="btn-link" invisible="not producto_id" groups="purchase.group_purchase_user"
+                        help="Sumar al pedido en borrador de este proveedor, con la cantidad mínima de su lista."/>
+            </xpath>
+        </field>
+    </record>
+    <record id="importacion_linea_list_pedido" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.list.pedido</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="inherit_id" ref="comercio_catalogo.importacion_linea_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_agregar_a_pedido" type="object" string="Agregar al pedido"
+                        groups="purchase.group_purchase_user"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

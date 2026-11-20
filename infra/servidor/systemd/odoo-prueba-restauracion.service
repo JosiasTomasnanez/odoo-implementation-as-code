@@ -1,0 +1,13 @@
+# ADR 0027. Lo instala configurar-respaldo-y-avisos.sh (no editar en /etc/systemd/system).
+[Unit]
+Description=Prueba de restauración del backup de Odoo
+After=docker.service network-online.target
+Wants=network-online.target
+OnFailure=odoo-aviso-falla@%n.service
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/opt/odoo-implementation/infra/servidor/verificar-backups.sh --restaurar
+Nice=10
+IOSchedulingClass=idle

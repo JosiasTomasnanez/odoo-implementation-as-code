@@ -1,0 +1,14 @@
+# Contacto de las alertas: todo va al relay (relay-discord), que manda la misma tarjeta que
+# avisar.sh a Discord y, si avisos.env tiene SMTP, el mismo mail HTML (formato_avisos.py, ADR 0028).
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: avisos
+    receivers:
+      - uid: avisos-discord
+        type: webhook
+        settings:
+          url: http://relay-discord:8080/grafana
+          httpMethod: POST
+        disableResolveMessage: false

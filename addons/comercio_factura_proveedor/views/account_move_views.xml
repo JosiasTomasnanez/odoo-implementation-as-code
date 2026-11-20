@@ -1,0 +1,267 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Factura de proveedor: «Leer factura» y la pestaña con lo leído (artículos que no
+         tenemos: agregarlos al catálogo desde la factura). ADR 0021. -->
+    <record id="view_move_form_leer_factura" model="ir.ui.view">
+        <field name="name">account.move.form.comercio.leer.factura</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='action_post']" position="after">
+                <button name="action_comercio_leer_factura" type="object" string="Leer factura"
+                        invisible="state != 'draft' or move_type not in ('in_invoice', 'in_refund')"
+                        help="Lee el PDF o la foto adjunta (sin la digitalización paga de Odoo): completa los datos vacíos y carga los artículos."/>
+                <button name="action_comercio_revisar_articulos" type="object" string="Artículos sin producto"
+                        class="btn-warning" invisible="state != 'draft' or not comercio_pendientes"
+                        help="Los artículos de la factura que no están en nuestro catálogo: agregarlos de a varios, ver si ya los tenemos con otro nombre (también con IA)."/>
+                <field name="comercio_pendientes" invisible="1"/>
+                <button name="action_comercio_crear_orden" type="object" string="Crear orden de compra"
+                        groups="purchase.group_purchase_user"
+                        invisible="move_type != 'in_invoice' or state == 'cancel' or not partner_id or invoice_origin"
+                        help="Llegó la factura sin pedido en Odoo: crea y confirma la orden de compra con estos productos, cantidades y precios (sale la recepción para el stock) y une la factura a esa orden."/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <field name="comercio_provisoria" invisible="1"/>
+                <div class="alert alert-info mb-0" role="alert" invisible="not comercio_provisoria">
+                    <b>Compra sin factura del proveedor.</b> Queda registrada y se puede pagar, pero no va
+                    al libro IVA ni da crédito fiscal: va sin IVA (el que cobre el proveedor es costo). Cuando llegue la
+                    factura real, la carga la administración.
+                </div>
+                <field name="comercio_total_distinto" invisible="1"/>
+                <div class="alert alert-danger mb-0" role="alert"
+                     invisible="not comercio_total_distinto or state == 'cancel'">
+                    La factura del proveedor dice <b>TOTAL <field name="comercio_total_factura" readonly="1"/></b> y esta
+                    da <b><field name="comercio_total_odoo" readonly="1"/></b> (diferencia
+                    <field name="comercio_diferencia_total" readonly="1"/>): falta o sobra algo (flete, percepciones,
+                    impuestos). Revisalo antes de confirmar y de pagar; «Leer factura» lo vuelve a cargar.
+                </div>
+                <div class="alert alert-warning mb-0 d-flex align-items-center gap-3" role="alert"
+                     invisible="not comercio_cuit_sin_proveedor or state != 'draft'">
+                    <span>
+                        Ningún proveedor tiene el CUIT <b><field name="comercio_cuit_sin_proveedor" readonly="1"/></b>
+                        de la factura: elegí cuál es (o crealo) y se buscan sus productos.
+                    </span>
+                    <button name="action_comercio_elegir_proveedor" type="object" class="btn btn-warning btn-sm"
+                            string="Elegir proveedor"/>
+                </div>
+                <div class="alert alert-warning mb-0 d-flex align-items-center gap-3" role="alert"
+                     invisible="not comercio_proveedor_factura_id or state != 'draft'">
+                    <span>
+                        El CUIT de la factura es de <b><field name="comercio_proveedor_factura_id" readonly="1" options="{'no_open': True}"/></b>,
+                        no del proveedor elegido: por eso no se encontraron sus productos.
+                    </span>
+                    <button name="action_comercio_usar_proveedor_factura" type="object" class="btn btn-warning btn-sm"
+                            string="Cambiar a ese proveedor y leer de nuevo"/>
+                </div>
+            </xpath>
+            <xpath expr="//page[@id='invoice_tab']" position="after">
+                <page id="comercio_leido" string="Leído de la factura" name="comercio_leido"
+                      invisible="not comercio_factura_linea_ids">
+                    <field name="comercio_lectura" nolabel="1" readonly="1"/>
+                    <p class="text-muted">
+                        Todos los artículos quedan anotados en la factura. Los verdes son productos nuestros; los
+                        demás van sin producto, con la descripción y el precio de la factura. Para sumarlos al
+                        catálogo: elegí la categoría y tocá <b>Agregar</b> (está en la lista del proveedor) o
+                        <b>Crear producto</b>. Si ya lo tenemos con otro nombre, elegilo en «Producto» y tocá
+                        <b>Es este</b>. La línea de la factura toma el producto, no se duplica.
+                    </p>
+                    <field name="comercio_factura_linea_ids" readonly="state != 'draft'">
+                        <list editable="bottom" create="0" delete="0"
+                              decoration-success="estado == 'cargada' and not diferencia_orden and not diferencia_lista"
+                              decoration-warning="estado == 'parecido' or diferencia_orden or diferencia_lista">
+                            <field name="secuencia" readonly="1" optional="hide"/>
+                            <field name="cantidad" readonly="1" width="70px"/>
+                            <field name="codigos" readonly="1" width="90px"/>
+                            <field name="descripcion" readonly="1" width="280px"/>
+                            <field name="precio" readonly="1"/>
+                            <field name="bonificacion" readonly="1" optional="show" width="70px"/>
+                            <field name="importe" readonly="1" optional="show"/>
+                            <field name="iva" readonly="1" optional="hide"/>
+                            <field name="estado" readonly="1" widget="badge"
+                                   decoration-success="estado == 'cargada'" decoration-info="estado == 'en_lista'"
+                                   decoration-warning="estado in ('parecido', 'nuevo')"/>
+                            <field name="diferencia_orden" readonly="1" optional="show" width="280px"
+                                   decoration-warning="diferencia_orden"/>
+                            <field name="diferencia_lista" readonly="1" optional="show" width="280px"
+                                   decoration-warning="diferencia_lista"/>
+                            <field name="producto_id" options="{'no_create': True}" readonly="estado == 'cargada'"/>
+                            <field name="lista_linea_id" readonly="1" optional="hide"/>
+                            <field name="categoria_id" options="{'no_open': True, 'no_create': True}"
+                                   readonly="estado == 'cargada' or (producto_id and estado != 'parecido')"/>
+                            <field name="parecido" readonly="1" widget="percentage" optional="hide" invisible="estado != 'parecido'"/>
+                            <field name="ia_motivo" readonly="1" optional="hide"/>
+                            <field name="avisos" readonly="1" optional="show"/>
+                            <button name="action_agregar_desde_lista" type="object" string="Agregar"
+                                    class="btn-link" invisible="estado not in ('en_lista', 'parecido') or not lista_linea_id or (producto_id and estado != 'parecido')"
+                                    help="Lo agrega a nuestro catálogo desde la lista del proveedor (como en «Buscar producto») y lo carga en la factura."/>
+                            <button name="action_crear_producto" type="object" string="Crear producto"
+                                    class="btn-link" invisible="estado == 'cargada' or producto_id or estado == 'en_lista'"
+                                    help="Producto nuevo con la descripción de la factura, la categoría elegida y este proveedor con su código y precio."/>
+                            <button name="action_es_este" type="object" string="Es este"
+                                    class="btn-link" invisible="estado == 'cargada' or not producto_id"
+                                    help="El producto elegido es el de la factura: se carga y, si este proveedor no lo tenía, se le agrega."/>
+                            <button name="action_abrir_buscar_producto" type="object" string="Buscar"
+                                    class="btn-link" invisible="estado == 'cargada'"
+                                    help="Buscarlo en las listas de todos los proveedores."/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- La factura es de un CUIT que no tiene ningún proveedor: elegirlo o crearlo -->
+    <record id="elegir_proveedor_form" model="ir.ui.view">
+        <field name="name">comercio.factura.elegir.proveedor.form</field>
+        <field name="model">comercio.factura.elegir.proveedor</field>
+        <field name="arch" type="xml">
+            <form>
+                <field name="move_id" invisible="1"/>
+                <group>
+                    <field name="cuit" readonly="1"/>
+                    <field name="partner_id" options="{'no_create': True}"
+                           placeholder="Uno de nuestros proveedores (si no tiene CUIT, se le guarda)"/>
+                    <field name="nombre" invisible="partner_id"
+                           placeholder="Si no lo tenemos: razón social, como dice la factura"/>
+                </group>
+                <footer>
+                    <button name="action_aceptar" type="object" string="Aceptar y leer la factura" class="btn-primary"/>
+                    <button string="Cancelar" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Compras sin factura -->
+    <record id="view_account_journal_form_sin_factura" model="ir.ui.view">
+        <field name="name">account.journal.form.comercio.sin.factura</field>
+        <field name="model">account.journal</field>
+        <field name="inherit_id" ref="account.view_account_journal_form"/>
+        <field name="arch" type="xml">
+            <field name="code" position="after">
+                <field name="comercio_sin_factura" invisible="type != 'purchase'"/>
+            </field>
+        </field>
+    </record>
+
+    <record id="view_invoice_filter_provisorias" model="ir.ui.view">
+        <field name="name">account.move.filter.comercio.provisorias</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_account_invoice_filter"/>
+        <field name="arch" type="xml">
+            <filter name="posted" position="after">
+                <separator/>
+                <filter name="comercio_provisorias" string="Sin factura" domain="[('comercio_provisoria', '=', True)]"/>
+                <filter name="comercio_con_factura" string="Con factura" domain="[('comercio_provisoria', '=', False)]"/>
+            </filter>
+        </field>
+    </record>
+
+    <record id="view_in_invoice_bill_tree_provisoria" model="ir.ui.view">
+        <field name="name">account.move.list.comercio.provisoria</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_in_invoice_bill_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='ref']" position="after">
+                <field name="comercio_provisoria" optional="show" string="Sin factura"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="purchase_order_form_provisoria" model="ir.ui.view">
+        <field name="name">purchase.order.form.comercio.provisoria</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <widget name="purchase_file_uploader" position="after">
+                <button name="action_comercio_factura_provisoria" type="object" string="Sin factura"
+                        invisible="state != 'purchase' or invoice_status != 'to invoice'"
+                        groups="account.group_account_invoice,purchase.group_purchase_user"
+                        help="El proveedor todavía no mandó la factura (o mandó un presupuesto o remito): registra la compra sin factura, sin IVA, para poder pagarla. La factura real la carga después la administración."/>
+            </widget>
+        </field>
+    </record>
+
+    <record id="action_compras_provisorias" model="ir.actions.server">
+        <field name="name">Compras sin factura</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_comercio_provisorias()</field>
+    </record>
+
+    <menuitem id="menu_compras_provisorias" name="Compras sin factura"
+              parent="purchase.menu_procurement_management" sequence="21"
+              action="action_compras_provisorias"
+              groups="account.group_account_invoice,purchase.group_purchase_user"/>
+
+    <!-- «Artículos sin producto»: los de una factura que no son nuestros, para resolverlos de a varios
+         (marcar con Mayús + clic, cambiar la categoría a todos juntos y un solo botón) -->
+    <record id="factura_linea_revisar_list" model="ir.ui.view">
+        <field name="name">comercio.factura.linea.revisar.list</field>
+        <field name="model">comercio.factura.linea</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0" multi_edit="1"
+                  decoration-success="estado == 'cargada'" decoration-warning="estado == 'parecido'">
+                <header>
+                    <button name="action_agregar_al_catalogo" type="object" string="Agregar al catálogo" class="btn-primary"
+                            help="Los marcados: desde la lista del proveedor si están ahí; si no, como producto nuevo. Cada uno queda en la factura con su producto."/>
+                    <button name="action_es_este" type="object" string="Es este (el sugerido)"
+                            help="Ya los tenemos: el producto de la columna «Producto» es el de la factura."/>
+                    <button name="action_verificar_ia" type="object" string="Verificar con IA"
+                            help="¿Ya los tenemos con otro nombre? La IA compara con nuestros productos y solo sugiere."/>
+                    <button name="action_crear_orden_igual" type="object" string="Crear la orden de compra" display="always"
+                            help="Con lo que ya tiene producto; lo que falte queda afuera de la orden (sigue en la factura)."/>
+                </header>
+                <field name="estado" widget="badge" readonly="1"
+                       decoration-success="estado == 'cargada'" decoration-info="estado == 'en_lista'"
+                       decoration-warning="estado in ('parecido', 'nuevo')"/>
+                <field name="cantidad" readonly="1"/>
+                <field name="codigos" readonly="1"/>
+                <field name="descripcion" readonly="1" width="320px"/>
+                <field name="precio" readonly="1"/>
+                <field name="producto_id" options="{'no_create': True}" readonly="estado == 'cargada'"
+                       string="Producto (nuestro)" width="200px"/>
+                <field name="parecido" widget="percentage" readonly="1" invisible="estado != 'parecido'"/>
+                <field name="ia_motivo" readonly="1" optional="show"/>
+                <field name="categoria_id" options="{'no_open': True, 'no_create': True}"
+                       readonly="estado == 'cargada'"/>
+                <field name="lista_linea_id" readonly="1" optional="hide"/>
+                <field name="avisos" readonly="1" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="factura_linea_revisar_search" model="ir.ui.view">
+        <field name="name">comercio.factura.linea.revisar.search</field>
+        <field name="model">comercio.factura.linea</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="descripcion"/>
+                <field name="codigos"/>
+                <filter name="sin_producto" string="Sin producto" domain="[('estado', '!=', 'cargada')]"/>
+                <filter name="es_este" string="¿Es este?" domain="[('estado', '=', 'parecido')]"/>
+                <filter name="en_lista" string="En su lista" domain="[('estado', '=', 'en_lista')]"/>
+                <filter name="no_esta" string="No está" domain="[('estado', '=', 'nuevo')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_revisar_articulos" model="ir.actions.act_window">
+        <field name="name">Artículos de la factura</field>
+        <field name="res_model">comercio.factura.linea</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="factura_linea_revisar_list"/>
+        <field name="search_view_id" ref="factura_linea_revisar_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Todos los artículos de la factura tienen su producto</p>
+            <p>Ya se puede crear la orden de compra.</p>
+        </field>
+    </record>
+
+    <!-- Compras → Órdenes → Facturas de proveedor: en Odoo 20 las facturas están solo en
+         Contabilidad; acá se suben y se leen sin salir de Compras -->
+    <menuitem id="menu_compras_facturas_proveedor" name="Facturas de proveedor"
+              parent="purchase.menu_procurement_management" sequence="20"
+              action="account.action_move_in_invoice_type"
+              groups="account.group_account_invoice,purchase.group_purchase_user"/>
+</odoo>

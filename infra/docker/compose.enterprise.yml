@@ -1,0 +1,9 @@
+# Odoo Enterprise (P-010): reemplaza el paquete `odoo` de la imagen oficial (Community)
+# por el código Enterprise descargado de odoo.com, que trae Community + módulos
+# Enterprise de la misma compilación. El código es privado: vive FUERA del repo y la
+# ruta se define en ODOO_ENTERPRISE_SRC (en .env, ignorado por git). Lo agrega
+# lib.sh solo si esa variable está definida; sin ella el stack sigue siendo Community.
+services:
+  odoo:
+    volumes:
+      - ${ODOO_ENTERPRISE_SRC:?definir ODOO_ENTERPRISE_SRC}/odoo:/usr/lib/python3/dist-packages/odoo:ro

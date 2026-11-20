@@ -1,0 +1,510 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Filas: la pantalla de revisión -->
+    <record id="importacion_linea_list" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.list</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="arch" type="xml">
+            <list editable="bottom" create="0" delete="0" multi_edit="1" class="o_comercio_filas"
+                  decoration-muted="estado == 'ignorada'"
+                  decoration-success="estado == 'aplicada' or (estado == 'sin_cambios' and registrado)"
+                  decoration-danger="estado == 'error'"
+                  decoration-warning="estado == 'pendiente' and accion in ('posible duplicado', 'revisar')">
+                <!-- Aparecen arriba al marcar filas con las casillas de la izquierda -->
+                <header>
+                    <button name="action_aplicar" type="object" string="Aplicar / agregar a nuestro catálogo" class="btn-primary"/>
+                    <button name="action_es_nuevo" type="object" string="Agregar como nuevo"/>
+                    <button name="action_es_el_mismo" type="object" string="Es el mismo (el más parecido)"/>
+                    <button name="action_ignorar" type="object" string="Ignorar"/>
+                    <button name="action_deshacer" type="object" string="Deshacer"
+                            confirm="¿Deshacer las filas marcadas? Las aplicadas vuelven a como estaban y las ignoradas quedan para decidir."/>
+                </header>
+                <field name="importacion_vigente" column_invisible="True"/>
+                <button name="action_ver_detalle" type="object" icon="fa-search-plus" title="Ver el detalle de la fila"
+                        class="btn-link"/>
+                <field name="fila" optional="hide"/>
+                <field name="accion" width="80px"/>
+                <field name="codigo_proveedor" width="70px" optional="hide"/>
+                <field name="descripcion" column_invisible="1"/>
+                <field name="descripcion_ver" width="200px"/>
+                <field name="nuestro_es_parecido" column_invisible="True"/>
+                <field name="nuestro_tono" column_invisible="True"/>
+                <field name="nuestro_ver" width="175px" optional="show"
+                       decoration-success="nuestro_tono == 'ia_mismo'" decoration-muted="nuestro_tono == 'ia_otro'"
+                       decoration-warning="nuestro_tono in ('parecido', 'ia_duda')"/>
+                <field name="codigo_barras" optional="hide"/>
+                <field name="registrado" optional="hide"/>
+                <field name="categoria_mostrada_id" options="{'no_open': True}" width="105px"
+                       readonly="not importacion_vigente or (not producto_id and (estado != 'pendiente' or accion not in ('nuevo', 'posible duplicado')))"/>
+                <field name="producto_id" optional="hide" width="150px"/>
+                <field name="unidades_posibles_ids" column_invisible="True"/>
+                <field name="producto_uom_id" column_invisible="True"/>
+                <field name="unidad_compra_id" optional="hide" options="{'no_open': True, 'no_quick_create': True}"
+                       domain="[('id', 'in', unidades_posibles_ids)]"
+                       context="{'default_relative_uom_id': producto_uom_id}"
+                       invisible="not producto_id"
+                       readonly="estado != 'pendiente' or accion not in ('revisar', 'vincular', 'vuelve', 'actualizar', 'sin cambios') or not importacion_vigente"/>
+                <field name="costo_ver" width="130px" optional="show" class="text-end"
+                       decoration-danger="variacion &gt; 0" decoration-success="variacion &lt; 0"/>
+                <field name="mayor_ver" width="95px" optional="show" class="text-end"/>
+                <field name="costo_anterior" invisible="not costo_anterior" optional="hide"/>
+                <field name="costo_manual" column_invisible="True"/>
+                <field name="costo" invisible="accion == 'baja'" decoration-info="costo_manual" optional="hide"/>
+                <field name="cambio" width="90px" optional="hide" decoration-danger="variacion &gt; 0" decoration-success="variacion &lt; 0"
+                       help="▲ sube (rojo) · ▼ baja (verde) · = igual, respecto del costo anterior de este proveedor"/>
+                <field name="variacion" optional="hide" invisible="not variacion"/>
+                <field name="mayor_anterior" optional="hide" invisible="not mayor_anterior"/>
+                <field name="costo_mayor" optional="hide" invisible="not costo_mayor"/>
+                <field name="cantidad_mayor" optional="hide" invisible="not costo_mayor" width="60px"/>
+                <field name="precio_lista" optional="hide"/>
+                <field name="mas_barato_id" optional="hide"/>
+                <field name="mas_barato_precio" optional="hide"/>
+                <field name="candidato_ids" column_invisible="1"/>
+                <field name="parecidos_ver" optional="hide"/>
+                <field name="producto_elegido_id" options="{'no_create': True}" optional="hide"
+                       readonly="estado != 'pendiente' or accion not in ('posible duplicado', 'nuevo') or not importacion_vigente"/>
+                <field name="detalle" optional="hide"/>
+                <field name="avisos" optional="hide"/>
+                <field name="automatico" optional="hide"/>
+                <field name="estado" optional="hide"/>
+                <field name="en_cola" optional="hide"/>
+                <button name="action_es_el_mismo" type="object" string="Es el mismo" icon="fa-link"
+                        class="btn-link" invisible="estado != 'pendiente' or not importacion_vigente or not (accion == 'posible duplicado' or (accion == 'nuevo' and producto_elegido_id))"/>
+                <button name="action_es_nuevo" type="object" string="Agregar como nuevo" icon="fa-plus"
+                        class="btn-link" invisible="estado != 'pendiente' or accion != 'posible duplicado' or not importacion_vigente"/>
+                <button name="action_aplicar" type="object" string="Agregar a nuestro catálogo" icon="fa-plus-circle"
+                        class="btn-link" invisible="not importacion_vigente or not ((estado == 'pendiente' and accion == 'nuevo') or (producto_id and not registrado))"
+                        help="Crea el producto en la categoría elegida, con este proveedor y su costo (o vuelve a poner uno que se había quitado)."/>
+                <button name="action_aplicar" type="object" string="Aplicar" icon="fa-check"
+                        class="btn-link"
+                        invisible="estado != 'pendiente' or not importacion_vigente or (producto_id and not registrado) or not (accion in ('vincular', 'vuelve', 'actualizar', 'baja') or (unidad_compra_id and producto_id))"/>
+                <button name="action_corregir" type="object" string="Corregir" icon="fa-pencil"
+                        class="btn-link" invisible="estado != 'pendiente' or accion != 'revisar' or not importacion_vigente"
+                        help="La lista trajo mal esta fila (sin precio, precio 0, mal copiada): cargar el precio o la descripción a mano."/>
+                <button name="action_ignorar" type="object" string="Ignorar" icon="fa-times"
+                        class="btn-link" invisible="estado != 'pendiente' or not importacion_vigente"
+                        help="No se aplica: el producto y el precio quedan como están. Se puede retomar."/>
+                <button name="action_deshacer" type="object" string="Retomar" icon="fa-undo"
+                        class="btn-link" invisible="estado != 'ignorada' or not importacion_vigente"
+                        help="Vuelve a dejar la fila para decidir (aplicar o ignorar)."/>
+                <button name="action_deshacer" type="object" string="Deshacer" icon="fa-undo"
+                        class="btn-link" invisible="estado != 'aplicada' or not importacion_vigente"
+                        confirm="¿Deshacer esta fila? Vuelve el producto o el precio a como estaba antes."/>
+                <field name="calculo" width="300px" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+
+    <!-- Detalle de una fila (06/11): todo lo largo (cálculo, parecidos, IA, avisos) y los mismos
+         botones de la lista, para que la lista quede con pocas columnas legibles. -->
+    <record id="importacion_linea_form" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.form</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="arch" type="xml">
+            <form create="0" delete="0">
+                <header>
+                    <field name="importacion_vigente" invisible="1"/>
+                    <field name="registrado" invisible="1"/>
+                    <field name="costo_manual" invisible="1"/>
+                    <field name="variacion" invisible="1"/>
+                    <field name="unidades_posibles_ids" invisible="1"/>
+                    <field name="producto_uom_id" invisible="1"/>
+                    <button name="action_aplicar" type="object" string="Agregar a nuestro catálogo" class="btn-primary"
+                            invisible="not importacion_vigente or not ((estado == 'pendiente' and accion == 'nuevo') or (producto_id and not registrado))"/>
+                    <button name="action_aplicar" type="object" string="Aplicar" class="btn-primary"
+                            invisible="estado != 'pendiente' or not importacion_vigente or (producto_id and not registrado) or not (accion in ('vincular', 'vuelve', 'actualizar', 'baja') or (unidad_compra_id and producto_id))"/>
+                    <button name="action_es_el_mismo" type="object" string="Es el mismo"
+                            invisible="estado != 'pendiente' or not importacion_vigente or not (accion == 'posible duplicado' or (accion == 'nuevo' and producto_elegido_id))"/>
+                    <button name="action_es_nuevo" type="object" string="Agregar como nuevo"
+                            invisible="estado != 'pendiente' or accion != 'posible duplicado' or not importacion_vigente"/>
+                    <button name="action_corregir" type="object" string="Corregir"
+                            invisible="estado != 'pendiente' or accion != 'revisar' or not importacion_vigente"/>
+                    <button name="action_ignorar" type="object" string="Ignorar"
+                            invisible="estado != 'pendiente' or not importacion_vigente"/>
+                    <button name="action_deshacer" type="object" string="Retomar"
+                            invisible="estado != 'ignorada' or not importacion_vigente"/>
+                    <button name="action_deshacer" type="object" string="Deshacer"
+                            invisible="estado != 'aplicada' or not importacion_vigente"
+                            confirm="¿Deshacer esta fila? Vuelve el producto o el precio a como estaba antes."/>
+                    <field name="estado" widget="statusbar" statusbar_visible="pendiente,aplicada"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <span class="text-muted"><field name="accion" readonly="1"/> · fila <field name="fila" readonly="1"/></span>
+                        <h2><field name="descripcion_ver" readonly="1"/></h2>
+                    </div>
+                    <group>
+                        <group string="Del proveedor">
+                            <field name="codigo_proveedor" readonly="1"/>
+                            <field name="codigo_barras" readonly="1" invisible="not codigo_barras"/>
+                            <field name="precio_lista" readonly="1"/>
+                            <field name="costo_anterior" readonly="1" invisible="not costo_anterior"/>
+                            <field name="costo" readonly="1" decoration-info="costo_manual"/>
+                            <field name="cambio" readonly="1" decoration-danger="variacion &gt; 0" decoration-success="variacion &lt; 0"/>
+                            <field name="mayor_anterior" readonly="1" invisible="not mayor_anterior"/>
+                            <field name="costo_mayor" readonly="1" invisible="not costo_mayor"/>
+                            <field name="cantidad_mayor" readonly="1" invisible="not costo_mayor or not cantidad_mayor"/>
+                            <field name="mas_barato_id" readonly="1" invisible="not mas_barato_id"/>
+                            <field name="mas_barato_precio" readonly="1" invisible="not mas_barato_id"/>
+                        </group>
+                        <group string="Nuestro catálogo">
+                            <field name="categoria_mostrada_id" options="{'no_open': True}"
+                                   readonly="not importacion_vigente or (not producto_id and (estado != 'pendiente' or accion not in ('nuevo', 'posible duplicado')))"/>
+                            <field name="producto_id" readonly="1" invisible="not producto_id"/>
+                            <field name="nuestro_es_parecido" invisible="1"/>
+                            <field name="comparar_id" string="El más parecido" readonly="1" invisible="not nuestro_es_parecido"/>
+                            <field name="comparar_codigo_barras" readonly="1" invisible="not comparar_codigo_barras"/>
+                            <field name="comparar_costo" readonly="1" invisible="not comparar_id"/>
+                            <field name="producto_elegido_id" options="{'no_create': True}"
+                                   readonly="estado != 'pendiente' or accion not in ('posible duplicado', 'nuevo') or not importacion_vigente"/>
+                            <field name="unidad_compra_id" options="{'no_open': True, 'no_quick_create': True}"
+                                   domain="[('id', 'in', unidades_posibles_ids)]"
+                                   context="{'default_relative_uom_id': producto_uom_id}"
+                                   invisible="not producto_id"
+                                   readonly="estado != 'pendiente' or accion not in ('revisar', 'vincular', 'vuelve', 'actualizar', 'sin cambios') or not importacion_vigente"/>
+                            <field name="automatico" readonly="1" invisible="not automatico"/>
+                            <field name="en_cola" readonly="1" invisible="not en_cola"/>
+                        </group>
+                    </group>
+                    <group string="Cómo se calculó el costo" name="calculo" invisible="not calculo">
+                        <field name="calculo" nolabel="1" colspan="2" readonly="1" class="o_comercio_texto_largo"/>
+                    </group>
+                    <group string="Se parece a" invisible="not parecidos_ver">
+                        <field name="parecidos_ver" nolabel="1" colspan="2" readonly="1"/>
+                    </group>
+                    <group string="Avisos" name="avisos" invisible="not avisos and not detalle">
+                        <field name="avisos" nolabel="1" colspan="2" readonly="1" invisible="not avisos"/>
+                        <field name="detalle" nolabel="1" colspan="2" readonly="1" invisible="not detalle"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="importacion_linea_search" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.linea.search</field>
+        <field name="model">comercio.lista.importacion.linea</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="importacion_id"/>
+                <field name="descripcion"/>
+                <field name="codigo_proveedor"/>
+                <field name="codigo_barras"/>
+                <filter name="registrado" string="En nuestro catálogo" domain="[('registrado', '=', True)]"/>
+                <filter name="catalogo" string="No los tenemos" domain="[('registrado', '=', False)]"/>
+                <separator/>
+                <filter name="revisar" string="Para revisar" domain="[('estado', 'in', ('pendiente', 'error')), ('registrado', '=', True)]"/>
+                <filter name="cambios" string="Cambios de costo" domain="[('variacion', '!=', 0)]"/>
+                <filter name="corregir" string="Para corregir" domain="[('accion', '=', 'revisar'), ('estado', '=', 'pendiente')]"
+                        help="Filas que la lista trajo mal (sin precio, precio 0, repetidas, mal copiadas): «Corregir» o «Ignorar»."/>
+                <filter name="subas" string="Subas" domain="[('variacion', '&gt;', 0)]"/>
+                <filter name="mas_barato" string="Otro proveedor es más barato" domain="[('mas_barato_id', '!=', False)]"/>
+                <separator/>
+                <filter name="duplicados" string="Posibles duplicados" domain="[('accion', '=', 'posible duplicado')]"/>
+                <filter name="nuevos" string="Nuevos" domain="[('accion', '=', 'nuevo')]"/>
+                <filter name="bajas" string="Ya no están en la lista" domain="[('accion', '=', 'baja')]"/>
+                <filter name="vuelven" string="Vuelven a la lista" domain="[('accion', '=', 'vuelve')]"/>
+                <group>
+                    <filter name="por_accion" string="Novedad" context="{'group_by': 'accion'}"/>
+                    <filter name="por_estado" string="Estado" context="{'group_by': 'estado'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_importacion_lineas" model="ir.actions.act_window">
+        <field name="name">Filas de la lista</field>
+        <field name="res_model">comercio.lista.importacion.linea</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Importación -->
+    <record id="importacion_form" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.form</field>
+        <field name="model">comercio.lista.importacion</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <button name="action_aplicar_todo" type="object" string="Aplicar todo"
+                            class="btn-primary" invisible="estado not in ('simulada', 'aplicada') or not es_vigente or aviso_formato or leida_con_ia"
+                            confirm="Se aplican los cambios de costo, las bajas y lo que marcaste. Los productos que no tenemos NO se agregan (eso se elige en «No los tenemos»). ¿Seguir?"/>
+                    <button name="action_aplicar_todo" type="object" string="Aplicar todo"
+                            class="btn-primary" invisible="estado not in ('simulada', 'aplicada') or not es_vigente or not (aviso_formato or leida_con_ia)"
+                            confirm="Ojo: esta lista cambió de formato o la leyó la IA. ¿Ya miraste algunas filas (sobre todo el costo) y están bien? Se aplican los cambios de costo, las bajas y lo que marcaste; los productos que no tenemos NO se agregan."/>
+                    <button name="action_revisar_filas" type="object" string="Elegir varias filas"
+                            invisible="estado not in ('simulada', 'aplicada')"
+                            help="Abre las filas con casillas: se marcan varias y se aplican, ignoran o deshacen juntas."/>
+                    <button name="action_deshacer_todo" type="object" string="Deshacer todo lo aplicado"
+                            invisible="(not cant_aplicadas) or not es_vigente"
+                            confirm="Se deshace todo lo que se aplicó de esta lista (productos nuevos, cambios de costo, bajas). ¿Seguir?"/>
+                    <button name="action_descartar" type="object" string="Descartar"
+                            invisible="(estado != 'simulada') or not es_vigente"
+                            confirm="Lo pendiente de esta lista no se aplica (queda ignorado). ¿Seguir?"/>
+                    <button name="action_simular" type="object" string="Volver a simular"
+                            invisible="estado not in ('simulada', 'error') or cant_aplicadas or (estado == 'simulada' and not es_vigente)"/>
+                    <field name="estado" widget="statusbar" statusbar_visible="simulada,aplicada"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(action_importacion_lineas)d" type="action" class="oe_stat_button"
+                                icon="fa-search" context="{'search_default_importacion_id': id, 'search_default_revisar': 1}">
+                            <field name="cant_revisar" widget="statinfo" string="Para revisar"/>
+                        </button>
+                        <button name="%(action_importacion_lineas)d" type="action" class="oe_stat_button"
+                                icon="fa-pencil" invisible="not cant_corregir"
+                                context="{'search_default_importacion_id': id, 'search_default_corregir': 1}">
+                            <field name="cant_corregir" widget="statinfo" string="Para corregir"/>
+                        </button>
+                        <button name="%(action_importacion_lineas)d" type="action" class="oe_stat_button"
+                                icon="fa-line-chart" context="{'search_default_importacion_id': id, 'search_default_cambios': 1}">
+                            <field name="cant_cambios" widget="statinfo" string="Cambios de costo"/>
+                        </button>
+                        <button name="%(action_importacion_lineas)d" type="action" class="oe_stat_button"
+                                icon="fa-plus-circle" context="{'search_default_importacion_id': id, 'search_default_catalogo': 1}">
+                            <field name="cant_catalogo" widget="statinfo" string="No los tenemos"/>
+                        </button>
+                        <button name="%(action_importacion_lineas)d" type="action" class="oe_stat_button"
+                                icon="fa-list" context="{'search_default_importacion_id': id}">
+                            <field name="cant_total" widget="statinfo" string="Toda la lista"/>
+                        </button>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <field name="es_vigente" invisible="1"/>
+                    <div class="alert alert-secondary" role="status"
+                         invisible="es_vigente or estado in ('reemplazada', 'error')">
+                        <b>Historial:</b> hay una lista más nueva de este proveedor (o esta se descartó).
+                        Esta queda como registro y no se modifica.
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="estado != 'reemplazada'">
+                        Llegó una lista más nueva de este proveedor: esta queda como historial y no se aplica.
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="estado != 'error'">
+                        <field name="error"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not aviso_formato or estado != 'simulada'">
+                        <b>El proveedor cambió el formato de la lista.</b> Las columnas se detectaron solas
+                        (si la subiste a mano, ya quedaron guardadas para las próximas). Por las dudas,
+                        <b>mirá algunas filas</b> (sobre todo el costo) antes de «Aplicar todo».
+                        <field name="aviso_formato" class="d-block mt-2"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not leida_con_ia">
+                        <b>Lista leída con IA desde una foto o un PDF escaneado.</b> Puede haber algún número
+                        mal leído. Compará las subas y bajas grandes con el <b>archivo original</b> antes de
+                        «Aplicar todo».
+                    </div>
+                    <div class="alert alert-light" role="status" invisible="not cant_catalogo or not es_vigente">
+                        <b>Catálogo del proveedor:</b> la lista trae <field name="cant_catalogo" class="d-inline"/>
+                        productos que no tenemos. No se crean solos: se agregan los que se quieren vender
+                        (botón <b>No los tenemos</b> → elegir la categoría → <b>Agregar a nuestro catálogo</b>).
+                        Para poner la misma categoría a varios: marcar las casillas y cambiarla en una de ellas.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="lista_id" readonly="1"/>
+                            <field name="fecha"/>
+                            <field name="origen"/>
+                            <field name="cotizacion_usada" invisible="not cotizacion_usada"/>
+                            <field name="archivo" filename="nombre_archivo"/>
+                            <field name="nombre_archivo" invisible="1"/>
+                            <field name="archivo_original" filename="nombre_original" invisible="not archivo_original"/>
+                            <field name="nombre_original" invisible="1"/>
+                            <field name="leida_con_ia" invisible="1"/>
+                        </group>
+                        <group string="Resumen">
+                            <field name="cant_catalogo"/>
+                            <field name="cant_cambios"/>
+                            <field name="cant_bajas"/>
+                            <field name="cant_vuelven" invisible="not cant_vuelven"/>
+                            <field name="cant_revisar"/>
+                            <field name="cant_aplicadas"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Filas" name="filas">
+                            <p class="text-muted">
+                                Para marcar varias filas y aplicarlas juntas:
+                                <button name="action_revisar_filas" type="object" class="btn-link p-0"
+                                        string="Elegir varias filas"/>
+                            </p>
+                            <field name="linea_ids">
+                                <list create="0" delete="0" limit="80" editable="bottom" class="o_comercio_filas"
+                                      decoration-muted="estado == 'ignorada'"
+                                      decoration-success="estado == 'aplicada' or (estado == 'sin_cambios' and registrado)"
+                                      decoration-danger="estado == 'error'"
+                                      decoration-warning="estado == 'pendiente' and accion in ('posible duplicado', 'revisar')">
+                                    <field name="importacion_vigente" column_invisible="True"/>
+                                    <button name="action_ver_detalle" type="object" icon="fa-search-plus"
+                                            title="Ver el detalle de la fila" class="btn-link"/>
+                                    <field name="accion"/>
+                                    <field name="codigo_proveedor" width="70px" optional="hide"/>
+                                    <field name="descripcion" column_invisible="1"/>
+                                    <field name="descripcion_ver" width="200px"/>
+                                    <field name="nuestro_es_parecido" column_invisible="True"/>
+                                    <field name="nuestro_tono" column_invisible="True"/>
+                                    <field name="nuestro_ver" width="175px" optional="show"
+                                           decoration-success="nuestro_tono == 'ia_mismo'" decoration-muted="nuestro_tono == 'ia_otro'"
+                                           decoration-warning="nuestro_tono in ('parecido', 'ia_duda')"/>
+                                    <field name="registrado" column_invisible="True"/>
+                                    <field name="categoria_mostrada_id" options="{'no_open': True}" optional="show" width="120px"
+                                           readonly="not importacion_vigente or (not producto_id and (estado != 'pendiente' or accion not in ('nuevo', 'posible duplicado')))"/>
+                                    <field name="producto_id" column_invisible="True"/>
+                                    <field name="unidades_posibles_ids" column_invisible="True"/>
+                                    <field name="producto_uom_id" column_invisible="True"/>
+                                    <field name="unidad_compra_id" optional="hide" options="{'no_open': True, 'no_quick_create': True}"
+                                           domain="[('id', 'in', unidades_posibles_ids)]"
+                                           context="{'default_relative_uom_id': producto_uom_id}"
+                                           invisible="not producto_id"
+                                           readonly="estado != 'pendiente' or accion not in ('revisar', 'vincular', 'vuelve', 'actualizar', 'sin cambios') or not importacion_vigente"/>
+                                    <field name="costo_ver" width="130px" optional="show" class="text-end"
+                                           decoration-danger="variacion &gt; 0" decoration-success="variacion &lt; 0"/>
+                                    <field name="mayor_ver" width="95px" optional="show" class="text-end"/>
+                                    <field name="costo_anterior" invisible="not costo_anterior" optional="hide"/>
+                                    <field name="costo_manual" column_invisible="True"/>
+                                    <field name="costo" invisible="accion == 'baja'" decoration-info="costo_manual" optional="hide"/>
+                                    <field name="cambio" width="90px" optional="hide" decoration-danger="variacion &gt; 0"
+                                           decoration-success="variacion &lt; 0"/>
+                                    <field name="variacion" column_invisible="True"/>
+                                    <field name="mayor_anterior" optional="hide" invisible="not mayor_anterior"/>
+                                    <field name="costo_mayor" optional="hide" invisible="not costo_mayor"/>
+                                    <field name="cantidad_mayor" optional="hide" invisible="not costo_mayor" width="60px"/>
+                                    <field name="precio_lista" optional="hide"/>
+                                    <field name="mas_barato_id" optional="hide"/>
+                                    <field name="candidato_ids" column_invisible="1"/>
+                                    <field name="parecidos_ver" optional="hide" invisible="accion != 'posible duplicado'"/>
+                                    <field name="producto_elegido_id" options="{'no_create': True}" optional="hide"
+                                           readonly="estado != 'pendiente' or accion not in ('posible duplicado', 'nuevo') or not importacion_vigente"/>
+                                    <field name="estado" optional="hide"/>
+                                    <button name="action_aplicar" type="object" string="Agregar" icon="fa-plus-circle"
+                                            class="btn-link" invisible="not importacion_vigente or not ((estado == 'pendiente' and accion == 'nuevo') or (producto_id and not registrado))"
+                                            help="Agregar a nuestro catálogo: crea el producto en la categoría elegida (o vuelve a poner uno que se había quitado)."/>
+                                    <button name="action_aplicar" type="object" string="Aplicar" icon="fa-check"
+                                            class="btn-link"
+                                            invisible="estado != 'pendiente' or not importacion_vigente or (producto_id and not registrado) or not (accion in ('vincular', 'vuelve', 'actualizar', 'baja') or (unidad_compra_id and producto_id))"/>
+                                    <button name="action_es_el_mismo" type="object" string="Es el mismo" icon="fa-link"
+                                            class="btn-link" invisible="estado != 'pendiente' or not importacion_vigente or not (accion == 'posible duplicado' or (accion == 'nuevo' and producto_elegido_id))"/>
+                                    <button name="action_es_nuevo" type="object" string="Agregar como nuevo" icon="fa-plus"
+                                            class="btn-link" invisible="estado != 'pendiente' or accion != 'posible duplicado' or not importacion_vigente"/>
+                                    <button name="action_corregir" type="object" string="Corregir" icon="fa-pencil"
+                                            class="btn-link" invisible="estado != 'pendiente' or accion != 'revisar' or not importacion_vigente"/>
+                                    <button name="action_ignorar" type="object" string="Ignorar" icon="fa-times"
+                                            class="btn-link" invisible="estado != 'pendiente' or not importacion_vigente"
+                                            help="No se aplica: el producto y el precio quedan como están. Se puede retomar."/>
+                                    <button name="action_deshacer" type="object" string="Retomar" icon="fa-undo"
+                                            class="btn-link" invisible="estado != 'ignorada' or not importacion_vigente"
+                                            help="Vuelve a dejar la fila para decidir (aplicar o ignorar)."/>
+                                    <button name="action_deshacer" type="object" string="Deshacer" icon="fa-undo"
+                                            class="btn-link" invisible="estado != 'aplicada' or not importacion_vigente"
+                                            confirm="¿Deshacer esta fila? Vuelve el producto o el precio a como estaba antes."/>
+                                    <field name="calculo" width="420px" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="importacion_list" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.list</field>
+        <field name="model">comercio.lista.importacion</field>
+        <field name="arch" type="xml">
+            <list create="0" decoration-danger="estado == 'error'" decoration-info="estado == 'simulada'">
+                <field name="fecha"/>
+                <field name="partner_id"/>
+                <field name="parte"/>
+                <field name="origen"/>
+                <field name="cant_total"/>
+                <field name="cant_nuevos"/>
+                <field name="cant_cambios"/>
+                <field name="cant_bajas"/>
+                <field name="cant_vuelven"/>
+                <field name="cant_revisar"/>
+                <field name="estado"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="importacion_search" model="ir.ui.view">
+        <field name="name">comercio.lista.importacion.search</field>
+        <field name="model">comercio.lista.importacion</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="nombre_archivo"/>
+                <filter name="para_revisar" string="Para revisar" domain="[('estado', '=', 'simulada')]"/>
+                <filter name="aplicadas" string="Aplicadas" domain="[('estado', '=', 'aplicada')]"/>
+                <filter name="con_error" string="Con error" domain="[('estado', '=', 'error')]"/>
+                <separator/>
+                <filter name="fecha" string="Fecha" date="fecha"/>
+                <group>
+                    <filter name="por_proveedor" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+                    <filter name="por_parte" string="Parte" context="{'group_by': 'parte'}"/>
+                    <filter name="por_estado" string="Estado" context="{'group_by': 'estado'}"/>
+                    <filter name="por_mes" string="Mes" context="{'group_by': 'fecha:month'}"/>
+                </group>
+                <!-- Columna de la izquierda: tocar un proveedor muestra solo sus importaciones -->
+                <searchpanel>
+                    <field name="partner_id" string="Proveedor" icon="fa-truck" enable_counters="1"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_importaciones" model="ir.actions.act_window">
+        <field name="name">Importaciones</field>
+        <field name="res_model">comercio.lista.importacion</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <!-- Acciones sobre varias filas seleccionadas (menú «Acciones» de la lista) -->
+    <record id="accion_lineas_aplicar" model="ir.actions.server">
+        <field name="name">Aplicar</field>
+        <field name="model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_aplicar()</field>
+    </record>
+    <record id="accion_lineas_es_nuevo" model="ir.actions.server">
+        <field name="name">Agregar como nuevo</field>
+        <field name="model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_es_nuevo()</field>
+    </record>
+    <record id="accion_lineas_es_el_mismo" model="ir.actions.server">
+        <field name="name">Es el mismo (el más parecido)</field>
+        <field name="model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_es_el_mismo()</field>
+    </record>
+    <record id="accion_lineas_ignorar" model="ir.actions.server">
+        <field name="name">Ignorar</field>
+        <field name="model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_ignorar()</field>
+    </record>
+    <record id="accion_lineas_deshacer" model="ir.actions.server">
+        <field name="name">Deshacer</field>
+        <field name="model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_deshacer()</field>
+    </record>
+    <record id="accion_lineas_quitar_del_catalogo" model="ir.actions.server">
+        <field name="name">Quitar de nuestro catálogo</field>
+        <field name="model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_model_id" ref="model_comercio_lista_importacion_linea"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_quitar_del_catalogo()</field>
+    </record>
+</odoo>

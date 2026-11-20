@@ -1,0 +1,148 @@
+---
+import "@fontsource/big-shoulders-display/700";
+import "@fontsource/big-shoulders-display/900";
+import "@fontsource/public-sans/400";
+import "@fontsource/public-sans/600";
+import "@fontsource/public-sans/700";
+import "@fontsource/ibm-plex-mono/500";
+import "../styles/global.css";
+import { env } from "cloudflare:workers";
+import { local, wa } from "../data/catalogo";
+import { rubros } from "../servidor/consultas";
+import { clienteActual } from "../servidor/clientes";
+import Icono from "../components/Icono.astro";
+// actual: qué sección marcar (slug del rubro, «ofertas», «categorias», «cuenta», «carrito», «inicio»).
+// pestanas: la barra de abajo del celular (se apaga en el panel de los empleados).
+// imagen: foto para la vista previa al compartir (WhatsApp, redes). datos: datos estructurados
+// (schema.org) para buscadores.
+interface Props { titulo: string; actual?: string; descripcion?: string; pestanas?: boolean; imagen?: string; datos?: Record<string, unknown> }
+const { titulo, actual, descripcion = "Ferretería, sanitarios, electricidad, pileta y más. Pedís online y retirás en el local.", pestanas = true, imagen, datos } = Astro.props;
+// La demo no se indexa; tampoco las páginas personales (cuenta, carrito, pago, pedido) ni la búsqueda
+const demo = /(^|[.-])demo\./.test(Astro.url.hostname);
+const privada = /^\/(cuenta|carrito|compra|pedido|pago|panel|buscar|arrepentimiento)(\/|$)/.test(Astro.url.pathname);
+const canonica = Astro.url.origin + Astro.url.pathname;
+const tituloPagina = titulo === "Comercio Ejemplo" ? "Comercio Ejemplo · Ferretería online en Córdoba" : `${titulo} · Comercio Ejemplo`;
+const previa = Astro.url.origin + (imagen ?? "/icono-512.png");
+const q = Astro.url.searchParams.get("q")?.slice(0, 100) ?? "";
+const [categorias, cliente] = await Promise.all([rubros(env.DB), clienteActual(env.DB, Astro.request)]);
+const iconos = [...new Set(["tornillo", "canilla", "rayo", "ola", "pincel", "hoja", "huella"])];
+const marca = (s: string) => (actual === s ? "page" : undefined);
+// Ingresar recuerda dónde estaba, para volver ahí; con sesión, el encabezado saluda y abre el menú
+const aca = Astro.url.pathname + Astro.url.search;
+const ingresar = /^\/cuenta\/?$/.test(Astro.url.pathname) || aca.length > 200 ? "/cuenta/" : `/cuenta/?v=${encodeURIComponent(aca)}`;
+const primerNombre = cliente?.nombre?.trim().split(/\s+/)[0];
+const inicial = cliente ? (cliente.nombre ?? cliente.email).trim()[0].toUpperCase() : "";
+---
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{tituloPagina}</title>
+  <meta name="description" content={descripcion}>
+  {(demo || privada) ? <meta name="robots" content="noindex, nofollow"> : <link rel="canonical" href={canonica}>}
+  <!-- Vista previa al compartir el link (WhatsApp, redes) -->
+  <meta property="og:site_name" content="Comercio Ejemplo">
+  <meta property="og:locale" content="es_AR">
+  <meta property="og:type" content={datos?.["@type"] === "Product" ? "product" : "website"}>
+  <meta property="og:title" content={titulo}>
+  <meta property="og:description" content={descripcion}>
+  <meta property="og:url" content={canonica}>
+  <meta property="og:image" content={previa}>
+  <meta name="twitter:card" content={imagen ? "summary_large_image" : "summary"}>
+  {datos && <script type="application/ld+json" set:html={JSON.stringify(datos).replace(/</g, "\\u003c")} />}
+  <meta name="theme-color" content="#1c2733">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <!-- Instalable como aplicación (PWA): manifiesto + public/sw.js -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Comercio Ejemplo">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body class={pestanas ? "con-pestanas" : undefined}>
+  <header class="enc">
+    <div class="cont">
+      {Astro.url.pathname !== "/" && <button class="volver" type="button" data-volver aria-label="Volver"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>}
+      <a class="marca" href="/" aria-label="Comercio Ejemplo, inicio"><img src="/logo.webp" width="40" height="40" alt="Comercio Ejemplo"></a>
+      <form class="busca" action="/buscar/" method="get" role="search">
+        <svg class="lupa" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="q" aria-label="Buscar productos" name="q" type="search" placeholder="Buscar producto o marca" value={q} autocomplete="off" enterkeyhint="search"
+          role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sugerencias">
+        <button type="submit">Buscar</button>
+        <div class="sugerencias" id="sugerencias" role="listbox" aria-label="Sugerencias" data-sugerencias hidden></div>
+      </form>
+      <div class="acciones">
+        {cliente ? (
+          <details class="menu-cuenta" data-menu-cuenta>
+            <summary aria-label="Mi cuenta"><span class="avatar" aria-hidden="true">{inicial}</span><span class="mc-nombre">{primerNombre ? `Hola, ${primerNombre}` : "Mi cuenta"}</span></summary>
+            <div class="mc-panel">
+              <p class="mc-mail">{cliente.email}</p>
+              <a href="/cuenta/">Mi cuenta</a>
+              <a href="/cuenta/pedidos">Mis pedidos</a>
+              <a href="/cuenta/datos">Mis datos</a>
+              <form method="post" action="/api/cuenta/salir"><button type="submit">Cerrar sesión</button></form>
+            </div>
+          </details>
+        ) : <a class="cuenta-btn" href={ingresar} aria-label="Ingresar"><Icono nombre="persona" /><span>Ingresar</span></a>}
+        <a class="carr-btn" href="/carrito/" aria-label="Carrito"><Icono nombre="carrito" /><b data-contador>0</b></a>
+      </div>
+    </div>
+  </header>
+  <nav class="nav" aria-label="Categorías">
+    <div class="cont">
+      <a href="/ofertas/" aria-current={marca("ofertas")}>Ofertas</a>
+      {categorias.map((c) => <a href={`/categoria/${c.slug}/`} aria-current={marca(c.slug)}>{c.nombre}</a>)}
+    </div>
+  </nav>
+  <main class="cont"><slot /></main>
+  <footer class="pie">
+    <div class="cont">
+      <div>
+        <b>Comercio Ejemplo</b>
+        <p>{local.direccion}, {local.ciudad}</p>
+        {local.horario && <p>{local.horario}</p>}
+        <p><a href={local.mapa} target="_blank" rel="noopener">Cómo llegar</a></p>
+      </div>
+      <div>
+        <b>Atención</b>
+        <p><a class="num" href={`tel:${local.telefono.replace(/[^0-9+]/g, "")}`}>{local.telefono}</a></p>
+        {local.whatsapp && <p><a href={wa("Hola, tengo una consulta sobre la tienda online.")} target="_blank" rel="noopener">Escribinos por WhatsApp</a></p>}
+        {local.mail && <p><a href={`mailto:${local.mail}`}>{local.mail}</a></p>}
+      </div>
+      <div>
+        <b>Comprar</b>
+        <p>Pagás con Mercado Pago: tarjeta de débito o crédito, o dinero en cuenta.</p>
+        <p>Retirás en el local, sin cargo.</p>
+        <p><a href="/ayuda/">Cómo se compra y cambios</a></p>
+      </div>
+      <div>
+        <b>Legales</b>
+        <p><a href="/legales/terminos/">Términos y condiciones</a></p>
+        <p><a href="/legales/privacidad/">Privacidad</a></p>
+        <p><a class="arrep" href="/arrepentimiento/">Botón de arrepentimiento</a></p>
+      </div>
+      <div class="app" data-app hidden>
+        <b>Tené la tienda en tu celular</b>
+        <button class="btn-app" type="button" data-instalar hidden>Instalar la app</button>
+        <p data-instalar-ios hidden>En iPhone: tocá Compartir y después «Agregar a inicio».</p>
+      </div>
+    </div>
+    <div class="cont pie-legal">
+      <span>{local.razonSocial ? `${local.razonSocial} · CUIT ${local.cuit}` : "Comercio Ejemplo"} · {local.direccion}, {local.ciudad} · Precios en pesos con IVA incluido.</span>
+      {local.dataFiscal && <a href={local.dataFiscal} target="_blank" rel="noopener">Data Fiscal</a>}
+    </div>
+  </footer>
+  {pestanas && (
+    <nav class="pestanas" aria-label="Secciones">
+      <a href="/" aria-current={marca("inicio")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg><span>Inicio</span></a>
+      <a href="/categorias/" aria-current={marca("categorias")}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Categorías</span></a>
+      <a href="/ofertas/" aria-current={marca("ofertas")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/></svg><span>Ofertas</span></a>
+      <a href="/cuenta/pedidos" aria-current={marca("pedidos")}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16l-1.2 11H5.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span>Mis pedidos</span></a>
+      <a class="p-carr" href="/carrito/" aria-current={marca("carrito")}><Icono nombre="carrito" /><b data-contador>0</b><span>Carrito</span></a>
+    </nav>
+  )}
+  {iconos.map((i) => <template data-icono={i}><Icono nombre={i} /></template>)}
+  <script src="../scripts/carrito.ts"></script>
+</body>
+</html>

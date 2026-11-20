@@ -1,0 +1,19 @@
+---
+import Foto from "./Foto.astro";
+import Disponibilidad from "./Disponibilidad.astro";
+import { descuento, pesos, type Vista } from "../servidor/consultas";
+const { p } = Astro.props as { p: Vista };
+const d = descuento(p);
+const vendible = p.consultar || p.disponible;
+---
+<article class="prod">
+  {p.nuevo && <span class="etq nuevo">Nuevo</span>}
+  <a class="link" href={`/producto/${p.slug}/`}>
+    <Foto p={p} />
+    <span class="nom">{p.nombre}</span>
+    <span class="precios">{p.precio_anterior && d > 0 && <><s class="ant">{pesos(p.precio_anterior)}</s><span class="off">{d}% OFF</span></>}</span>
+    <span class="precio">{pesos(p.precio)}</span>
+    <Disponibilidad p={p} />
+  </a>
+  <button class="btn" type="button" data-agregar={p.slug} disabled={!vendible}>{vendible ? "Agregar" : "Sin stock"}</button>
+</article>

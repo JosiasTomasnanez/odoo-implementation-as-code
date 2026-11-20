@@ -1,0 +1,2 @@
+id,name,model_id,group_id/id,operation,domain
+access_verificar_ia_wizard,verificar con ia,comercio.verificar.ia.wizard,comercio_catalogo.group_listas_proveedores,crud,

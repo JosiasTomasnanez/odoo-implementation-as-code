@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="importar_lista_wizard_form" model="ir.ui.view">
+        <field name="name">comercio.importar.lista.wizard.form</field>
+        <field name="model">comercio.importar.lista.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Importar lista de precios">
+                <p class="text-muted">
+                    Subí el Excel tal como lo manda el proveedor. Primero se <b>simula</b>: nada cambia
+                    hasta que lo revises y apliques.
+                </p>
+                <group>
+                    <field name="partner_id" placeholder="Escribí el nombre: si no existe, «Crear»"
+                           context="{'default_is_company': True, 'default_supplier_rank': 1}"
+                           options="{'no_open': True}"/>
+                    <field name="lista_id" string="Parte" invisible="not tiene_listas or nueva_parte or hoja_ids"
+                           required="varias_listas and not hoja_ids and not nueva_parte"
+                           options="{'no_create': True, 'no_open': True}"/>
+                    <field name="nueva_parte" invisible="not tiene_listas or hoja_ids"/>
+                    <field name="nombre_parte" invisible="not nueva_parte or hoja_ids" required="nueva_parte and not hoja_ids"
+                           placeholder="P. ej. Bulones"/>
+                    <field name="tiene_listas" invisible="1"/>
+                    <field name="es_nueva" invisible="1"/>
+                    <field name="varias_listas" invisible="1"/>
+                    <div colspan="2" class="text-muted" invisible="not es_nueva">
+                        Es la primera lista de este proveedor: las columnas del Excel se reconocen solas
+                        (después se pueden corregir en Costos y precios → Listas de proveedores → Proveedores).
+                    </div>
+                    <field name="categoria_id" options="{'no_open': True}"
+                           placeholder="Rubro de lo que vende este proveedor (se puede crear)"/>
+                    <field name="archivo" filename="nombre_archivo"/>
+                    <field name="descuentos" placeholder="p. ej. 10 o 10+10 (vacío si no hay)" invisible="hoja_ids"/>
+                    <field name="nombre_archivo" invisible="1"/>
+                    <field name="es_foto" invisible="1"/>
+                    <field name="mas_fotos_ids" widget="many2many_binary" invisible="not es_foto"/>
+                </group>
+                <div invisible="not hoja_ids">
+                    <p class="text-muted mb-1">
+                        El archivo tiene <b>varias hojas</b>. Marcá las que tienen productos: cada una queda
+                        como una <b>parte</b> de la lista del proveedor (si no existe, se crea con el nombre de
+                        la hoja) y lo que deja de venir en una parte no toca las otras. El descuento de
+                        cada parte se carga en su ficha.
+                    </p>
+                    <field name="hoja_ids" nolabel="1">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="importar" widget="boolean_toggle"/>
+                            <field name="nombre" force_save="1"/>
+                            <field name="filas" force_save="1"/>
+                            <field name="lista_id" options="{'no_open': True}" placeholder="Nueva parte" force_save="1"/>
+                            <field name="categoria_id" options="{'no_open': True}"/>
+                        </list>
+                    </field>
+                </div>
+                <footer>
+                    <button name="action_importar" type="object" string="Simular" class="btn-primary"/>
+                    <button special="cancel" string="Cancelar"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_importar_lista_wizard" model="ir.actions.act_window">
+        <field name="name">Importar lista</field>
+        <field name="res_model">comercio.importar.lista.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

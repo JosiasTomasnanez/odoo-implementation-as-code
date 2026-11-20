@@ -1,0 +1,34 @@
+# Medios de pago que acepta el negocio (P-016): efectivo, débito, crédito y transferencia
+# (las billeteras pagan por transferencia). Sin QR por ahora (P-036).
+# Los nombres que ve el cajero están en config/valores.yaml.
+#
+# PENDIENTE (P-034, contador): a qué cuenta va cada medio. Mientras tanto débito, crédito
+# y transferencia usan el diario «Banco» que crea la localización (account.1_bank).
+model: pos.payment.method
+match: [name]
+records:
+  - id: pm_efectivo_caja_1
+    values:
+      name: {valor: medios_de_pago.efectivo_caja_1}
+      type: cash
+      journal_id: {ref: diario_efectivo_caja_1}
+  - id: pm_efectivo_caja_2
+    values:
+      name: {valor: medios_de_pago.efectivo_caja_2}
+      type: cash
+      journal_id: {ref: diario_efectivo_caja_2}
+  - id: pm_debito
+    values:
+      name: {valor: medios_de_pago.debito}
+      type: bank
+      journal_id: {ref: account.1_bank}
+  - id: pm_credito
+    values:
+      name: {valor: medios_de_pago.credito}
+      type: bank
+      journal_id: {ref: account.1_bank}
+  - id: pm_transferencia
+    values:
+      name: {valor: medios_de_pago.transferencia}
+      type: bank
+      journal_id: {ref: account.1_bank}

@@ -1,0 +1,55 @@
+---
+// Equipo (solo «admin»): quién entra a la administración y con qué permisos. Al sumar a alguien le
+// llega un mail; la primera vez elige su contraseña con un código. Abajo, lo último que se hizo.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/BaseAdmin.astro";
+import { miembroActual, puede, ROLES, type Rol } from "../../servidor/equipo";
+const yo = await miembroActual(env.DB, Astro.request);
+if (!yo) return Astro.redirect("/admin/ingresar", 303);
+if (!puede(yo, "admin")) return Astro.redirect("/admin", 303);
+const ok = Astro.url.searchParams.get("ok"), e = Astro.url.searchParams.get("e");
+type M = { id: string; email: string; nombre: string; roles: string; activo: number; clave: number; creado: string };
+const equipo = (await env.DB.prepare("SELECT id, email, nombre, roles, activo, clave_hash IS NOT NULL AS clave, creado FROM equipo ORDER BY activo DESC, nombre").all<M>()).results;
+const registro = (await env.DB.prepare("SELECT cuando, quien, que FROM registro_admin ORDER BY id DESC LIMIT 30").all<{ cuando: string; quien: string; que: string }>()).results;
+const fecha = (t: string) => new Date(t).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Cordoba" });
+const roles = Object.entries(ROLES) as [Rol, string][];
+---
+<Base titulo="Equipo" actual="equipo" miembro={yo}>
+  <h1 class="h-disp">Equipo</h1>
+  <p class="adm-sub">Quién puede entrar a esta administración. El panel de pedidos del local sigue con el PIN de Odoo.</p>
+  {ok && <p class="adm-ok" role="status">{({ alta: "Listo: le mandamos un mail para que elija su contraseña.", roles: "Permisos guardados.", baja: "Dado de baja: ya no puede entrar.", alta2: "Reactivado." } as Record<string, string>)[ok] ?? "Listo."}</p>}
+  {e === "mail" && <p class="aviso">Revisá el mail y el nombre.</p>}
+  {e === "existe" && <p class="aviso">Ese mail ya está en el equipo.</p>}
+  {e === "yo" && <p class="aviso">No podés sacarte a vos el permiso de administración ni darte de baja (para no quedar sin nadie que administre).</p>}
+  <div class="adm-lista">
+    {equipo.map((m) => (
+      <form class={`adm-ficha${m.activo ? "" : " baja"}`} method="post" action="/api/admin/equipo">
+        <input type="hidden" name="id" value={m.id}>
+        <header><div><b>{m.nombre}</b><span class="cod">{m.email}</span></div>
+          <span class={`estado ${!m.activo ? "no" : m.clave ? "ok" : "pend"}`}>{!m.activo ? "De baja" : m.clave ? "Activo" : "Falta que elija contraseña"}</span></header>
+        <fieldset class="roles" disabled={!m.activo}>
+          <legend>Permisos</legend>
+          {roles.map(([r, txt]) => <label class="casilla"><input type="checkbox" name="roles" value={r} checked={m.roles.split(",").includes(r)} disabled={r === "marketing"}> {txt}</label>)}
+        </fieldset>
+        <div class="botones">
+          {m.activo ? <button class="btn sec2" name="accion" value="roles">Guardar permisos</button> : <button class="btn sec2" name="accion" value="reactivar">Reactivar</button>}
+          {m.activo && m.id !== yo.id && <button class="btn lineal" name="accion" value="baja">Dar de baja</button>}
+        </div>
+      </form>
+    ))}
+  </div>
+  <form class="adm-form" method="post" action="/api/admin/equipo">
+    <h2>Sumar a alguien</h2>
+    <input type="hidden" name="accion" value="alta">
+    <div class="dos">
+      <label class="campo"><span>Nombre</span><input name="nombre" required maxlength="80" autocomplete="off"></label>
+      <label class="campo"><span>Mail</span><input name="email" type="email" required maxlength="160" autocomplete="off"></label>
+    </div>
+    <fieldset class="roles"><legend>Permisos</legend>
+      {roles.map(([r, txt]) => <label class="casilla"><input type="checkbox" name="roles" value={r} checked={r === "mayoristas"} disabled={r === "marketing"}> {txt}</label>)}
+    </fieldset>
+    <button class="btn sec2" type="submit">Sumar y mandarle el mail</button>
+  </form>
+  <h2 class="adm-h2">Últimos cambios</h2>
+  <ul class="adm-registro">{registro.map((r) => <li><time>{fecha(r.cuando)}</time> <b>{r.quien.replace(/ <.*/, "")}</b> {r.que}</li>)}</ul>
+</Base>

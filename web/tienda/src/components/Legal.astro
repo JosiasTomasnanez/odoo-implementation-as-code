@@ -1,0 +1,14 @@
+---
+// Marco de las páginas legales y de ayuda: título, aviso de borrador y texto en una columna legible.
+import Base from "../layouts/Base.astro";
+import { legalesRevisados } from "../data/catalogo";
+const { titulo, actualizado, borrador = true } = Astro.props as { titulo: string; actualizado?: string; borrador?: boolean };
+---
+<Base titulo={titulo}>
+  <article class="texto">
+    <h1 class="h-disp">{titulo}</h1>
+    {actualizado && <p class="nota-demo">Última actualización: {actualizado}</p>}
+    {borrador && !legalesRevisados && <p class="aviso"><b>Borrador.</b> Este texto todavía no fue revisado por un profesional y le faltan datos del comercio. No es la versión definitiva.</p>}
+    <slot />
+  </article>
+</Base>

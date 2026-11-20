@@ -1,0 +1,5 @@
+id,name,model_id,group_id/id,operation,domain
+access_cierre_z_facturacion,cierre z facturacion,comercio.cierre.z,account.group_account_invoice,crud,
+access_cierre_z_lectura,cierre z lectura,comercio.cierre.z,account.group_account_readonly,r,
+access_cierre_z_cobro_facturacion,cierre z cobro facturacion,comercio.cierre.z.cobro,account.group_account_invoice,crud,
+access_cierre_z_cobro_lectura,cierre z cobro lectura,comercio.cierre.z.cobro,account.group_account_readonly,r,

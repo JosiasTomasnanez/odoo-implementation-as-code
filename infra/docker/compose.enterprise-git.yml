@@ -1,0 +1,11 @@
+# Odoo Enterprise desde GitHub (github.com/odoo/enterprise, acceso de la suscripción): solo los
+# módulos Enterprise, sobre la imagen oficial de Odoo (Community). El clon vive FUERA del repo
+# (código privado): ODOO_ENTERPRISE_ADDONS en .env (lab) u onprem.env (servidor). Tiene que ser
+# de la misma fecha que la imagen: infra/scripts/fijar-enterprise.sh.
+# Lab: se monta. Servidor: compose.onprem.yml lo copia adentro de la imagen.
+services:
+  odoo:
+    volumes:
+      # Mismo destino que el volumen vacío de compose.lab.yml: lo reemplaza. El camino está en
+      # odoo.lab.conf (no como argumento: `odoo shell` y `odoo db` no lo verían)
+      - ${ODOO_ENTERPRISE_ADDONS:?definir ODOO_ENTERPRISE_ADDONS}:/mnt/enterprise-addons:ro

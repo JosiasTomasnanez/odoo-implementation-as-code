@@ -1,0 +1,16 @@
+# Un diario de efectivo por caja: Odoo no permite compartir el efectivo entre dos
+# puntos de venta, y así cada caja tiene su propio arqueo. En el local cobran 2 cajas
+# (docs/relevamiento/procesos/venta-mostrador.md). Nombres en config/valores.yaml.
+model: account.journal
+match: [code]
+records:
+  - id: diario_efectivo_caja_1
+    values:
+      name: {valor: medios_de_pago.efectivo_caja_1}
+      type: cash
+      code: CAJ1
+  - id: diario_efectivo_caja_2
+    values:
+      name: {valor: medios_de_pago.efectivo_caja_2}
+      type: cash
+      code: CAJ2

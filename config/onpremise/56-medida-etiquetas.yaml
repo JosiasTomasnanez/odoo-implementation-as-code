@@ -1,0 +1,17 @@
+# Rollos de la Zebra (comercio_etiquetas, P-062): se eligen en «Imprimir etiquetas». Nombre y
+# medida salen de config/valores.yaml («etiquetas.rollos»); el orden de acá es el de la lista
+# (el primero es el predeterminado). Un tipo de rollo nuevo: un registro más acá y en valores.
+model: comercio.etiqueta.rollo
+records:
+  - id: rollo_chico
+    values:
+      name: {valor: etiquetas.rollos.chico.nombre}
+      ancho_mm: {valor: etiquetas.rollos.chico.ancho_mm}
+      alto_mm: {valor: etiquetas.rollos.chico.alto_mm}
+      sequence: 10
+  - id: rollo_grande
+    values:
+      name: {valor: etiquetas.rollos.grande.nombre}
+      ancho_mm: {valor: etiquetas.rollos.grande.ancho_mm}
+      alto_mm: {valor: etiquetas.rollos.grande.alto_mm}
+      sequence: 20

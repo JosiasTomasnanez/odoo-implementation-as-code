@@ -1,0 +1,48 @@
+---
+// Administración de la tienda (fase 7): sobria, para el equipo. Logo, secciones según los roles
+// de quien entró, su nombre y «Salir». Nunca se indexa ni se guarda en caché.
+import "@fontsource/public-sans/400";
+import "@fontsource/public-sans/600";
+import "@fontsource/public-sans/700";
+import "@fontsource/ibm-plex-mono/500";
+import "../styles/global.css";
+import { puede, type Miembro } from "../servidor/equipo";
+interface Props { titulo: string; actual?: string; miembro?: Miembro | null }
+const { titulo, actual, miembro } = Astro.props;
+Astro.response.headers.set("Cache-Control", "no-store");
+Astro.response.headers.set("X-Robots-Tag", "noindex, nofollow");
+const marca = (s: string) => (actual === s ? "page" : undefined);
+---
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{`${titulo} · Administración · Comercio Ejemplo`}</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#1c2733">
+  <link rel="icon" type="image/png" href="/favicon.png">
+</head>
+<body class="adm">
+  <header class="adm-enc">
+    <div class="cont">
+      <a class="adm-marca" href="/admin"><img src="/logo.webp" width="34" height="34" alt="Comercio Ejemplo"><span>Administración</span></a>
+      {miembro && (
+        <nav class="adm-nav" aria-label="Secciones">
+          <a href="/admin" aria-current={marca("inicio")}>Inicio</a>
+          {puede(miembro, "mayoristas") && <a href="/admin/mayoristas" aria-current={marca("mayoristas")}>Mayoristas</a>}
+          {puede(miembro, "mayoristas") && <a href="/admin/listas" aria-current={marca("listas")}>Listas</a>}
+          {puede(miembro, "admin") && <a href="/admin/arrepentimientos" aria-current={marca("arrepentimientos")}>Arrepentimientos</a>}
+          {puede(miembro, "admin") && <a href="/admin/equipo" aria-current={marca("equipo")}>Equipo</a>}
+        </nav>
+      )}
+      {miembro && (
+        <form class="adm-quien" method="post" action="/api/admin/salir">
+          <span>{miembro.nombre}</span><button type="submit">Salir</button>
+        </form>
+      )}
+    </div>
+  </header>
+  <main class="cont adm-main"><slot /></main>
+</body>
+</html>

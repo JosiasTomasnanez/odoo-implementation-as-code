@@ -1,0 +1,62 @@
+# Prometheus del monitoreo (ADR 0028). Lee cada 30 s (alcanza para un local y ahorra RAM y
+# disco); guarda 30 días (compose.monitoreo.yml). Las alertas NO van acá: las evalúa Grafana
+# (grafana/aprovisionamiento/alerting/), así hay un solo lugar para umbrales y avisos.
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Servidor (node_exporter en la red del host, escucha en la puerta de enlace de «monitoreo»)
+  - job_name: servidor
+    static_configs:
+      - targets: ["servidor:9100"]
+
+  - job_name: postgresql
+    scrape_interval: 60s
+    scrape_timeout: 30s
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+    # Odoo tiene ~750 tablas: se guarda solo lo que usan los tableros y las alertas
+    # (de ~22 000 series a ~10 000; menos RAM y disco)
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "pg_settings_(max_connections|shared_buffers_bytes|autovacuum_freeze_max_age|max_wal_size_bytes|work_mem_bytes)"
+        target_label: __tmp_conservar
+        replacement: "si"
+      - source_labels: [__tmp_conservar, __name__]
+        regex: ";pg_settings_.*"
+        action: drop
+      - source_labels: [__name__]
+        regex: "pg_stat_user_tables_(analyze_count|autoanalyze_count|vacuum_count|autovacuum_count|idx_tup_fetch|n_mod_since_analyze|n_tup_hot_upd|n_tup_del|last_vacuum|last_analyze)|pg_statio_user_tables_(idx|tidx|toast)_blocks_.*"
+        action: drop
+
+  - job_name: contenedores
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      # Solo los contenedores con nombre (los de compose); se descartan los cgroups sueltos
+      - source_labels: [name]
+        regex: ""
+        action: drop
+
+  # Odoo responde: /web/health (vivo) y /web/login (página con base de datos: mide la demora real)
+  - job_name: odoo
+    metrics_path: /probe
+    params:
+      module: [http_odoo]
+    static_configs:
+      - targets:
+          - http://odoo:8069/web/health
+          - http://odoo:8069/web/login
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

@@ -1,0 +1,2589 @@
+{
+ "uid": "postgresql",
+ "title": "PostgreSQL",
+ "description": "Conexiones, actividad, caché, tablas, consultas lentas, WAL y mantenimiento de la base de Odoo (ADR 0028).",
+ "tags": [
+  "casa-ejemplo"
+ ],
+ "timezone": "America/Argentina/Cordoba",
+ "editable": false,
+ "graphTooltip": 1,
+ "refresh": "1m",
+ "schemaVersion": 41,
+ "version": 1,
+ "time": {
+  "from": "now-24h",
+  "to": "now"
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "base",
+    "label": "Base",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "prometheus"
+    },
+    "query": {
+     "query": "label_values(pg_database_size_bytes{datname!~\"template.*|postgres\"}, datname)",
+     "refId": "base"
+    },
+    "refresh": 1,
+    "includeAll": false,
+    "multi": false,
+    "sort": 1
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "id": 1,
+   "title": "Resumen",
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "type": "stat",
+   "title": "PostgreSQL",
+   "description": "1 = responde.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "pg_up",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "CAÍDO",
+         "color": "red"
+        },
+        "1": {
+         "text": "OK",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 2,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 0,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Tamaño de la base",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "pg_database_size_bytes{datname=\"$base\"}",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 3,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 3,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Conexiones",
+   "description": "% del máximo (max_connections).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "100 * sum(pg_stat_activity_count) / max(pg_settings_max_connections)",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 60
+       },
+       {
+        "color": "red",
+        "value": 80
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 4,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 6,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Lecturas desde memoria",
+   "description": "Cache hit ratio de la última hora. Bien: > 99 %.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "100 * sum(rate(pg_stat_database_blks_hit{datname=\"$base\"}[1h])) / (sum(rate(pg_stat_database_blks_hit{datname=\"$base\"}[1h])) + sum(rate(pg_stat_database_blks_read{datname=\"$base\"}[1h])))",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 2,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 95
+       },
+       {
+        "color": "green",
+        "value": 99
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 5,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 9,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Transacciones/s",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "sum(rate(pg_stat_database_xact_commit{datname=\"$base\"}[5m]) + rate(pg_stat_database_xact_rollback{datname=\"$base\"}[5m]))",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 6,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 12,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Deadlocks (24 h)",
+   "description": "",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "sum(increase(pg_stat_database_deadlocks{datname=\"$base\"}[24h]))",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "decimals": 0,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 7,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 15,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Transacción más larga",
+   "description": "Abierta ahora (cualquier estado salvo idle).",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "max(pg_stat_activity_max_tx_duration{state!=\"idle\"})",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s",
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 60
+       },
+       {
+        "color": "red",
+        "value": 600
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 8,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 18,
+    "y": 1
+   }
+  },
+  {
+   "type": "stat",
+   "title": "Edad de XID (wraparound)",
+   "description": "% del límite de transacciones antes del «wraparound». El autovacuum lo mantiene bajo; alerta al 50 %.",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "expr": "100 * max(pg_database_wraparound_age_datfrozenxid_seconds) / 2147483648",
+     "refId": "A",
+     "legendFormat": "__auto",
+     "instant": true,
+     "range": false
+    }
+   ],
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "decimals": 2,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 30
+       },
+       {
+        "color": "red",
+        "value": 50
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none",
+    "textMode": "auto",
+    "justifyMode": "center"
+   },
+   "id": 9,
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 21,
+    "y": 1
+   }
+  },
+  {
+   "type": "row",
+   "id": 10,
+   "title": "Conexiones y esperas",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Conexiones por estado",
+     "description": "active = trabajando; idle = esperando (normal en Odoo); «idle in transaction» = abrió una transacción y no la cerró (bloquea el vacuum).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (state) (pg_stat_activity_count{datname=\"$base\"})",
+       "refId": "A",
+       "legendFormat": "{{state}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "normal"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 11,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 6
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Antigüedad de la transacción más vieja, por estado",
+     "description": "Alertas: idle in transaction > 5 min; cualquier transacción > 10 min.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "max by (state) (pg_stat_activity_max_tx_duration{datname=\"$base\", state!=\"idle\"})",
+       "refId": "A",
+       "legendFormat": "{{state}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 12,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 6
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Bloqueos por tipo (locks)",
+     "description": "Muchos *exclusivelock* sostenidos = procesos esperándose entre sí.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (mode) (pg_locks_count{datname=\"$base\"})",
+       "refId": "A",
+       "legendFormat": "{{mode}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 13,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 14
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Transacciones largas en curso",
+     "description": "Transacciones abiertas hace más de 5 min. La espera concreta (wait_event) no se muestra: verla pide permisos que también dejan leer el texto con datos de las consultas en curso.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "pg_long_running_transactions",
+       "refId": "A",
+       "legendFormat": "cantidad"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "time() - (pg_long_running_transactions_oldest_timestamp_seconds > 0)",
+       "refId": "B",
+       "legendFormat": "la más vieja (s)"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 14,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 14
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 15,
+   "title": "Actividad",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 22
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Commits y rollbacks por segundo",
+     "description": "Odoo hace rollback en errores y conflictos de concurrencia; muchos sostenidos = revisar el log.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_xact_commit{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "commits"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_xact_rollback{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "B",
+       "legendFormat": "rollbacks"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "ops",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 16,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 23
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Filas por segundo",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_tup_fetched{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "leídas"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_tup_inserted{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "B",
+       "legendFormat": "insertadas"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_tup_updated{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "C",
+       "legendFormat": "actualizadas"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_tup_deleted{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "D",
+       "legendFormat": "borradas"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "rps",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 17,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 23
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Deadlocks y conflictos",
+     "description": "Alerta: algún deadlock en 10 min. Conflictos: solo con réplicas (no hay).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(increase(pg_stat_database_deadlocks{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "deadlocks"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(increase(pg_stat_database_conflicts{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "B",
+       "legendFormat": "conflictos"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 18,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 31
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Archivos temporales",
+     "description": "Consultas que no entran en work_mem y ordenan en disco. Alerta: más de 1 GB por hora.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_temp_bytes{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "bytes/s"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(increase(pg_stat_database_temp_files{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "B",
+       "legendFormat": "archivos"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "bytes/s"
+        },
+        "properties": [
+         {
+          "id": "unit",
+          "value": "Bps"
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 19,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 31
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 20,
+   "title": "Caché y disco",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 39
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "Lecturas desde memoria (cache hit)",
+     "description": "Alerta: menos de 95 % sostenido. Si baja, la base ya no entra en shared_buffers + caché del sistema.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "100 * sum(rate(pg_stat_database_blks_hit{datname=\"$base\"}[$__rate_interval])) / (sum(rate(pg_stat_database_blks_hit{datname=\"$base\"}[$__rate_interval])) + sum(rate(pg_stat_database_blks_read{datname=\"$base\"}[$__rate_interval])))",
+       "refId": "A",
+       "legendFormat": "cache hit"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 21,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 40
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Bloques: memoria contra disco",
+     "description": "Bloques de 8 kB por segundo.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_blks_hit{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "desde memoria"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_blks_read{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "B",
+       "legendFormat": "desde disco"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "ops",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 22,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 40
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Tiempo leyendo y escribiendo disco",
+     "description": "Segundos de E/S por segundo (track_io_timing).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_blk_read_time{datname=\"$base\"}[$__rate_interval])) / 1000",
+       "refId": "A",
+       "legendFormat": "lectura"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum(rate(pg_stat_database_blk_write_time{datname=\"$base\"}[$__rate_interval])) / 1000",
+       "refId": "B",
+       "legendFormat": "escritura"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "s",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 23,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 48
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Tablas que más leen del disco",
+     "description": "Bloques por segundo que no estaban en memoria.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(8, rate(pg_statio_user_tables_heap_blocks_read{datname=\"$base\"}[$__rate_interval]))",
+       "refId": "A",
+       "legendFormat": "{{relname}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "ops",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 24,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 48
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 25,
+   "title": "Tablas: tamaño, crecimiento y mantenimiento",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 56
+   },
+   "panels": [
+    {
+     "type": "table",
+     "title": "Tablas más grandes",
+     "description": "Datos + índices. ir_attachment guarda solo la referencia: los archivos están en el filestore (ver «Adjuntos y mensajes»).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(20, pg_stat_user_tables_table_size_bytes{datname=\"$base\"} + pg_stat_user_tables_index_size_bytes{datname=\"$base\"})",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "pg_stat_user_tables_index_size_bytes{datname=\"$base\"} and on (relname) topk(20, pg_stat_user_tables_table_size_bytes{datname=\"$base\"} + pg_stat_user_tables_index_size_bytes{datname=\"$base\"})",
+       "refId": "B",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "pg_stat_user_tables_n_live_tup{datname=\"$base\"} and on (relname) topk(20, pg_stat_user_tables_table_size_bytes{datname=\"$base\"} + pg_stat_user_tables_index_size_bytes{datname=\"$base\"})",
+       "refId": "C",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byRegexp",
+         "options": "Total|Índices"
+        },
+        "properties": [
+         {
+          "id": "unit",
+          "value": "bytes"
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      },
+      "sortBy": [
+       {
+        "displayName": "Total",
+        "desc": true
+       }
+      ]
+     },
+     "transformations": [
+      {
+       "id": "merge",
+       "options": {}
+      },
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "__name__": true,
+         "instance": true,
+         "job": true,
+         "datname": true,
+         "schemaname": true
+        },
+        "renameByName": {
+         "relname": "Tabla",
+         "Value #A": "Total",
+         "Value #B": "Índices",
+         "Value #C": "Filas"
+        }
+       }
+      }
+     ],
+     "id": 26,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 0,
+      "y": 57
+     }
+    },
+    {
+     "type": "table",
+     "title": "Tablas que más crecieron (en el período elegido)",
+     "description": "Cambiar el período arriba a la derecha (7 días, 30 días).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(20, delta(pg_stat_user_tables_table_size_bytes{datname=\"$base\"}[$__range]) + delta(pg_stat_user_tables_index_size_bytes{datname=\"$base\"}[$__range]))",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      },
+      "sortBy": [
+       {
+        "displayName": "Creció",
+        "desc": true
+       }
+      ]
+     },
+     "transformations": [
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "__name__": true,
+         "instance": true,
+         "job": true,
+         "datname": true,
+         "schemaname": true
+        },
+        "renameByName": {
+         "relname": "Tabla",
+         "Value": "Creció"
+        }
+       }
+      }
+     ],
+     "id": 27,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 12,
+      "y": 57
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Adjuntos y mensajes",
+     "description": "Los archivos (PDF de facturas, listas, fotos) viven en el filestore, fuera de PostgreSQL; su tamaño sale del backup de cada noche (vacío en el lab).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (relname) (pg_stat_user_tables_table_size_bytes{datname=\"$base\", relname=~\"ir_attachment|mail_message|mail_tracking_value\"} + pg_stat_user_tables_index_size_bytes{datname=\"$base\", relname=~\"ir_attachment|mail_message|mail_tracking_value\"})",
+       "refId": "A",
+       "legendFormat": "{{relname}} (base)"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "odoo_filestore_bytes",
+       "refId": "B",
+       "legendFormat": "filestore (archivos adjuntos)"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 28,
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 67
+     }
+    },
+    {
+     "type": "table",
+     "title": "Filas muertas y último vacuum",
+     "description": "Filas muertas (borradas o actualizadas que el vacuum todavía no limpió): es la estimación de «bloat» liviana. Vacío en «días» = nunca corrió el autovacuum en esa tabla. Alerta: tabla > 50 MB con > 10 000 filas muertas y sin autovacuum hace > 7 días.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(20, pg_stat_user_tables_n_dead_tup{datname=\"$base\"})",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "100 * pg_stat_user_tables_n_dead_tup{datname=\"$base\"} / clamp_min(pg_stat_user_tables_n_live_tup{datname=\"$base\"} + pg_stat_user_tables_n_dead_tup{datname=\"$base\"}, 1) and on (relname) topk(20, pg_stat_user_tables_n_dead_tup{datname=\"$base\"})",
+       "refId": "B",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "(time() - (pg_stat_user_tables_last_autovacuum{datname=\"$base\"} > 0)) / 86400 and on (relname) topk(20, pg_stat_user_tables_n_dead_tup{datname=\"$base\"})",
+       "refId": "C",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "(time() - (pg_stat_user_tables_last_autoanalyze{datname=\"$base\"} > 0)) / 86400 and on (relname) topk(20, pg_stat_user_tables_n_dead_tup{datname=\"$base\"})",
+       "refId": "D",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 1,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      },
+      "sortBy": [
+       {
+        "displayName": "Filas muertas",
+        "desc": true
+       }
+      ]
+     },
+     "transformations": [
+      {
+       "id": "merge",
+       "options": {}
+      },
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "__name__": true,
+         "instance": true,
+         "job": true,
+         "datname": true,
+         "schemaname": true
+        },
+        "renameByName": {
+         "relname": "Tabla",
+         "Value #A": "Filas muertas",
+         "Value #B": "% muertas",
+         "Value #C": "Días desde autovacuum",
+         "Value #D": "Días desde autoanalyze"
+        }
+       }
+      }
+     ],
+     "id": 29,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 0,
+      "y": 75
+     }
+    },
+    {
+     "type": "table",
+     "title": "Lecturas completas en tablas grandes (candidatas a índice)",
+     "description": "Tablas de más de 10 MB que se recorren enteras (seq scan) en la última hora. Muchas filas leídas así y pocas búsquedas por índice = puede faltar un índice (decidirlo mirando las consultas lentas de abajo).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(15, rate(pg_stat_user_tables_seq_tup_read{datname=\"$base\"}[1h]) and on (relname) (pg_stat_user_tables_table_size_bytes{datname=\"$base\"} > 10e6))",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(pg_stat_user_tables_seq_scan{datname=\"$base\"}[1h]) * 3600 and on (relname) topk(15, rate(pg_stat_user_tables_seq_tup_read{datname=\"$base\"}[1h]) and on (relname) (pg_stat_user_tables_table_size_bytes{datname=\"$base\"} > 10e6))",
+       "refId": "B",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "rate(pg_stat_user_tables_idx_scan{datname=\"$base\"}[1h]) * 3600 and on (relname) topk(15, rate(pg_stat_user_tables_seq_tup_read{datname=\"$base\"}[1h]) and on (relname) (pg_stat_user_tables_table_size_bytes{datname=\"$base\"} > 10e6))",
+       "refId": "C",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "decimals": 0,
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      },
+      "sortBy": [
+       {
+        "displayName": "Filas leídas enteras/s",
+        "desc": true
+       }
+      ]
+     },
+     "transformations": [
+      {
+       "id": "merge",
+       "options": {}
+      },
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "__name__": true,
+         "instance": true,
+         "job": true,
+         "datname": true,
+         "schemaname": true
+        },
+        "renameByName": {
+         "relname": "Tabla",
+         "Value #A": "Filas leídas enteras/s",
+         "Value #B": "Lecturas completas/h",
+         "Value #C": "Búsquedas por índice/h"
+        }
+       }
+      }
+     ],
+     "id": 30,
+     "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 12,
+      "y": 75
+     }
+    },
+    {
+     "type": "table",
+     "title": "Índices sin uso (los más grandes)",
+     "description": "Índices que no se usaron desde que se reiniciaron las estadísticas (o desde que se creó la base). Ocupan disco y hacen más lentas las escrituras. Muchos son de Odoo: no borrar ninguno sin revisarlo; mirarlo después de meses de uso real.",
+     "datasource": {
+      "type": "grafana-postgresql-datasource",
+      "uid": "odoo"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "odoo"
+       },
+       "rawSql": "SELECT s.relname AS \"Tabla\", s.indexrelname AS \"Índice\", pg_relation_size(s.indexrelid) AS \"Tamaño\" FROM pg_stat_user_indexes s JOIN pg_index i ON i.indexrelid = s.indexrelid WHERE s.idx_scan = 0 AND NOT i.indisunique AND NOT i.indisprimary ORDER BY pg_relation_size(s.indexrelid) DESC LIMIT 20",
+       "format": "table",
+       "refId": "A",
+       "rawQuery": true,
+       "editorMode": "code"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Tamaño"
+        },
+        "properties": [
+         {
+          "id": "unit",
+          "value": "bytes"
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      }
+     },
+     "transformations": [],
+     "id": 31,
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 85
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 32,
+   "title": "Consultas lentas (pg_stat_statements)",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 93
+   },
+   "panels": [
+    {
+     "type": "table",
+     "title": "Por tiempo total",
+     "description": "Texto normalizado por PostgreSQL (los valores pasan a $1, $2…: no muestra datos de clientes) y cortado a 160 letras. Período: el de arriba a la derecha. Solo las 40 consultas que más tiempo llevan (las del monitoreo no cuentan).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])))",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (queryid) (increase(pg_stat_statements_calls_total{datname=\"$base\"}[$__range])) and on (queryid) topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])))",
+       "refId": "B",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "(sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])) / clamp_min(sum by (queryid) (increase(pg_stat_statements_calls_total{datname=\"$base\"}[$__range])), 1)) and on (queryid) topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])))",
+       "refId": "C",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "max by (queryid, query) (pg_stat_statements_query_id) and on (queryid) topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])))",
+       "refId": "D",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byRegexp",
+         "options": "Tiempo.*"
+        },
+        "properties": [
+         {
+          "id": "unit",
+          "value": "s"
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Consulta"
+        },
+        "properties": [
+         {
+          "id": "custom.width",
+          "value": 700
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      },
+      "sortBy": [
+       {
+        "displayName": "Tiempo total",
+        "desc": true
+       }
+      ]
+     },
+     "transformations": [
+      {
+       "id": "merge",
+       "options": {}
+      },
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "Value #D": true
+        },
+        "renameByName": {
+         "queryid": "Id",
+         "query": "Consulta",
+         "Value #A": "Tiempo total",
+         "Value #B": "Llamadas",
+         "Value #C": "Tiempo medio"
+        }
+       }
+      }
+     ],
+     "id": 33,
+     "gridPos": {
+      "h": 10,
+      "w": 24,
+      "x": 0,
+      "y": 94
+     }
+    },
+    {
+     "type": "table",
+     "title": "Por tiempo medio (más lentas de a una)",
+     "description": "Texto normalizado por PostgreSQL (los valores pasan a $1, $2…: no muestra datos de clientes) y cortado a 160 letras. Período: el de arriba a la derecha. Solo las 40 consultas que más tiempo llevan (las del monitoreo no cuentan).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])) / (sum by (queryid) (increase(pg_stat_statements_calls_total{datname=\"$base\"}[$__range])) > 0))",
+       "refId": "A",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "sum by (queryid) (increase(pg_stat_statements_calls_total{datname=\"$base\"}[$__range])) and on (queryid) topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])) / (sum by (queryid) (increase(pg_stat_statements_calls_total{datname=\"$base\"}[$__range])) > 0))",
+       "refId": "B",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "max by (queryid, query) (pg_stat_statements_query_id) and on (queryid) topk(15, sum by (queryid) (increase(pg_stat_statements_seconds_total{datname=\"$base\"}[$__range])) / (sum by (queryid) (increase(pg_stat_statements_calls_total{datname=\"$base\"}[$__range])) > 0))",
+       "refId": "C",
+       "legendFormat": "__auto",
+       "instant": true,
+       "range": false,
+       "format": "table"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "align": "auto",
+        "filterable": false
+       }
+      },
+      "overrides": [
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Tiempo medio"
+        },
+        "properties": [
+         {
+          "id": "unit",
+          "value": "s"
+         }
+        ]
+       },
+       {
+        "matcher": {
+         "id": "byName",
+         "options": "Consulta"
+        },
+        "properties": [
+         {
+          "id": "custom.width",
+          "value": 700
+         }
+        ]
+       }
+      ]
+     },
+     "options": {
+      "showHeader": true,
+      "cellHeight": "sm",
+      "footer": {
+       "show": false
+      },
+      "sortBy": [
+       {
+        "displayName": "Tiempo medio",
+        "desc": true
+       }
+      ]
+     },
+     "transformations": [
+      {
+       "id": "merge",
+       "options": {}
+      },
+      {
+       "id": "organize",
+       "options": {
+        "excludeByName": {
+         "Time": true,
+         "Value #C": true
+        },
+        "renameByName": {
+         "queryid": "Id",
+         "query": "Consulta",
+         "Value #A": "Tiempo medio",
+         "Value #B": "Llamadas"
+        }
+       }
+      }
+     ],
+     "id": 34,
+     "gridPos": {
+      "h": 10,
+      "w": 24,
+      "x": 0,
+      "y": 104
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Llamadas por segundo (las 8 más llamadas)",
+     "description": "El texto de cada Id está en las tablas de arriba.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "topk(8, sum by (queryid) (rate(pg_stat_statements_calls_total{datname=\"$base\"}[$__rate_interval])))",
+       "refId": "A",
+       "legendFormat": "{{queryid}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "ops",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 35,
+     "gridPos": {
+      "h": 8,
+      "w": 24,
+      "x": 0,
+      "y": 114
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 36,
+   "title": "WAL, checkpoints y wraparound",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 122
+   },
+   "panels": [
+    {
+     "type": "timeseries",
+     "title": "WAL generado por hora",
+     "description": "Cuánto escribe la base (registro de cambios). Sirve para dimensionar backups y disco. Lo anota revisar-servidor.sh cada 15 min (vacío en el lab).",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "increase(odoo_pg_wal_bytes_total[1h])",
+       "refId": "A",
+       "legendFormat": "por hora"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 37,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 123
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Checkpoints",
+     "description": "Muchos «pedidos» = max_wal_size chico para la carga.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "increase(pg_stat_bgwriter_checkpoints_timed_total[$__rate_interval])",
+       "refId": "A",
+       "legendFormat": "por tiempo"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "increase(pg_stat_bgwriter_checkpoints_req_total[$__rate_interval])",
+       "refId": "B",
+       "legendFormat": "pedidos (WAL lleno)"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "custom": {
+        "drawStyle": "bars",
+        "fillOpacity": 60,
+        "lineWidth": 1,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 38,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 123
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Carpeta pg_wal",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "pg_wal_size_bytes",
+       "refId": "A",
+       "legendFormat": "tamaño"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 39,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 0,
+      "y": 131
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Edad de XID por base (wraparound)",
+     "description": "% del límite. El autovacuum lo baja solo; alerta al 50 %.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "100 * pg_database_wraparound_age_datfrozenxid_seconds / 2147483648",
+       "refId": "A",
+       "legendFormat": "{{datname}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "percent",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 40,
+     "gridPos": {
+      "h": 8,
+      "w": 12,
+      "x": 12,
+      "y": 131
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "id": 41,
+   "title": "Backups",
+   "collapsed": true,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 139
+   },
+   "panels": [
+    {
+     "type": "bargauge",
+     "title": "Último backup bueno, hace",
+     "description": "La alerta la dan los scripts (26 h). Vacío en el lab.",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "(time() - odoo_backup_ultimo_ok_timestamp_seconds) / 3600",
+       "refId": "A",
+       "legendFormat": "{{copia}}"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "h",
+       "thresholds": {
+        "mode": "absolute",
+        "steps": [
+         {
+          "color": "green",
+          "value": null
+         },
+         {
+          "color": "orange",
+          "value": 25
+         },
+         {
+          "color": "red",
+          "value": 26
+         }
+        ]
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "reduceOptions": {
+       "calcs": [
+        "lastNotNull"
+       ],
+       "fields": "",
+       "values": false
+      },
+      "orientation": "horizontal",
+      "displayMode": "gradient",
+      "showUnfilled": true,
+      "valueMode": "color",
+      "namePlacement": "left",
+      "sizing": "auto"
+     },
+     "id": 42,
+     "gridPos": {
+      "h": 6,
+      "w": 12,
+      "x": 0,
+      "y": 140
+     }
+    },
+    {
+     "type": "timeseries",
+     "title": "Tamaño de la base y del backup",
+     "description": "",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "targets": [
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "pg_database_size_bytes{datname=\"$base\"}",
+       "refId": "A",
+       "legendFormat": "base (PostgreSQL)"
+      },
+      {
+       "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+       },
+       "expr": "odoo_backup_bytes",
+       "refId": "B",
+       "legendFormat": "backup (volcado + adjuntos)"
+      }
+     ],
+     "fieldConfig": {
+      "defaults": {
+       "unit": "bytes",
+       "custom": {
+        "drawStyle": "line",
+        "fillOpacity": 10,
+        "lineWidth": 2,
+        "showPoints": "never",
+        "spanNulls": true,
+        "stacking": {
+         "mode": "none"
+        }
+       }
+      },
+      "overrides": []
+     },
+     "options": {
+      "legend": {
+       "displayMode": "list",
+       "placement": "bottom",
+       "showLegend": true
+      },
+      "tooltip": {
+       "mode": "multi",
+       "sort": "desc"
+      }
+     },
+     "id": 43,
+     "gridPos": {
+      "h": 6,
+      "w": 12,
+      "x": 12,
+      "y": 140
+     }
+    }
+   ]
+  }
+ ],
+ "annotations": {
+  "list": []
+ },
+ "links": []
+}

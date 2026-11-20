@@ -1,0 +1,68 @@
+---
+// Ingreso del equipo: mail y contraseña; la primera vez en cada navegador, además un código por mail.
+// «Primera vez o me olvidé» manda un código para elegir la contraseña.
+import { env } from "cloudflare:workers";
+import Base from "../../layouts/BaseAdmin.astro";
+import Marco from "../../components/MarcoIngreso.astro";
+import { miembroActual } from "../../servidor/equipo";
+if (await miembroActual(env.DB, Astro.request)) return Astro.redirect("/admin", 303);
+const q = Astro.url.searchParams;
+const modo = ["codigo", "clave", "nueva"].includes(q.get("modo") ?? "") ? q.get("modo")! : "entrar";
+const e = q.get("e");
+const mail = (q.get("m") ?? "").slice(0, 160);
+const sitekey = env.TURNSTILE_SITEKEY ?? "";
+const m = mail ? `&m=${encodeURIComponent(mail)}` : "";
+---
+<Base titulo="Ingresar">
+  <Marco titulo="Administración de la tienda" puntos={["Aprobar cuentas mayoristas", "Listas de precios para clientes", "Equipo y permisos"]} pie="Solo para el equipo de Comercio Ejemplo.">
+  <div class="ingreso">
+    {modo === "entrar" && (<>
+      <h1 class="h-disp">Ingresar</h1>
+      <form method="post" action="/api/admin/entrar">
+        {e === "clave" && <p class="aviso">El mail o la contraseña no son correctos.</p>}
+        <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="username" required maxlength="160" value={mail}></label>
+        <label class="campo"><span>Contraseña</span><input name="clave" type="password" autocomplete="current-password" required maxlength="200"></label>
+        <a class="chico" href={`/admin/ingresar?modo=clave${m}`}>Primera vez o me olvidé la contraseña</a>
+        <button class="btn sec2" type="submit">Ingresar</button>
+      </form>
+    </>)}
+    {modo === "codigo" && (<>
+      <h1 class="h-disp">Revisá tu mail</h1>
+      <p class="intro">Es la primera vez que entrás desde este equipo: te mandamos un código a <b>{mail}</b>. Después, acá alcanza con la contraseña.</p>
+      <form method="post" action="/api/admin/entrar">
+        {e === "codigo" && <p class="aviso">El código no es correcto o venció. Volvé a poner tu contraseña para recibir otro.</p>}
+        <input type="hidden" name="email" value={mail}>
+        <label class="campo"><span>Código</span><input class="codigo" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label>
+        <button class="btn sec2" type="submit">Entrar</button>
+      </form>
+      <p class="cambiar"><a href={`/admin/ingresar?${m.slice(1)}`}>Volver</a></p>
+    </>)}
+    {modo === "clave" && (<>
+      <h1 class="h-disp">Elegir contraseña</h1>
+      <p class="intro">Si te sumaron al equipo o te olvidaste la contraseña, te mandamos un código al mail.</p>
+      <form method="post" action="/api/admin/clave">
+        {e === "robot" && <p class="aviso">No pudimos comprobar que no sos un robot. Probá de nuevo.</p>}
+        {e === "mail" && <p class="aviso">Revisá el mail.</p>}
+        <label class="campo"><span>Mail</span><input name="email" type="email" autocomplete="username" required maxlength="160" value={mail}></label>
+        <div class="cf-turnstile" data-sitekey={sitekey} data-language="es"></div>
+        <button class="btn sec2" type="submit">Mandame el código</button>
+      </form>
+      <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    </>)}
+    {modo === "nueva" && (<>
+      <h1 class="h-disp">Elegí tu contraseña</h1>
+      <p class="intro">Si <b>{mail}</b> es del equipo, le llegó un código de 6 números.</p>
+      <form method="post" action="/api/admin/clave">
+        {e === "codigo" && <p class="aviso">El código no es correcto o venció.</p>}
+        {e === "repetir" && <p class="aviso">Las dos contraseñas no coinciden. Escribilas de nuevo.</p>}
+        {e === "clave" && <p class="aviso">La contraseña tiene que tener al menos 8 caracteres y no ser demasiado fácil.</p>}
+        <input type="hidden" name="email" value={mail}>
+        <label class="campo"><span>Código</span><input class="codigo" name="codigo" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required></label>
+        <label class="campo"><span>Contraseña nueva</span><input name="clave" type="password" autocomplete="new-password" required minlength="8" maxlength="200"><small>Al menos 8 caracteres.</small></label>
+        <label class="campo"><span>Repetir contraseña</span><input name="clave2" type="password" autocomplete="new-password" required maxlength="200"></label>
+        <button class="btn sec2" type="submit">Guardar y entrar</button>
+      </form>
+    </>)}
+  </div>
+  </Marco>
+</Base>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cierres Z de las registradoras (P-070, ADR 0038). -->
+    <record id="view_cierre_z_list" model="ir.ui.view">
+        <field name="name">comercio.cierre.z.list</field>
+        <field name="model">comercio.cierre.z</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'confirmado'" decoration-warning="state == 'borrador'">
+                <field name="fecha"/>
+                <field name="journal_id"/>
+                <field name="numero" options="{'format': false}"/>
+                <field name="tique_desde" optional="hide" options="{'format': false}"/>
+                <field name="tique_hasta" optional="hide" options="{'format': false}"/>
+                <field name="total" sum="Total"/>
+                <field name="cobrado" sum="Cobrado" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="move_id" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'confirmado'"
+                       decoration-warning="state == 'borrador'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_cierre_z_search" model="ir.ui.view">
+        <field name="name">comercio.cierre.z.search</field>
+        <field name="model">comercio.cierre.z</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="numero"/>
+                <field name="journal_id"/>
+                <filter name="borrador" string="Sin confirmar" domain="[('state', '=', 'borrador')]"/>
+                <filter name="confirmado" string="Confirmados" domain="[('state', '=', 'confirmado')]"/>
+                <separator/>
+                <filter name="fecha" date="fecha"/>
+                <group>
+                    <filter name="por_registradora" string="Registradora" context="{'group_by': 'journal_id'}"/>
+                    <filter name="por_mes" string="Mes" context="{'group_by': 'fecha:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_cierre_z_form" model="ir.ui.view">
+        <field name="name">comercio.cierre.z.form</field>
+        <field name="model">comercio.cierre.z</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_leer_foto" type="object" string="Leer foto con IA" class="btn-secondary"
+                            invisible="state != 'borrador' or not foto"
+                            help="Gemini lee la foto y completa los números. Revisalos siempre contra el Z."/>
+                    <button name="action_confirmar" type="object" string="Confirmar" class="btn-primary"
+                            invisible="state != 'borrador'"
+                            help="Crea el comprobante del Z (va al Libro IVA) y registra lo cobrado."/>
+                    <button name="action_volver_a_borrador" type="object" string="Volver a borrador"
+                            invisible="state != 'confirmado'"
+                            confirm="Se anulan el comprobante y los cobros de este Z para corregirlo. ¿Seguir?"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-danger" role="alert" invisible="not problemas or state != 'borrador'">
+                        <b>Para corregir antes de confirmar:</b>
+                        <field name="problemas" nolabel="1" readonly="1"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="not avisos">
+                        <b>Para revisar:</b>
+                        <field name="avisos" nolabel="1" readonly="1"/>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="El Z">
+                            <field name="journal_id" options="{'no_create': True}" readonly="state != 'borrador'"/>
+                            <field name="fecha" readonly="state != 'borrador'"/>
+                            <field name="numero" readonly="state != 'borrador'" options="{'format': false}"/>
+                            <field name="tique_desde" readonly="state != 'borrador'" options="{'format': false}"/>
+                            <field name="tique_hasta" readonly="state != 'borrador'" options="{'format': false}"/>
+                            <field name="documento_tipo_id" options="{'no_create': True, 'no_open': True}"
+                                   readonly="state != 'borrador'"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Foto">
+                            <field name="foto" widget="image" filename="foto_nombre" nolabel="1" colspan="2"
+                                   readonly="state != 'borrador'" options="{'size': [0, 320]}"/>
+                            <field name="foto_nombre" invisible="1"/>
+                            <field name="leido_con_ia" invisible="not leido_con_ia"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Ventas del Z">
+                            <field name="neto_21" readonly="state != 'borrador'"/>
+                            <field name="iva_21" readonly="state != 'borrador'"/>
+                            <field name="neto_105" readonly="state != 'borrador'"/>
+                            <field name="iva_105" readonly="state != 'borrador'"/>
+                            <field name="neto_27" readonly="state != 'borrador'"/>
+                            <field name="iva_27" readonly="state != 'borrador'"/>
+                            <field name="exento" readonly="state != 'borrador'"/>
+                            <field name="no_gravado" readonly="state != 'borrador'"/>
+                            <field name="total" readonly="state != 'borrador'"/>
+                            <field name="suma"/>
+                        </group>
+                        <group string="Control del día">
+                            <field name="puestos_dia"/>
+                            <field name="z_del_dia"/>
+                            <field name="move_id" invisible="not move_id"/>
+                        </group>
+                    </group>
+                    <separator string="Cómo se cobró"/>
+                    <field name="cobro_ids" readonly="state != 'borrador'">
+                        <list editable="bottom">
+                            <field name="medio"/>
+                            <field name="journal_id" options="{'no_create': True}"/>
+                            <field name="importe" sum="Total"/>
+                            <field name="currency_id" column_invisible="1"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_cierre_z" model="ir.actions.act_window">
+        <field name="name">Cierres Z</field>
+        <field name="res_model">comercio.cierre.z</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_borrador': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cargá el cierre Z de cada registradora</p>
+            <p>Uno por registradora y por día: los números del Z y su foto. Con la foto, «Leer foto con IA» completa
+                los números; siempre se revisan antes de confirmar.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_cierre_z" name="Cierres Z" parent="account.menu_finance_receivables"
+              action="action_cierre_z" sequence="15" groups="account.group_account_invoice"/>
+</odoo>
