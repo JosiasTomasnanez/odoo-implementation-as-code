@@ -525,9 +525,9 @@ def planificar(filas: list[dict], foto: Foto, categorias_con_stock: list[str] = 
                     suyo = por_prov_y_producto.get((kprov, c.id))
                     if suyo and suyo.get("id"):
                         avisos.append(f"«{c.nombre}» ya era de este proveedor con el código "
-                                      f"«{suyo.get('product_code') or '—'}»: ¿cambió el código? Si es el "
+                                      f"«{suyo.get('product_code') or '-'}»: ¿cambió el código? Si es el "
                                       "mismo, se actualiza el código y no se da de baja")
-                        texto += " — ¿cambió el código?"
+                        texto += " - ¿cambió el código?"
                     return texto
 
                 lista = "; ".join(describir(c) for c in parecidos[:3])
@@ -624,9 +624,9 @@ def planificar(filas: list[dict], foto: Foto, categorias_con_stock: list[str] = 
                 bulto_otra = valores_prov.get("comercio_bulto")
                 de_a = f", de a {bulto_otra:g}" if bulto_otra else ""
                 presentaciones.setdefault((kprov, tmpl), []).append(
-                    f"{descripcion} (código {codigo_prov or '—'}{de_a}, {costo:g})")
+                    f"{descripcion} (código {codigo_prov or '-'}{de_a}, {costo:g})")
                 acciones.append(Accion(n, SIN_CAMBIOS, f"Otra presentación de «{primera}» "
-                                       f"({proveedor}): {descripcion} (código {codigo_prov or '—'}"
+                                       f"({proveedor}): {descripcion} (código {codigo_prov or '-'}"
                                        + (f", de a {valores_prov['comercio_bulto']:g}"
                                           if valores_prov.get("comercio_bulto") else "") + ")",
                                        tmpl=tmpl if isinstance(tmpl, int) else None, avisos=avisos))

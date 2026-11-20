@@ -472,7 +472,7 @@ class ComercioListaProveedor(models.Model):
                     mayor = costo * (1 - ajustes["pack"] / 100)
                     cuenta += (f" · por mayor desde {pack:g}: −{ajustes['pack']:g} % (pack completo)"
                                f" → $ {_pesos(mayor)}")
-                renglones.append(f"{datos.get('codigo_proveedor') or '—'} {datos.get('descripcion_proveedor') or ''}"
+                renglones.append(f"{datos.get('codigo_proveedor') or '-'} {datos.get('descripcion_proveedor') or ''}"
                                  f"\n    {cuenta}")
             lista.ejemplo_calculo = "\n".join(renglones) or False
 
@@ -514,7 +514,7 @@ class ComercioListaProveedor(models.Model):
             # (currency_rate_live solo corre si «próxima ejecución» está cargada)
             try:
                 empresa.with_context(suppress_errors=True).update_currency_rates()
-            except Exception:  # noqa: BLE001 — sin ARCA se sigue con la última cotización
+            except Exception:  # noqa: BLE001 - sin ARCA se sigue con la última cotización
                 _logger.exception("No se pudo traer la cotización del dólar")
         valor, _fecha = self._dolar()
         if not valor:
@@ -530,7 +530,7 @@ class ComercioListaProveedor(models.Model):
                 lista._importar_archivo(vigente.archivo.content, vigente.nombre_archivo, origen="recalculo",
                                         aplicar_seguros=True)
                 hechas += 1
-            except Exception as error:  # noqa: BLE001 — una lista rota no frena a las demás
+            except Exception as error:  # noqa: BLE001 - una lista rota no frena a las demás
                 if not en_tarea:
                     raise
                 _logger.exception("Error al recalcular %s", lista.name)
@@ -571,7 +571,7 @@ class ComercioListaProveedor(models.Model):
         se cambia sola: si el archivo parece de otra moneda, queda el aviso en la ficha."""
         try:
             con_formato = leer_tabla(contenido, nombre_archivo, self.hoja or None, monedas=True)
-        except Exception:  # noqa: BLE001 — la sugerencia nunca frena la importación
+        except Exception:  # noqa: BLE001 - la sugerencia nunca frena la importación
             return {}
         sugerida = sugerir_moneda(con_formato, fila, col_costo)
         nombres = dict(MONEDAS)
@@ -773,7 +773,7 @@ class ComercioListaProveedor(models.Model):
             try:
                 if lista.origen == "url" and lista.url:
                     lista._descargar_e_importar(aplicar_seguros=True)
-            except Exception as error:  # noqa: BLE001 — una lista rota no frena a las demás
+            except Exception as error:  # noqa: BLE001 - una lista rota no frena a las demás
                 _logger.exception("Error al actualizar %s", lista.name)
                 lista._recordar(_("No se pudo actualizar la lista de %(p)s: %(e)s",
                                   p=lista.partner_id.name, e=error))

@@ -42,41 +42,41 @@ ausente en el lab), *marca* (etiqueta «Enterprise» en Ajustes), *doc*, *supues
 
 | Función | Módulo | Edición (verif.) | ¿La usamos? | En el lab hoy | Queda para Enterprise | Alternativa Community |
 |---|---|---|---|---|---|---|
-| Localización AR: plan de cuentas, tipos de documento, letra A/B, responsabilidad ARCA | `l10n_ar`, `l10n_latam_invoice_document` | C (lab) | Sí, facturación (P-002) | Todo, sin CAE | — | — |
+| Localización AR: plan de cuentas, tipos de documento, letra A/B, responsabilidad ARCA | `l10n_ar`, `l10n_latam_invoice_document` | C (lab) | Sí, facturación (P-002) | Todo, sin CAE | - | - |
 | **Factura electrónica ARCA (CAE, web service wsfev1, certificado, homologación)** | `l10n_ar_edi` | **E** (lab: ausente; doc) | **Sí, crítico** (P-029, P-034) | Nada contra ARCA; solo la factura sin CAE | Certificado de homologación, CAE en factura y en POS, QR ARCA, notas de crédito, rechazos | No hay en 20.0 (los de terceros llegan a 18.0, ver P-029) |
-| POS argentino: cliente CF por defecto, A/B según cliente, botón «Factura» | `l10n_ar_pos` | C (lab) | Sí, cajas (P-003) | Flujo y letra del comprobante | Que la caja obtenga el CAE al validar | — |
-| Autofacturación por QR del ticket | `point_of_sale` + `l10n_ar_pos` | C (lab) | Propuesto (P-037) | Pantalla y factura sin CAE | Factura con CAE | — |
+| POS argentino: cliente CF por defecto, A/B según cliente, botón «Factura» | `l10n_ar_pos` | C (lab) | Sí, cajas (P-003) | Flujo y letra del comprobante | Que la caja obtenga el CAE al validar | - |
+| Autofacturación por QR del ticket | `point_of_sale` + `l10n_ar_pos` | C (lab) | Propuesto (P-037) | Pantalla y factura sin CAE | Factura con CAE | - |
 | **Libro IVA Digital (ZIP), resumen de IVA** | `l10n_ar_reports` (sobre `account_reports`) | **E** (lab: ausente; doc) | Sí, contador | No | Exportar el ZIP y validarlo con el contador | Exportar facturas a planilla (manual) |
-| Retenciones en pagos | `l10n_ar_withholding` | C (lab) | A definir con el contador | Sí | — | — |
-| Ecommerce AR (tipo de documento y responsabilidad en el checkout) | `l10n_ar_website_sale` | C (lab) | Futuro (P-009) | Sí | Factura con CAE de la venta web | — |
+| Retenciones en pagos | `l10n_ar_withholding` | C (lab) | A definir con el contador | Sí | - | - |
+| Ecommerce AR (tipo de documento y responsabilidad en el checkout) | `l10n_ar_website_sale` | C (lab) | Futuro (P-009) | Sí | Factura con CAE de la venta web | - |
 | App Contabilidad completa (conciliación bancaria, cierre, activos) | `account_accountant` | **E** (lab: ausente) | Sí, administración/contador | Solo Facturación (`account`): facturas, pagos, extractos | Conciliación bancaria, asientos de cierre | Conciliar a mano (pagos contra extracto) |
 | Reportes contables (balance, resultados, mayor, reporte de impuestos) | `account_reports` | **E** (lab: ausente; los menús de reportes vienen vacíos) | Sí | «Análisis de facturas» y tablas dinámicas | Todos los reportes legales | Tablas dinámicas, exportar a planilla |
 | Seguimiento de cobros (follow-ups, cuenta corriente) | `account_followup` | **E** (lab: ausente) | Mayorista, etapa posterior (P-015) | No | Recordatorios de deuda | Filtro de facturas vencidas |
 | Importar extractos bancarios CSV/OFX, OCR de facturas de proveedor | `account_bank_statement_import_*`, `account_invoice_extract` | **E** (marca); OCR además consume créditos IAP | A evaluar | No | Probar con extractos reales anonimizados | Carga manual |
-| **IoT (caja IoT o IoT de Windows)**, impresoras/balanzas/pagos por IoT en el POS | `iot`, `pos_iot` | **E** (lab: ausentes; doc: requiere suscripción de IoT box) | **No por ahora** (ADR 0012 eligió WebSerial) | — | Solo si se cambia de camino | `iot_webserial` (C, en el lab) + módulo propio |
-| Balanza por USB desde el navegador | `iot_webserial` + `comercio_pos_balanza_systel` | C (lab) | Sí (P-040) | Todo, con balanza simulada | — | — |
+| **IoT (caja IoT o IoT de Windows)**, impresoras/balanzas/pagos por IoT en el POS | `iot`, `pos_iot` | **E** (lab: ausentes; doc: requiere suscripción de IoT box) | **No por ahora** (ADR 0012 eligió WebSerial) | - | Solo si se cambia de camino | `iot_webserial` (C, en el lab) + módulo propio |
+| Balanza por USB desde el navegador | `iot_webserial` + `comercio_pos_balanza_systel` | C (lab) | Sí (P-040) | Todo, con balanza simulada | - | - |
 | Impresoras de tickets por red (Epson ePOS) y etiquetas ZPL por IP | `point_of_sale`, `printer` | C (lab) | A definir (P-006) | Sí, si la impresora es ePOS/ZPL de red | Impresora USB por IoT | Impresión del navegador (modo kiosco) |
-| Empleados en el POS con PIN y roles (supervisado, cajero) | `pos_hr` | C (lab) | Sí, puestos y cajas (P-005) | Todo (ya probado) | Confirmar licencia «Light User» (P-005) | — |
-| Mercado Pago (terminal POS / pago web) | `pos_mercado_pago`, `payment_mercado_pago` | C (lab) | A evaluar (P-016) | Con credenciales de prueba | — | — |
-| Autoservicio / pantalla de preparación | `pos_self_order` (C) / `pos_enterprise` (E, supuesto) | C / E | No | — | — | — |
-| Promociones, cupones, 2x1 | `loyalty`, `pos_loyalty` | C (lab) | Sí, gradual (P-030) | Todo | — | — |
-| Listas de precios, margen por categoría | `product` | C (lab) | Sí (P-030) | Todo | — | — |
-| Inventario, ubicaciones, lotes/vencimientos, reposición | `stock`, `product_expiry` | C (lab) | Sí | Todo | — | — |
-| Nomenclatura de códigos con peso/precio y GS1 | `barcodes`, `barcodes_gs1_nomenclature` | C (lab) | Plan B pesables | Todo | — | — |
-| Etiquetas de producto (A4, Dymo, ZPL) | `product` | C (lab) | Sí (P-007, D8) | Todo | — | — |
+| Empleados en el POS con PIN y roles (supervisado, cajero) | `pos_hr` | C (lab) | Sí, puestos y cajas (P-005) | Todo (ya probado) | Confirmar licencia «Light User» (P-005) | - |
+| Mercado Pago (terminal POS / pago web) | `pos_mercado_pago`, `payment_mercado_pago` | C (lab) | A evaluar (P-016) | Con credenciales de prueba | - | - |
+| Autoservicio / pantalla de preparación | `pos_self_order` (C) / `pos_enterprise` (E, supuesto) | C / E | No | - | - | - |
+| Promociones, cupones, 2x1 | `loyalty`, `pos_loyalty` | C (lab) | Sí, gradual (P-030) | Todo | - | - |
+| Listas de precios, margen por categoría | `product` | C (lab) | Sí (P-030) | Todo | - | - |
+| Inventario, ubicaciones, lotes/vencimientos, reposición | `stock`, `product_expiry` | C (lab) | Sí | Todo | - | - |
+| Nomenclatura de códigos con peso/precio y GS1 | `barcodes`, `barcodes_gs1_nomenclature` | C (lab) | Plan B pesables | Todo | - | - |
+| Etiquetas de producto (A4, Dymo, ZPL) | `product` | C (lab) | Sí (P-007, D8) | Todo | - | - |
 | **App Código de barras** (recepción, conteos, transferencias con lector) | `stock_barcode` | **E** (lab: ausente; marca) | Probable: recepción y conteos | No | Recepción de compras y conteo con lector o celular | Inventario normal con lector como teclado |
 | Datos de producto por código de barras (barcodelookup) | `product_barcodelookup` | **E** (marca); usa servicio externo | A evaluar (carga de catálogo) | No | Ver costo y calidad para productos argentinos | Importador propio `integrations/catalogo/` |
-| **Fusionar productos repetidos** (proveedores, stock e historial pasan al que queda; el otro se archiva) | `data_cleaning`, `data_merge_product` (+ `data_merge_stock_account`) | **E** (lab Enterprise, probado 21/10) | Sí, para duplicados que se escaparon de las listas | Todo (`config/onpremise/50-…`, `51-…`) | — | Quitar el repetido del catálogo y unir la fila en la próxima lista |
-| Compras, varios proveedores por producto | `purchase`, `purchase_stock` | C (lab) | Sí | Todo | — | — |
-| Acuerdos de compra y pedidos alternativos | `purchase_requisition`, `purchase_alternative` | C (lab) | A evaluar (P-004) | Todo | — | — |
-| Ventas mayoristas (presupuestos, pedidos) | `sale_management` | C (lab) | Etapa posterior (P-015) | Todo, salvo follow-ups | — | — |
-| Sitio web y ecommerce | `website`, `website_sale` | C (lab) | Futuro (P-009) | Todo | — | — |
+| **Fusionar productos repetidos** (proveedores, stock e historial pasan al que queda; el otro se archiva) | `data_cleaning`, `data_merge_product` (+ `data_merge_stock_account`) | **E** (lab Enterprise, probado 21/10) | Sí, para duplicados que se escaparon de las listas | Todo (`config/onpremise/50-…`, `51-…`) | - | Quitar el repetido del catálogo y unir la fila en la próxima lista |
+| Compras, varios proveedores por producto | `purchase`, `purchase_stock` | C (lab) | Sí | Todo | - | - |
+| Acuerdos de compra y pedidos alternativos | `purchase_requisition`, `purchase_alternative` | C (lab) | A evaluar (P-004) | Todo | - | - |
+| Ventas mayoristas (presupuestos, pedidos) | `sale_management` | C (lab) | Etapa posterior (P-015) | Todo, salvo follow-ups | - | - |
+| Sitio web y ecommerce | `website`, `website_sale` | C (lab) | Futuro (P-009) | Todo | - | - |
 | **Studio** (campos, vistas, informes, automatizaciones sin código) | `web_studio` | **E** (lab: ausente) | Propuesto para backend (P-028) | No | Probar y **probar la exportación** a módulo | Módulo en `addons/` o `config/` + `base_automation` (C) |
-| Automatizaciones (acciones automáticas) | `base_automation` | C (lab) | Sí | Todo | — | — |
+| Automatizaciones (acciones automáticas) | `base_automation` | C (lab) | Sí | Todo | - | - |
 | **Funciones de IA** (app IA, agentes, «Preguntar a IA», crear registros desde PDF) | `ai` y derivados | **E** (lab: ausente); consumen créditos IAP (P-020) | A evaluar (P-020, P-021) | No | Agentes para listas de proveedores (P-021) | `odoo-product-matcher`, importador propio |
-| Tableros (spreadsheet dashboards) de solo lectura | `spreadsheet_dashboard*` | C (lab) | Probable (reportes) | Ver tableros estándar | — | — |
+| Tableros (spreadsheet dashboards) de solo lectura | `spreadsheet_dashboard*` | C (lab) | Probable (reportes) | Ver tableros estándar | - | - |
 | Editar hojas de cálculo y tableros propios, Documentos | `spreadsheet_edition`, `documents` | **E** (supuesto; no están en el lab) | A evaluar | No | Tableros propios | Tablas dinámicas, exportar |
-| Calidad (controles) | `quality_control` | **E** (marca) | No | — | — | — |
+| Calidad (controles) | `quality_control` | **E** (marca) | No | - | - | - |
 
 ## Lab Enterprise (13/10; desde GitHub el 26/10)
 

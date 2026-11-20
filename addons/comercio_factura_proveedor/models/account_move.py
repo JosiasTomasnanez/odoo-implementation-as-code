@@ -257,7 +257,7 @@ class AccountMove(models.Model):
         if tipo == "pdf":
             try:
                 factura = leer.leer_pdf(contenido, tabla_desde_pdf, renglones_desde_pdf)
-            except Exception as error:  # noqa: BLE001 — PDF dañado o raro: se prueba con la IA
+            except Exception as error:  # noqa: BLE001 - PDF dañado o raro: se prueba con la IA
                 _logger.warning("No se pudo leer el texto de %s: %s", nombre, error)
                 factura = None
             if factura is not None:
@@ -426,7 +426,7 @@ class AccountMove(models.Model):
         try:
             with self.env.cr.savepoint():
                 socio.sudo().write(vals)
-        except Exception as error:  # noqa: BLE001 — validación del CUIT o de la condición de IVA
+        except Exception as error:  # noqa: BLE001 - validación del CUIT o de la condición de IVA
             return [_("No se pudo guardar el CUIT en el proveedor: %s", error)]
         return [_("Se guardó el CUIT %s en el proveedor (estaba vacío).", cuit)]
 
@@ -452,7 +452,7 @@ class AccountMove(models.Model):
                 try:
                     with self.env.cr.savepoint():
                         self.l10n_latam_document_number = factura.numero
-                except Exception as error:  # noqa: BLE001 — formato que no acepta el tipo elegido
+                except Exception as error:  # noqa: BLE001 - formato que no acepta el tipo elegido
                     avisos.append(_("No se pudo poner el número %(n)s: %(e)s", n=factura.numero, e=error))
         elif factura.numero and not self.ref:
             self.ref = f"{factura.letra or ''} {factura.numero}".strip()

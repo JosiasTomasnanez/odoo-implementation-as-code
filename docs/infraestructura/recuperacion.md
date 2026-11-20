@@ -8,7 +8,7 @@ Servidor perdido
   → Equipo nuevo: instalar-servidor.md, pasos 1 a 7   (Debian 13, RAID, LUKS + TPM,
                                                       preparar-servidor.sh, instalar-odoo.sh)
   → Secretos y clave de recuperación del disco desde Bitwarden
-                                                      («Comercio Ejemplo — Odoo»)
+                                                      («Comercio Ejemplo - Odoo»)
   → configurar-respaldo-y-avisos.sh con la clave de restic y los datos de R2 de siempre
   → Restaurar desde R2 (backup-restauracion.md, «Servidor nuevo»)
   → make verify ENV=onpremise                       (configuración == repo)

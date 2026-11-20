@@ -99,7 +99,7 @@ class ComercioCierreZ(models.Model):
                 partes.append(z.journal_id.name)
             if z.fecha:
                 partes.append(z.fecha.strftime("%d/%m/%Y"))
-            z.name = " — ".join(partes)
+            z.name = " - ".join(partes)
 
     @api.depends("neto_21", "iva_21", "neto_105", "iva_105", "neto_27", "iva_27", "exento", "no_gravado",
                  "cobro_ids.importe")
@@ -323,7 +323,7 @@ class ComercioCierreZ(models.Model):
             if impuesto.price_include and impuesto.amount_type == "percent":
                 precio = round(neto * (1 + impuesto.amount / 100.0), 2)
             lineas.append((0, 0, {
-                "name": _("%(l)s — Z %(n)s", l=NOMBRE_LINEA[campo], n=self.numero),
+                "name": _("%(l)s - Z %(n)s", l=NOMBRE_LINEA[campo], n=self.numero),
                 "quantity": 1, "price_unit": precio, "account_id": cuenta.id,
                 "tax_ids": [(6, 0, impuesto.ids)],
             }))
@@ -376,7 +376,7 @@ class ComercioCierreZ(models.Model):
             asistente = self.env["account.payment.register"].with_context(
                 active_model="account.move", active_ids=move.ids).create({
                     "journal_id": cobro.journal_id.id, "amount": cobro.importe, "payment_date": self.fecha,
-                    "communication": _("%(m)s — Z %(n)s", m=cobro._nombre_medio(), n=self.numero),
+                    "communication": _("%(m)s - Z %(n)s", m=cobro._nombre_medio(), n=self.numero),
                     "payment_difference_handling": "open",
                 })
             asistente._create_payments()

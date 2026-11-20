@@ -235,7 +235,7 @@ def probar(socios_prueba: list[int], productos_prueba: list[int]) -> int:
     try:
         c.call("comercio.lista.importacion", "action_aplicar_automaticos", [vieja])
         raise AssertionError("se aplicó una importación vieja")
-    except Exception as error:  # noqa: BLE001 — Odoo responde con un error de usuario
+    except Exception as error:  # noqa: BLE001 - Odoo responde con un error de usuario
         assert "más nueva" in str(error) or "Reemplazada" in str(error), error
     print("5. Una lista vieja queda «reemplazada» y no se puede aplicar después de una más nueva ✓")
 

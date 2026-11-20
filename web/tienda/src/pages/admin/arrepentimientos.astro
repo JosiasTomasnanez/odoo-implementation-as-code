@@ -24,9 +24,9 @@ const fecha = (t: string) => new Date(t).toLocaleString("es-AR", { day: "numeric
           <span class={`estado ${a.resuelto ? "ok" : "pend"}`}>{a.resuelto ? `Resuelto por ${a.resuelto_por}` : "Pendiente"}</span></header>
         <dl>
           <div><dt>Mail</dt><dd><a href={`mailto:${a.email}`}>{a.email}</a></dd></div>
-          <div><dt>Teléfono</dt><dd>{a.telefono ?? "—"}</dd></div>
+          <div><dt>Teléfono</dt><dd>{a.telefono ?? "-"}</dd></div>
           <div><dt>Pedido</dt><dd>{a.estado ? `Coincide con una compra de ese mail · ${ESTADOS[a.estado] ?? a.estado}` : <span class="err">No hay una compra paga con ese número y ese mail: revisar</span>}</dd></div>
-          <div><dt>Motivo</dt><dd>{a.motivo ?? "—"}</dd></div>
+          <div><dt>Motivo</dt><dd>{a.motivo ?? "-"}</dd></div>
           {a.nota && <div><dt>Nota</dt><dd>{a.nota}</dd></div>}
         </dl>
         {!a.resuelto && a.estado && CANCELABLES.includes(a.estado) && (

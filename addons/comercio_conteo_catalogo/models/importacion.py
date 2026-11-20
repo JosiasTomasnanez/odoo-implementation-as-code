@@ -119,6 +119,6 @@ class ProductTemplate(models.Model):
         self._comercio_exigir_permiso()
         self.env["product.uom"].sudo().create(
             {"product_id": producto.id, "uom_id": producto.uom_id.id, "barcode": codigo})
-        self.message_post(body=_("Código de fábrica alternativo %(c)s, al contar — %(u)s.",
+        self.message_post(body=_("Código de fábrica alternativo %(c)s, al contar - %(u)s.",
                                  c=codigo, u=self.env.user.name))
         return codigo

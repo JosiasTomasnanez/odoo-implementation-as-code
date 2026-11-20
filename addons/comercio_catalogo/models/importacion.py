@@ -386,9 +386,9 @@ class ComercioListaImportacion(models.Model):
         except FormatoCambiado as error:
             self.sudo().write({"estado": "error", "error": _(
                 "%(e)s\nTítulos encontrados en el archivo: %(t)s\nCorregir las columnas en la lista del "
-                "proveedor y volver a simular.", e=error, t=", ".join(titulos) or "—")})
+                "proveedor y volver a simular.", e=error, t=", ".join(titulos) or "-")})
             return
-        except Exception as error:  # noqa: BLE001 — archivo dañado o de otro formato
+        except Exception as error:  # noqa: BLE001 - archivo dañado o de otro formato
             self.sudo().write({"estado": "error", "error": _("No se pudo leer el archivo: %s", error)})
             return
         if not filas:
@@ -402,7 +402,7 @@ class ComercioListaImportacion(models.Model):
         anteriores = {li.fila: li for li in self.linea_ids if li.fila}
         try:
             acciones, _hoy = self._plan(OrmCliente(self.env), filas)
-        except Exception as error:  # noqa: BLE001 — que una lista rara no deje un error 500
+        except Exception as error:  # noqa: BLE001 - que una lista rara no deje un error 500
             self.sudo().write({"estado": "error", "error": _("No se pudo armar la simulación: %s", error)})
             return
         tope = (lista.tope_automatico or 0) / 100
@@ -520,7 +520,7 @@ class ComercioListaImportacion(models.Model):
         """«Costo: «Precio s/IVA» → «Precio neto»», una línea por columna que cambió."""
         nombres = {campo: lista._fields[campo].string for campo in COLUMNAS_MAPEO.values()}
         nombres["fila_encabezado"] = lista._fields["fila_encabezado"].string
-        cambios = [f"{nombres[campo]}: «{lista[campo] or '—'}» → «{valor or '—'}»"
+        cambios = [f"{nombres[campo]}: «{lista[campo] or '-'}» → «{valor or '-'}»"
                    for campo, valor in sugerido.items() if (lista[campo] or False) != (valor or False)]
         return "\n".join(cambios)
 
@@ -865,7 +865,7 @@ class ComercioListaImportacionLinea(models.Model):
                                 help="Se aplica sin revisar (cambio de costo dentro del tope).")
     decision = fields.Selection(
         [("pendiente", "Pendiente"), ("aplicar", "Aplicar"), ("es_el_mismo", "Es el mismo"),
-         ("es_nuevo", "Es nuevo"), ("ignorar", "Ignorar"), ("nada", "—")],
+         ("es_nuevo", "Es nuevo"), ("ignorar", "Ignorar"), ("nada", "-")],
         default="pendiente",
     )
     estado = fields.Selection(
@@ -1341,7 +1341,7 @@ class ComercioListaImportacionLinea(models.Model):
                 try:
                     with self.env.cr.savepoint():
                         producto.unlink()
-                except Exception:  # noqa: BLE001 — ya se usó (ventas, stock): se archiva
+                except Exception:  # noqa: BLE001 - ya se usó (ventas, stock): se archiva
                     producto.write({"active": False})
             linea.sudo().write({
                 "estado": "pendiente", "decision": "pendiente", "deshacer_datos": False, "aplicada_por": False,

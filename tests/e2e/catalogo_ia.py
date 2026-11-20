@@ -88,8 +88,8 @@ def main() -> int:
             ["codigo_proveedor", "estado", "ia_veredicto", "ia_producto_id", "ia_confianza", "ia_motivo",
              "producto_elegido_id", "unida_por_ia"])}
         ia1, ia2 = filas["IA1"], filas["IA2"]
-        print(f"   IA1: {ia1['ia_veredicto']} ({ia1['ia_confianza']:.2f}) — {ia1['ia_motivo']}")
-        print(f"   IA2: {ia2['ia_veredicto']} ({ia2['ia_confianza']:.2f}) — {ia2['ia_motivo']}")
+        print(f"   IA1: {ia1['ia_veredicto']} ({ia1['ia_confianza']:.2f}) - {ia1['ia_motivo']}")
+        print(f"   IA2: {ia2['ia_veredicto']} ({ia2['ia_confianza']:.2f}) - {ia2['ia_motivo']}")
         # El mismo producto: el de la prueba u otro con el mismo nombre (p. ej. el de la demo de la tienda)
         assert ia1["ia_veredicto"] == "mismo" and (
             ia1["ia_producto_id"][0] == perro or "Alimento perro adulto 15 kg" in ia1["ia_producto_id"][1]
@@ -122,7 +122,7 @@ def main() -> int:
             raise AssertionError("aceptar «es otro» no debería hacer nada")
         except AssertionError:
             raise
-        except Exception:  # noqa: BLE001 — avisa que lo que es otro no se agrega solo
+        except Exception:  # noqa: BLE001 - avisa que lo que es otro no se agrega solo
             pass
         todos = [("active", "in", (True, False))]
         productos_despues = c.call("product.template", "search_count", domain=todos)
@@ -152,8 +152,8 @@ def main() -> int:
         c.call(LINEA, "action_verificar_ia", [filas["IA3"]["id"], filas["IA4"]["id"]])
         ia3, ia4 = c.read(LINEA, [filas["IA3"]["id"], filas["IA4"]["id"]],
                           ["ia_veredicto", "ia_producto_id", "ia_motivo", "estado", "producto_id"])
-        print(f"   IA3 (nuevo): {ia3['ia_veredicto']} — {ia3['ia_motivo']}")
-        print(f"   IA4 (unido): {ia4['ia_veredicto']} — {ia4['ia_motivo']}")
+        print(f"   IA3 (nuevo): {ia3['ia_veredicto']} - {ia3['ia_motivo']}")
+        print(f"   IA4 (unido): {ia4['ia_veredicto']} - {ia4['ia_motivo']}")
         assert ia3["ia_veredicto"] in ("mismo", "dudoso"), ia3  # vio la cinta aunque el motor no
         if ia3["ia_veredicto"] == "mismo":
             assert ia3["ia_producto_id"][0] == cinta, ia3

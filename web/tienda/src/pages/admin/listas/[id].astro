@@ -81,7 +81,7 @@ const MAL: Record<string, string> = { datos: "Revisá los datos: un nombre y un 
         {hallados.length > 0 && (
           <table class="adm-tabla">
             <thead><tr><th>Producto</th><th class="num">En «{cond.base}»</th><th class="num">Hoy en esta lista</th><th>Descuento propio</th></tr></thead>
-            <tbody>{hallados.map((p) => <tr><td>{p.nombre}<small>{p.codigo}</small></td><td class="num">{p.base != null ? pesos(p.base) : "—"}</td><td class="num">{p.suyo != null ? pesos(p.suyo) : "—"}</td>
+            <tbody>{hallados.map((p) => <tr><td>{p.nombre}<small>{p.codigo}</small></td><td class="num">{p.base != null ? pesos(p.base) : "-"}</td><td class="num">{p.suyo != null ? pesos(p.suyo) : "-"}</td>
               <td><form class="adm-mini" method="post" action="/api/admin/lista"><input type="hidden" name="id" value={propia.id}><input type="hidden" name="tipo" value="producto"><input type="hidden" name="ref" value={p.id_odoo}>
                 <input name="descuento" type="number" inputmode="decimal" min="0" max="60" step="0.5" required aria-label={`Descuento para ${p.nombre}`} placeholder="%"><button class="btn chico sec2" name="accion" value="regla">Aplicar</button></form></td></tr>)}</tbody>
           </table>

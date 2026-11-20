@@ -1,6 +1,6 @@
 # Cierre de caja y puestos
 
-Procedimiento para el personal. Versión para compartir: documento «Comercio Ejemplo —
+Procedimiento para el personal. Versión para compartir: documento «Comercio Ejemplo -
 Reglas de cierre de caja y puestos» (Claude Docs). Detalle técnico: ADR 0009 y
 `addons/comercio_pos_pedido_qr`.
 

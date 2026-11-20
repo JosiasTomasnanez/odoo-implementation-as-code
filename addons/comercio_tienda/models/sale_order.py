@@ -53,7 +53,7 @@ class TiendaCambioPedidos(models.Model):
                     orden = SO.search([("comercio_tienda_ref", "=", ref)], limit=1)
                     if not orden:
                         orden = self._tienda_nuevo_pedido(SO, lista, p)
-            except Exception as e:  # noqa: BLE001 — se informa y sigue con los demás
+            except Exception as e:  # noqa: BLE001 - se informa y sigue con los demás
                 hechos.append({"id": ref, "error": str(e)[:200]})
                 continue
             hechos.append({"id": ref, "odoo_id": orden.id, "odoo_nombre": orden.name})
@@ -201,7 +201,7 @@ class TiendaCambioAcciones(models.Model):
             try:
                 with self.env.cr.savepoint():
                     resultado = self._tienda_accion(orden, tipo, a.get("datos") or {}, quien)
-            except Exception as e:  # noqa: BLE001 — se informa a la tienda y sigue con las demás
+            except Exception as e:  # noqa: BLE001 - se informa a la tienda y sigue con las demás
                 resultado = f"error: {str(e)[:200]}"
             hechas.append({"id": aid, "resultado": resultado})
         return hechas

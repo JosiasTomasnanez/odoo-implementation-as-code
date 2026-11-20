@@ -47,7 +47,7 @@ Lo de Odoo y lo de las registradoras van **por separado**:
 | Qué pide | De Odoo | De las registradoras / 3C |
 |---|---|---|
 | **Libro IVA Ventas** (todas las facturas y tickets emitidos, con su IVA) | *Facturación → Reportes → Impuestos y finanzas → **Libro de IVA***, tipo de impuesto **Ventas** (ventas): solo lo que facturó Odoo | Como hoy: el resumen de cada registradora y lo de 3C |
-| **Detalle de compras** (todas las facturas de proveedores) | El mismo **Libro de IVA** (compras): solo las facturas reales; las «Compras sin factura» no entran | — |
+| **Detalle de compras** (todas las facturas de proveedores) | El mismo **Libro de IVA** (compras): solo las facturas reales; las «Compras sin factura» no entran | - |
 | **TXT para ARCA** (los archivos del Libro IVA Digital que se suben a la página de ARCA) | En el **Libro de IVA**, con **Ventas** o **Compras** elegido, ⚙ → **Libro de IVA (ZIP)**: trae los TXT | Como hoy |
 
 Para controlar lo de las registradoras: *Punto de venta → Órdenes → **Ventas sin factura de Odoo***,

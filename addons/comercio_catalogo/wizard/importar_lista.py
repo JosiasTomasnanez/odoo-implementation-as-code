@@ -35,7 +35,7 @@ def fotos_a_pdf(fotos: list[tuple[str, bytes]]) -> bytes:
             imagen = ImageOps.exif_transpose(imagen).convert("RGB")
         except UserError:
             raise
-        except Exception as error:  # noqa: BLE001 — archivo dañado o que no es una foto
+        except Exception as error:  # noqa: BLE001 - archivo dañado o que no es una foto
             raise UserError(_("«%s» no es una foto que se pueda leer.", nombre)) from error
         paginas.append(imagen)
     salida = io.BytesIO()
@@ -212,7 +212,7 @@ class ComercioImportarListaWizard(models.TransientModel):
             código o la descripción (no los carteles, la hoja de cuentas bancarias, el índice…)."""
             try:
                 return bool(redetectar(leer_tabla(self._contenido(), self.nombre_archivo or "", nombre)))
-            except Exception:  # noqa: BLE001 — una hoja rara no frena el asistente
+            except Exception:  # noqa: BLE001 - una hoja rara no frena el asistente
                 return False
 
         lineas = [Command.clear()]

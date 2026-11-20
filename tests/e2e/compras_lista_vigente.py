@@ -194,7 +194,7 @@ def main() -> int:
             try:
                 c.call("purchase.order", "button_cancel", [orden])
                 c.call("purchase.order", "unlink", [orden])
-            except Exception:  # noqa: BLE001 — con recepción hecha no se cancela: queda en el lab
+            except Exception:  # noqa: BLE001 - con recepción hecha no se cancela: queda en el lab
                 pass
         precios = [p["id"] for p in c.search_read("product.supplierinfo",
                                                   [("partner_id", "in", [socio, otro])], ["id"])]

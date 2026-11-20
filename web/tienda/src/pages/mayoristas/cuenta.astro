@@ -13,7 +13,7 @@ type D = { razon_social: string | null; cuit: string | null; condicion_iva: stri
 const d = (await env.DB.prepare(`SELECT c.razon_social, c.cuit, c.condicion_iva, c.actividad, c.contacto, c.telefono, c.direccion, c.localidad,
     (SELECT nombre FROM listas_precios WHERE id_odoo = c.lista_id) AS lista FROM clientes c WHERE c.id = ?`).bind(cliente.id).first<D>())!;
 const IVA: Record<string, string> = { ri: "Responsable inscripto", monotributo: "Monotributo", exento: "Exento" };
-const cuit = d.cuit ? d.cuit.replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3") : "—";
+const cuit = d.cuit ? d.cuit.replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3") : "-";
 const ESTADO: Record<string, string> = { aprobado: "Cuenta aprobada", pendiente: "Esperando aprobación", rechazado: "Cuenta sin aprobar" };
 const q = Astro.url.searchParams;
 const pedir = `mailto:${local.mailCuentas}?subject=${encodeURIComponent(`Cambio de datos de mi cuenta mayorista (CUIT ${cuit})`)}`;
@@ -24,12 +24,12 @@ const pedir = `mailto:${local.mailCuentas}?subject=${encodeURIComponent(`Cambio 
     <div class="mc-bloque">
       <h2>Datos de la empresa</h2>
       <dl>
-        <div><dt>Razón social</dt><dd>{d.razon_social ?? "—"}</dd></div>
+        <div><dt>Razón social</dt><dd>{d.razon_social ?? "-"}</dd></div>
         <div><dt>CUIT o CUIL</dt><dd class="num">{cuit}</dd></div>
-        <div><dt>Condición de IVA</dt><dd>{IVA[d.condicion_iva ?? ""] ?? "—"}</dd></div>
-        <div><dt>Actividad</dt><dd>{d.actividad ?? "—"}</dd></div>
+        <div><dt>Condición de IVA</dt><dd>{IVA[d.condicion_iva ?? ""] ?? "-"}</dd></div>
+        <div><dt>Actividad</dt><dd>{d.actividad ?? "-"}</dd></div>
         <div><dt>Mail de la cuenta</dt><dd>{cliente.email}</dd></div>
-        <div><dt>Estado</dt><dd>{ESTADO[cliente.mayorista] ?? "—"}{cliente.mayorista === "aprobado" && d.lista ? ` · ${d.lista}` : ""}</dd></div>
+        <div><dt>Estado</dt><dd>{ESTADO[cliente.mayorista] ?? "-"}{cliente.mayorista === "aprobado" && d.lista ? ` · ${d.lista}` : ""}</dd></div>
       </dl>
       <p class="chico-nota">Con estos datos aprobamos tu cuenta y hacemos tus facturas, por eso no se cambian desde acá. Si alguno cambió, escribinos a <a href={pedir}>{local.mailCuentas}</a> desde el mail de tu cuenta, con el dato nuevo, y lo actualizamos.</p>
     </div>

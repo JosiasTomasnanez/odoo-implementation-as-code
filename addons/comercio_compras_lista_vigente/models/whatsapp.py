@@ -19,7 +19,7 @@ def numero_whatsapp(numero: str, pais: str = "AR") -> str:
 
         digitos = phonenumbers.format_number(phonenumbers.parse(numero, pais or "AR"),
                                              phonenumbers.PhoneNumberFormat.E164).lstrip("+")
-    except Exception:  # noqa: BLE001 — número raro: se usa tal cual
+    except Exception:  # noqa: BLE001 - número raro: se usa tal cual
         pass
     if digitos.startswith("54") and not digitos.startswith("549"):
         digitos = "549" + digitos[2:]
@@ -44,7 +44,7 @@ class PurchaseOrder(models.Model):
         renglones = []
         for linea in self.order_line.filtered(lambda li: li.product_id and not li.display_type):
             cantidad = f"{linea.product_qty:g}".replace(".", ",")
-            renglones.append(f"• {cantidad} {linea.uom_id.name} — {self._comercio_detalle_para_proveedor(linea)}")
+            renglones.append(f"• {cantidad} {linea.uom_id.name} - {self._comercio_detalle_para_proveedor(linea)}")
         saludo = _("Hola %s!", self.partner_id.name)
         pedido = _("Te paso el pedido %(n)s de %(e)s:", n=self.name, e=self.company_id.name)
         cierre = _("Por favor confirmame disponibilidad y fecha de entrega. ¡Gracias!")

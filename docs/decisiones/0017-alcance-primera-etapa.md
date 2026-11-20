@@ -39,7 +39,7 @@ Queda **fuera** de la primera etapa:
 Lo ya hecho para esas partes **no se borra**: queda probado en el lab para la etapa
 siguiente (`make e2e-factura`, `make e2e-pos`).
 
-## Cómo se descuenta el stock (P-046) — decidido 21/10, temporal: opción B (ADR 0019)
+## Cómo se descuenta el stock (P-046) - decidido 21/10, temporal: opción B (ADR 0019)
 
 En Odoo el stock de una venta del POS se descuenta cuando el pedido **se valida**. Si la
 caja no cobra en Odoo, el pedido del puesto nunca se valida y el stock no baja. Opciones:

@@ -55,7 +55,7 @@ def main() -> int:
         for malo in (fabrica, fabrica[:-1] + str((int(fabrica[-1]) + 1) % 10), propio):
             try:
                 c.write("product.template", [b], {"comercio_codigo_fabrica": malo})
-            except Exception as error:  # noqa: BLE001 — el servidor devuelve UserError
+            except Exception as error:  # noqa: BLE001 - el servidor devuelve UserError
                 assert "ya es de" in str(error) or "no es un código" in str(error), error
             else:
                 raise AssertionError(f"aceptó {malo}")

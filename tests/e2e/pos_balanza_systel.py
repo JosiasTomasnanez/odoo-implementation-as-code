@@ -3,7 +3,7 @@
 No hace falta la balanza: el navegador recibe una **Cuora simulada** (reemplaza
 `navigator.serial`) que responde como indica el protocolo oficial de Systel
 («Protocolo de comunicaciones MAX CUORA V7», función 1). Lo que esta prueba no cubre
-—el cable, el driver FT232 y la balanza real— se prueba aparte con el equipo.
+-el cable, el driver FT232 y la balanza real- se prueba aparte con el equipo.
 
 Flujo verificado en el puesto:
 1. El POS detecta la Cuora al abrir (115200 baudios, trama [número, 1, XOR]).

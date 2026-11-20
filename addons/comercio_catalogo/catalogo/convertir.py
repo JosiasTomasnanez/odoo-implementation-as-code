@@ -264,7 +264,7 @@ def hojas(contenido: bytes, nombre_archivo: str) -> list[tuple[str, int]]:
             return [(h.name, sum(1 for i in range(h.nrows)
                                  if sum(1 for v in h.row_values(i) if _texto(v)) >= 2))
                     for h in libro.sheets()]
-    except Exception:  # noqa: BLE001 — el error claro lo da después la lectura de la hoja
+    except Exception:  # noqa: BLE001 - el error claro lo da después la lectura de la hoja
         return []
     return []
 

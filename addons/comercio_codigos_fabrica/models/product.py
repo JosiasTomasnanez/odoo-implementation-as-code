@@ -75,7 +75,7 @@ class ProductTemplate(models.Model):
                 {"product_id": producto.id, "uom_id": producto.uom_id.id, "barcode": anterior})
         yo.comercio_sin_codigo_fabrica = False
         yo.comercio_codigo_lista = False  # ya verificado: la pista de la lista no hace falta
-        self.message_post(body=_("Código de fábrica %(c)s (antes %(a)s, que queda como alternativo) — %(u)s.",
+        self.message_post(body=_("Código de fábrica %(c)s (antes %(a)s, que queda como alternativo) - %(u)s.",
                                  c=codigo, a=anterior or "-", u=self.env.user.name))
 
     def action_comercio_sin_codigo_fabrica(self):

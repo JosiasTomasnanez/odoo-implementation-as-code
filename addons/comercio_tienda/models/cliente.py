@@ -39,7 +39,7 @@ class TiendaCambioClientes(models.Model):
                 with self.env.cr.savepoint():
                     lista = self._tienda_lista(lid, li)
                 hecha = {"id": lid, "odoo_id": lista.id, "resultado": f"lista: {lista.name}"}
-            except Exception as e:  # noqa: BLE001 — se informa a la tienda y sigue con las demás
+            except Exception as e:  # noqa: BLE001 - se informa a la tienda y sigue con las demás
                 hecha = {"id": lid, "odoo_id": None, "resultado": f"error: {str(e)[:200]}"}
             if isinstance(li.get("version"), int):
                 hecha["version"] = li["version"]

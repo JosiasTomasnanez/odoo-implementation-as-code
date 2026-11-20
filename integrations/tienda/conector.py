@@ -215,7 +215,7 @@ def ping(url: str | None, falla: bool = False) -> None:
         return
     try:
         urllib.request.urlopen(url + ("/fail" if falla else ""), timeout=10).read()
-    except Exception as e:  # noqa: BLE001 — el ping nunca frena el conector
+    except Exception as e:  # noqa: BLE001 - el ping nunca frena el conector
         log.warning("no se pudo avisar a healthchecks: %s", e)
 
 
@@ -259,7 +259,7 @@ def main(argv: list[str] | None = None) -> int:
             if a.una_vez:
                 log.info("listo: %d cambios", n)
                 return 0
-        except Exception as e:  # noqa: BLE001 — sigue intentando; avisa a healthchecks
+        except Exception as e:  # noqa: BLE001 - sigue intentando; avisa a healthchecks
             errores += 1
             log.error("vuelta con error (%d seguidas): %s", errores, e)
             if errores in (3, 30, 300):

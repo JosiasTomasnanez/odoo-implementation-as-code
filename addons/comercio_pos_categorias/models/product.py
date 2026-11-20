@@ -58,6 +58,6 @@ def _avisar_al_pos(env, plantillas):
     for config in configs:
         try:
             config._notify_synchronisation(config.current_session_id.id, False, registros)
-        except Exception as error:  # noqa: BLE001 — un aviso que falla no puede frenar el guardado
+        except Exception as error:  # noqa: BLE001 - un aviso que falla no puede frenar el guardado
             _logger.warning("No se pudo avisar a %s de %s productos cambiados: %s", config.name,
                             len(productos), error)

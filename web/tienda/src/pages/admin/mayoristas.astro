@@ -27,9 +27,9 @@ const conteo = Object.fromEntries((await env.DB.prepare("SELECT mayorista, COUNT
 const sinVer = (await env.DB.prepare("SELECT COUNT(*) AS n FROM clientes WHERE mayorista = 'aprobado' AND cambios_sin_ver = 1").first<{ n: number }>())?.n ?? 0;
 const porDefecto = listas.find((l) => /mayorista/i.test(l.nombre))?.id_odoo ?? listas[0]?.id_odoo;
 const IVA: Record<string, string> = { ri: "Responsable inscripto", monotributo: "Monotributo", exento: "Exento" };
-const cuit = (c: string | null) => c ? c.replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3") : "—";
+const cuit = (c: string | null) => c ? c.replace(/^(\d{2})(\d{8})(\d)$/, "$1-$2-$3") : "-";
 const fecha = (t: string | null) => t ? new Date(t).toLocaleString("es-AR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "America/Argentina/Cordoba" }) : "";
-const nombreLista = (id: number | null) => listas.find((l) => l.id_odoo === id)?.nombre ?? (id ? `Lista ${id}` : "—");
+const nombreLista = (id: number | null) => listas.find((l) => l.id_odoo === id)?.nombre ?? (id ? `Lista ${id}` : "-");
 ---
 <Base titulo="Mayoristas" actual="mayoristas" miembro={yo}>
   <h1 class="h-disp">Mayoristas</h1>
@@ -59,15 +59,15 @@ const nombreLista = (id: number | null) => listas.find((l) => l.id_odoo === id)?
           {ver === "rechazado" && <span class="estado no">Rechazado</span>}
         </header>
         <dl>
-          <div><dt>IVA</dt><dd>{IVA[c.condicion_iva ?? ""] ?? "—"}</dd></div>
-          <div><dt>Actividad</dt><dd>{c.actividad ?? "—"}</dd></div>
-          <div><dt>Contacto</dt><dd>{c.contacto ?? c.nombre ?? "—"}</dd></div>
-          <div><dt>Teléfono</dt><dd>{c.telefono ? <a href={`tel:${c.telefono.replace(/[^0-9+]/g, "")}`}>{c.telefono}</a> : "—"}</dd></div>
+          <div><dt>IVA</dt><dd>{IVA[c.condicion_iva ?? ""] ?? "-"}</dd></div>
+          <div><dt>Actividad</dt><dd>{c.actividad ?? "-"}</dd></div>
+          <div><dt>Contacto</dt><dd>{c.contacto ?? c.nombre ?? "-"}</dd></div>
+          <div><dt>Teléfono</dt><dd>{c.telefono ? <a href={`tel:${c.telefono.replace(/[^0-9+]/g, "")}`}>{c.telefono}</a> : "-"}</dd></div>
           <div><dt>Mail</dt><dd><a href={`mailto:${c.email}`}>{c.email}</a></dd></div>
-          <div><dt>Dirección</dt><dd>{[c.direccion, c.localidad].filter(Boolean).join(", ") || "—"}</dd></div>
-          {ver === "aprobado" && <div><dt>Aprobó</dt><dd>{c.aprobado_por ?? "—"} · {fecha(c.aprobado)}</dd></div>}
+          <div><dt>Dirección</dt><dd>{[c.direccion, c.localidad].filter(Boolean).join(", ") || "-"}</dd></div>
+          {ver === "aprobado" && <div><dt>Aprobó</dt><dd>{c.aprobado_por ?? "-"} · {fecha(c.aprobado)}</dd></div>}
           {ver === "aprobado" && <div><dt>Pedidos</dt><dd>{c.pedidos}</dd></div>}
-          {ver === "aprobado" && <div><dt>En Odoo</dt><dd>{c.odoo_pendiente === 2 ? <span class="err">No se pudo: {c.odoo_error} (corregilo en Odoo y tocá «Guardar lista»)</span> : c.odoo_pendiente ? "Pasando a Odoo…" : c.odoo_partner_id ? `Contacto n.º ${c.odoo_partner_id}` : "—"}</dd></div>}
+          {ver === "aprobado" && <div><dt>En Odoo</dt><dd>{c.odoo_pendiente === 2 ? <span class="err">No se pudo: {c.odoo_error} (corregilo en Odoo y tocá «Guardar lista»)</span> : c.odoo_pendiente ? "Pasando a Odoo…" : c.odoo_partner_id ? `Contacto n.º ${c.odoo_partner_id}` : "-"}</dd></div>}
           {c.nota && <div><dt>Nota</dt><dd>{c.nota}</dd></div>}
         </dl>
         {cambios.some((x) => x.cliente_id === c.id) && (

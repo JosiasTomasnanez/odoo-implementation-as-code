@@ -20,7 +20,7 @@ O todo junto, para probar con lo que hay (borra el lab): `make lab-completo` = b
 proveedores que estén en `data/privado/listas-proveedores/` (`make lab-listas-reales`, script
 `infra/scripts/lab-listas-reales.py`; sin los archivos se saltean).
 
-- Odoo: <http://localhost:8069> — `admin` / `admin` (solo lab).
+- Odoo: <http://localhost:8069> - `admin` / `admin` (solo lab).
 - Correos: <http://localhost:8025> (Mailpit). Todo lo que Odoo manda por mail (recibos,
   facturas) llega a este buzón de prueba y **no sale a internet**, aunque se ponga una
   dirección real. Con `make lab-red` también se abre desde la red local.

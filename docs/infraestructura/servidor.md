@@ -13,7 +13,7 @@ en el equipo real desde el 27/10). Backups y avisos: ADR 0027.
 | Memoria | 16 GB DDR4 3200 (un módulo) | Quizás se suma otro igual (32 GB, doble canal) |
 | Discos | 2 × SSD WD Green 1 TB SATA | RAID 1; gama económica: vigilar su estado (`smartmontools`) |
 | Fuente | Gamemax 600 W 80 Plus Bronze | La pieza más probable de fallar: por eso la UPS |
-| Gabinete | Magnum Tech 436B | — |
+| Gabinete | Magnum Tech 436B | - |
 | UPS | Se compra aparte | 1000 VA o más con USB, que cubra también router y switch |
 
 Sin memoria ECC ni garantía en sitio: lo compensan el RAID 1, la UPS, los backups probados y
@@ -48,7 +48,7 @@ actualizaciones mal hechas y errores humanos**. La inversión va primero ahí.
 | Red | 1 Gbps cableado (idealmente 2 puertos) | 1 Gbps | Nunca por Wi-Fi |
 | **UPS** | Interactiva o en línea, **1500 VA**, con USB para apagado automático; que cubra también el router y el switch | 1000 VA | Cortes de luz: el riesgo número uno. Sin UPS se puede corromper la base |
 | Backup local | Disco externo o NAS chico para la copia diaria | Disco externo USB | Restauración rápida sin depender de Internet |
-| Backup externo | Almacenamiento en la nube, cifrado (P-013) | — | Por si se pierde el local (robo, incendio) |
+| Backup externo | Almacenamiento en la nube, cifrado (P-013) | - | Por si se pierde el local (robo, incendio) |
 
 ## Entorno
 

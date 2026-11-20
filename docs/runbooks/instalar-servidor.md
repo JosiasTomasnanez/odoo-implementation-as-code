@@ -74,9 +74,9 @@ Particionado: **Manual**.
 | Línea | Utilizar como | Montaje |
 |---|---|---|
 | LV `raiz` | ext4 | `/` |
-| LV `swap` | área de intercambio | — |
+| LV `swap` | área de intercambio | - |
 | RAID1 #0 (1 GB) | ext4 | `/boot` |
-| Particiones 1 de los dos discos | Partición del sistema EFI | — |
+| Particiones 1 de los dos discos | Partición del sistema EFI | - |
 
 - [ ] *Finalizar el particionado y escribir los cambios* → **Sí**
 

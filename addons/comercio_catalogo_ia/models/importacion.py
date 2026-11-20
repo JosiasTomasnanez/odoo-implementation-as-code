@@ -362,7 +362,7 @@ class ComercioListaImportacion(models.Model):
             try:
                 with self.env.cr.savepoint():
                     tanda.with_context(sin_revision_ia=True).action_verificar_ia()
-            except Exception as error:  # noqa: BLE001 — cupo, corte, respuesta rara: no traba el alta
+            except Exception as error:  # noqa: BLE001 - cupo, corte, respuesta rara: no traba el alta
                 _logger.warning("IA antes de agregar: %s; se agrega sin revisar", error)
                 break
         retenidas = lineas.filtered(lambda li: li.estado == "pendiente" and li.ia_veredicto == ia.MISMO)

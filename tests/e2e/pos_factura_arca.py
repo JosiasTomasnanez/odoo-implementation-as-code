@@ -105,7 +105,7 @@ def prueba_dos_a_la_vez(c) -> None:
         barrera.wait()
         try:
             cliente.call("account.move", "action_post", [factura_id])
-        except Exception as error:  # noqa: BLE001 — se informa abajo
+        except Exception as error:  # noqa: BLE001 - se informa abajo
             errores.append(str(error)[:300])
 
     hilos = [threading.Thread(target=validar, args=(f,)) for f in borradores]

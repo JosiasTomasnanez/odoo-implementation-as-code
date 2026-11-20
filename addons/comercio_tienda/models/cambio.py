@@ -147,7 +147,7 @@ class TiendaCambio(models.Model):
             # Pillow directo: la herramienta de imágenes de Odoo 20 solo escribe PNG, JPEG, GIF o ICO
             original = Image.open(io.BytesIO(crudo))
             original.load()
-        except Exception:  # noqa: BLE001 — una foto que no se puede leer: va solo la original
+        except Exception:  # noqa: BLE001 - una foto que no se puede leer: va solo la original
             return {}
         for ancho in (400, 800):
             foto = original.copy()

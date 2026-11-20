@@ -202,7 +202,7 @@ def main() -> int:
             if productos:
                 c.call("product.template", "unlink", productos)
             c.call("product.category", "unlink", [hija, madre])
-        except Exception:  # noqa: BLE001 — si algo los usó, quedan archivados
+        except Exception:  # noqa: BLE001 - si algo los usó, quedan archivados
             if productos:
                 c.write("product.template", productos, {"active": False})
         c.write("res.partner", [socio], {"active": False})

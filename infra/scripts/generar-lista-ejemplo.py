@@ -38,7 +38,7 @@ def ean13(doce: str) -> str:
     return doce + str((10 - suma % 10) % 10)
 
 
-# (familia o None, código, detalle, descripción, código de barras, precio, desc. %) — None en
+# (familia o None, código, detalle, descripción, código de barras, precio, desc. %) - None en
 # código = fila de familia. El precio puede ser texto («SIN STOCK»).
 GENERAL_1 = [
     ("ABRAZADERAS", None),
@@ -114,7 +114,7 @@ IMPORTADOS_1 = [
 def hoja_general(libro, filas, titulo_precio, promociones):
     h = libro.create_sheet("Lista general")
     h.append(["FERRETERA EJEMPLO S.A. (ficticia)"])
-    h.append(["Lista de precios — precios SIN IVA. Bonificación 5 % en factura. Flete 2,5 %."])
+    h.append(["Lista de precios - precios SIN IVA. Bonificación 5 % en factura. Flete 2,5 %."])
     h.append(["Consultas: ventas@ferretera-ejemplo.invalid"])
     h.append([])
     h.append(["Código", "Detalle", "Descripción del producto", "Código de barras", titulo_precio, "Desc. %",
@@ -134,7 +134,7 @@ def hoja_general(libro, filas, titulo_precio, promociones):
 
 def hoja_bulones(libro, filas, suba=1.0):
     h = libro.create_sheet("Bulones")
-    h.append(["FERRETERA EJEMPLO S.A. — LISTA DE PRECIOS BULONES (sin IVA)"])
+    h.append(["FERRETERA EJEMPLO S.A. - LISTA DE PRECIOS BULONES (sin IVA)"])
     h.append([])
     # Dos precios por unidad: suelta, o comprando la caja cerrada (más barato)
     h.append(["Código", "Detalle", "Descripción / medidas", "Unidades x caja", "Precio Unit. sin IVA",
@@ -151,7 +151,7 @@ def hoja_bulones(libro, filas, suba=1.0):
 
 def hoja_importados(libro, filas):
     h = libro.create_sheet("Importados USD")
-    h.append(["Importados — precios en DÓLARES con IVA incluido"])
+    h.append(["Importados - precios en DÓLARES con IVA incluido"])
     h.append([])
     h.append(["Código", "Descripción", "Precio U$S c/IVA", "IVA %"])
     for c in h[3]:
